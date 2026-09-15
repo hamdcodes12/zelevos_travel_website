@@ -1,6 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, CalendarDays, Car, Check, Hotel, MapPin, Plane, Search, Star, Ticket, Users, X, AlertCircle } from "lucide-react";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
+import { RouteMap } from "@/components/route-map";
+
+declare global {
+  interface Window {
+    Razorpay?: any;
+  }
+}
 
 type Provider = { provider: string; mode: "DEMO" | "LIVE"; status: string };
 type HotelResult = { id: string; name: string; destination: string; rating: number; location: string; amenities: string[]; room: string; cancellation: string; pricePerNight: number; image: string; provider: string; mode: "DEMO" | "LIVE" };
@@ -39,6 +46,25 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   const payload = await response.json() as T & { message?: string };
   if (!response.ok) throw new Error(payload.message || "Wayora could not complete that action.");
   return payload;
+}
+
+async function loadRazorpayCheckout(): Promise<void> {
+  if (window.Razorpay) return;
+  await new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Unable to load Razorpay checkout SDK.")), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Unable to load Razorpay checkout SDK. Please check your connection."));
+    document.head.appendChild(script);
+  });
+  if (!window.Razorpay) throw new Error("Razorpay checkout SDK is unavailable.");
 }
 
 function DemoBadge({ mode }: { mode: "DEMO" | "LIVE" }) {
@@ -179,8 +205,71 @@ export function TravelHub({
       return;
     }
     try {
-      const result = await postJson<{ message: string }>("/api/bookings", { kind, itemId, amount, payload });
-      onToast(result.message);
+      const result = await postJson<{
+        message: string;
+        requiresPayment?: boolean;
+        booking?: BookingRecord & { paymentOrderId?: string };
+        orderId?: string;
+        amountSubunits?: number;
+        currency?: string;
+        keyId?: string;
+        provider?: string;
+      }>("/api/bookings", {
+        kind,
+        itemId,
+        amount,
+        payload,
+        idempotencyKey: `booking-${crypto.randomUUID()}`,
+      });
+
+      if (result.requiresPayment && result.booking && result.orderId && result.amountSubunits && result.keyId) {
+        try {
+          await loadRazorpayCheckout();
+          if (!window.Razorpay) throw new Error("Razorpay checkout SDK is unavailable.");
+
+          const payment = await new Promise<{ orderId: string; paymentId: string; signature: string }>((resolve, reject) => {
+            const checkout = new window.Razorpay({
+              key: result.keyId,
+              amount: result.amountSubunits,
+              currency: result.currency || "INR",
+              name: "Wayora",
+              description: `${kind.charAt(0) + kind.slice(1).toLowerCase()} booking`,
+              order_id: result.orderId,
+              prefill: { email: user.email },
+              theme: { color: "#214ecf" },
+              handler: (response: any) => {
+                if (!response?.razorpay_payment_id || !response?.razorpay_signature) {
+                  reject(new Error("Incomplete payment response from Razorpay."));
+                  return;
+                }
+                resolve({
+                  orderId: response.razorpay_order_id || result.orderId!,
+                  paymentId: response.razorpay_payment_id,
+                  signature: response.razorpay_signature,
+                });
+              },
+              payment: {
+                failed: (response: any) => reject(new Error(response?.error?.description || "Razorpay could not complete the payment.")),
+              },
+              modal: {
+                ondismiss: () => reject(new Error("Payment checkout was cancelled before completing the transaction.")),
+              },
+            });
+            checkout.open();
+          });
+
+          const finalized = await postJson<{ message: string }>(`/api/bookings/${result.booking.id}/payment`, payment);
+          onToast(finalized.message);
+        } catch (paymentError) {
+          void postJson("/api/payments/cancel", {
+            orderId: result.orderId,
+            reason: paymentError instanceof Error ? paymentError.message : "Checkout was cancelled.",
+          }).catch(() => undefined);
+          throw paymentError;
+        }
+      } else {
+        onToast(result.message);
+      }
       if (tab === "bookings") void runSearch();
     } catch (bookingError) {
       onToast(bookingError instanceof Error ? bookingError.message : "Booking could not be created.");
@@ -312,6 +401,9 @@ export function TravelHub({
               </button>
             )}
           </form>
+        )}
+        {tab === "transport" && transportForm.pickup && transportForm.drop && (
+          <RouteMap origin={transportForm.pickup} destination={transportForm.drop} />
         )}
         {tab !== "flights" && <ProviderNote provider={provider} />}
         {tab !== "flights" && tab !== "bookings" && (

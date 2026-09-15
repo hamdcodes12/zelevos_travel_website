@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import { z } from "zod/v4";
 import { auditLogsTable, bookingsTable, db, generatedTripsTable, notificationsTable, paymentTransactionsTable } from "@workspace/db";
@@ -374,6 +374,10 @@ router.post("/payments/verify", requireAuth, async (req, res): Promise<void> => 
     }
     if (transaction && transaction.provider !== "razorpay" && paymentProvider.mode === "LIVE") {
       res.status(409).json({ status: "verification_failed", verified: false, message: "Payment provider does not match the created order." });
+      return;
+    }
+    if (transaction && transaction.currency !== "INR") {
+      res.status(409).json({ status: "verification_failed", verified: false, message: "Payment currency does not match the created order." });
       return;
     }
     if (transaction?.status === "CAPTURED" && transaction.providerPaymentId === parsed.data.paymentId) {
@@ -1072,6 +1076,113 @@ router.post("/bookings/:id/cancel", requireAuth, async (req, res): Promise<void>
 });
 
 // --------------------------------------------------------------------------
+// 6b. Marketplace payment finalization
+// --------------------------------------------------------------------------
+router.post("/bookings/:id/payment", requireAuth, async (req, res): Promise<void> => {
+  const parsedId = z.string().uuid().safeParse(req.params.id);
+  const parsedPayment = z.object({
+    orderId: z.string().trim().min(1),
+    paymentId: z.string().trim().min(1),
+    signature: z.string().trim().min(1),
+  }).safeParse(req.body);
+
+  if (!parsedId.success || !parsedPayment.success) {
+    res.status(400).json({ status: "invalid_request", message: "A valid booking and payment confirmation are required." });
+    return;
+  }
+
+  try {
+    const [booking] = await db.select().from(bookingsTable).where(and(
+      eq(bookingsTable.id, parsedId.data),
+      eq(bookingsTable.ownerId, req.user!.id),
+    )).limit(1);
+
+    if (!booking) {
+      res.status(404).json({ status: "not_found", message: "Booking not found." });
+      return;
+    }
+
+    if (booking.status === "CONFIRMED" && booking.paymentStatus === "PAYMENT_CONFIRMED") {
+      if (booking.paymentOrderId === parsedPayment.data.orderId && booking.paymentId === parsedPayment.data.paymentId) {
+        res.json({ success: true, duplicate: true, booking });
+        return;
+      }
+      res.status(409).json({ status: "already_processed", message: "This booking has already been paid." });
+      return;
+    }
+
+    if (booking.paymentOrderId !== parsedPayment.data.orderId) {
+      res.status(409).json({ status: "payment_order_mismatch", message: "The payment order does not belong to this booking." });
+      return;
+    }
+
+    const paymentProvider = getPaymentProvider();
+    const verification = await paymentProvider.verifyPayment(parsedPayment.data);
+    if (!verification.verified) {
+      res.status(400).json({ status: "verification_failed", verified: false, message: verification.error || "Payment verification failed." });
+      return;
+    }
+
+    const [transaction] = await db.select().from(paymentTransactionsTable).where(and(
+      eq(paymentTransactionsTable.userId, req.user!.id),
+      eq(paymentTransactionsTable.providerOrderId, parsedPayment.data.orderId),
+    )).limit(1);
+
+    if (!transaction || transaction.bookingId !== booking.id) {
+      res.status(409).json({ status: "payment_not_found", message: "The payment transaction is not linked to this booking." });
+      return;
+    }
+    if (transaction.provider !== "razorpay" || paymentProvider.mode !== "LIVE") {
+      res.status(409).json({ status: "payment_provider_mismatch", message: "This booking is not configured for live payment." });
+      return;
+    }
+    if (transaction.status === "REFUNDED" || transaction.status === "CANCELLED" || transaction.status === "FAILED") {
+      res.status(409).json({ status: "payment_not_payable", message: "This payment order is no longer payable." });
+      return;
+    }
+    if (transaction.providerPaymentId && transaction.providerPaymentId !== parsedPayment.data.paymentId) {
+      res.status(409).json({ status: "payment_already_linked", message: "This order is already linked to another payment." });
+      return;
+    }
+
+    const [updatedTransaction] = await db.update(paymentTransactionsTable).set({
+      providerPaymentId: parsedPayment.data.paymentId,
+      status: "CAPTURED",
+      capturedAmount: transaction.amount,
+      updatedAt: new Date(),
+    }).where(and(
+      eq(paymentTransactionsTable.id, transaction.id),
+      eq(paymentTransactionsTable.status, "CREATED"),
+    )).returning();
+
+    if (!updatedTransaction && transaction.status !== "CAPTURED") {
+      res.status(409).json({ status: "payment_state_changed", message: "Payment state changed while it was being confirmed. Please retry." });
+      return;
+    }
+
+    const [updatedBooking] = await db.update(bookingsTable).set({
+      status: "CONFIRMED",
+      paymentStatus: "PAYMENT_CONFIRMED",
+      paymentId: parsedPayment.data.paymentId,
+      updatedAt: new Date(),
+    }).where(and(
+      eq(bookingsTable.id, booking.id),
+      eq(bookingsTable.status, "PENDING"),
+    )).returning();
+
+    res.status(updatedBooking ? 200 : 409).json({
+      success: Boolean(updatedBooking),
+      duplicate: !updatedBooking,
+      booking: updatedBooking || booking,
+      message: updatedBooking ? "Payment verified and booking confirmed." : "Booking state changed while payment was being confirmed.",
+    });
+  } catch (error) {
+    req.log.error({ err: error }, "Marketplace payment finalization failed");
+    res.status(500).json({ status: "payment_error", message: "Payment was verified, but the booking could not be finalized." });
+  }
+});
+
+// --------------------------------------------------------------------------
 // 7. Payment Webhook Endpoint
 // --------------------------------------------------------------------------
 router.post("/payments/webhook", async (req, res): Promise<void> => {
@@ -1102,8 +1213,11 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
   const event = req.body?.event;
   const eventId = typeof req.body?.id === "string" ? req.body.id : undefined;
   const paymentPayload = req.body?.payload?.payment?.entity;
+  const orderPayload = req.body?.payload?.order?.entity;
+  const providerOrderId = paymentPayload?.order_id || orderPayload?.id;
+  const providerPaymentId = typeof paymentPayload?.id === "string" ? paymentPayload.id : undefined;
 
-  if (paymentPayload?.order_id) {
+  if (providerOrderId) {
     try {
       if (eventId) {
         const [alreadyProcessed] = await db.select({ id: paymentTransactionsTable.id })
@@ -1121,25 +1235,45 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
       const status = captured ? "CAPTURED" : failed ? "FAILED" : event === "payment.authorized" ? "AUTHORIZED" : undefined;
 
       if (status) {
+        const [transaction] = await db.select().from(paymentTransactionsTable)
+          .where(eq(paymentTransactionsTable.providerOrderId, providerOrderId))
+          .limit(1);
+
+        if (!transaction) {
+          req.log.warn({ providerOrderId }, "Ignoring webhook for unknown Razorpay order");
+          res.json({ status: "ok", ignored: true });
+          return;
+        }
+
+        const webhookAmount = Number(paymentPayload?.amount || orderPayload?.amount || 0);
+        if (captured && webhookAmount > 0 && Math.round(webhookAmount / 100) !== transaction.amount) {
+          req.log.warn({ providerOrderId }, "Ignoring webhook with mismatched payment amount");
+          res.status(400).json({ status: "amount_mismatch", message: "Webhook payment amount does not match the created order." });
+          return;
+        }
+
         await db.update(paymentTransactionsTable).set({
-          providerPaymentId: typeof paymentPayload.id === "string" ? paymentPayload.id : undefined,
+          providerPaymentId,
           status,
-          capturedAmount: captured ? Math.round(Number(paymentPayload.amount || 0) / 100) : undefined,
-          failureReason: failed ? (paymentPayload.error_description || "Payment failed.") : undefined,
+          capturedAmount: captured ? transaction.amount : undefined,
+          failureReason: failed ? (paymentPayload?.error_description || "Payment failed.") : undefined,
           webhookEventId: eventId,
           webhookEventType: event,
           updatedAt: new Date(),
-        }).where(eq(paymentTransactionsTable.providerOrderId, paymentPayload.order_id));
+        }).where(and(
+          eq(paymentTransactionsTable.providerOrderId, providerOrderId),
+          or(eq(paymentTransactionsTable.status, "CREATED"), eq(paymentTransactionsTable.status, "AUTHORIZED")),
+        ));
       }
 
       if (captured) {
         await db.update(bookingsTable)
           .set({ paymentStatus: "CAPTURED", updatedAt: new Date() })
-          .where(eq(bookingsTable.paymentOrderId, paymentPayload.order_id));
+          .where(eq(bookingsTable.paymentOrderId, providerOrderId));
       } else if (failed) {
         await db.update(bookingsTable)
           .set({ paymentStatus: "FAILED", updatedAt: new Date() })
-          .where(eq(bookingsTable.paymentOrderId, paymentPayload.order_id));
+          .where(eq(bookingsTable.paymentOrderId, providerOrderId));
       }
     } catch (err) {
       req.log.error({ err }, "Webhook DB update failed");
@@ -1210,7 +1344,13 @@ router.post("/bookings", requireAuth, async (req, res): Promise<void> => {
   }
   try {
     const destination = typeof parsed.data.payload.destination === "string" ? parsed.data.payload.destination : undefined;
-    const serverAmount = demoItemAmount(parsed.data.kind, parsed.data.itemId, destination) ?? parsed.data.amount;
+    const catalogAmount = demoItemAmount(parsed.data.kind, parsed.data.itemId, destination);
+    const paymentProvider = getPaymentProvider();
+    if (paymentProvider.mode === "LIVE" && catalogAmount === null) {
+      res.status(400).json({ status: "invalid_item", message: "The selected travel item is no longer available at a server-verified price." });
+      return;
+    }
+    const serverAmount = catalogAmount ?? parsed.data.amount;
 
     const idempotencyKey = parsed.data.idempotencyKey || `booking-${req.user!.id}-${parsed.data.kind}-${parsed.data.itemId}`;
 
@@ -1219,6 +1359,66 @@ router.post("/bookings", requireAuth, async (req, res): Promise<void> => {
       .where(and(eq(bookingsTable.ownerId, req.user!.id), eq(bookingsTable.idempotencyKey, idempotencyKey)));
     if (existingBooking) {
       res.status(200).json({ booking: existingBooking, message: "Booking already exists (idempotent response). DEMO PAYMENT — NO REAL MONEY was charged." });
+      return;
+    }
+
+    if (paymentProvider.mode === "LIVE") {
+      const receipt = `rcpt_${crypto.randomUUID().slice(0, 12)}`;
+      const order = await paymentProvider.createOrder({
+        amount: serverAmount,
+        currency: "INR",
+        receipt,
+        notes: {
+          userId: req.user!.id,
+          kind: parsed.data.kind,
+          itemId: parsed.data.itemId,
+        },
+      });
+
+      const [transaction] = await db.insert(paymentTransactionsTable).values({
+        userId: req.user!.id,
+        provider: order.provider,
+        providerOrderId: order.orderId,
+        amount: serverAmount,
+        requestedAmount: serverAmount,
+        currency: order.currency,
+        status: "CREATED",
+        idempotencyKey,
+        metadata: { kind: parsed.data.kind, itemId: parsed.data.itemId, mode: "LIVE", payload: parsed.data.payload },
+      }).returning();
+
+      const reference = `WAY-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+      const [booking] = await db.insert(bookingsTable).values({
+        ownerId: req.user!.id,
+        kind: parsed.data.kind,
+        status: "PENDING",
+        providerMode: "DEMO",
+        providerReference: parsed.data.itemId,
+        bookingReference: reference,
+        amount: serverAmount,
+        paymentOrderId: order.orderId,
+        paymentStatus: "PAYMENT_PENDING",
+        idempotencyKey,
+        payload: parsed.data.payload,
+      }).returning();
+
+      await db.update(paymentTransactionsTable).set({ bookingId: booking.id, updatedAt: new Date() })
+        .where(eq(paymentTransactionsTable.id, transaction.id));
+
+      res.status(201).json({
+        success: true,
+        requiresPayment: true,
+        booking,
+        orderId: order.orderId,
+        amount: order.amount,
+        amountSubunits: order.amountSubunits,
+        currency: order.currency,
+        keyId: order.keyId,
+        provider: order.provider,
+        transactionId: transaction.id,
+        status: "PAYMENT_REQUIRED",
+        message: "Complete Razorpay checkout to confirm this booking.",
+      });
       return;
     }
 

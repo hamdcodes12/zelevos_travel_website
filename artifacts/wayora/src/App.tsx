@@ -50,6 +50,7 @@ import { detectHomepageIntent } from '@/lib/intent';
 import { AuthDialog, type AuthUser } from '@/components/auth-dialog';
 import { FlightsPage } from '@/pages/flights';
 import { AdminPage } from '@/pages/admin';
+import { LocationAutocomplete } from '@/components/location-autocomplete';
 
 const queryClient = new QueryClient();
 
@@ -847,7 +848,7 @@ function Planner({ onToast, onSaved, user, onLogin }: { onToast: (message: strin
         <div className="planner-card">
           <div className="planner-card-top"><div><span className="mini-label">YOUR TRIP BRIEF</span><h3>Let’s make this yours.</h3></div><span className="planner-status"><span /> AI ready</span></div>
           <div className="planner-fields">
-            <label><span>Where do you want to go?</span><div className="field-input"><MapPin size={17} /><input value={destination} onChange={(event) => setDestination(event.target.value)} /></div></label>
+             <label><span>Where do you want to go?</span><div className="field-input"><LocationAutocomplete id="planner-destination-input" value={destination} onChange={setDestination} placeholder="Search a city, hotel or landmark..." /></div></label>
              <label><span>When are you going?</span><div className="field-input"><CalendarDays size={17} /><input value={dates} onChange={(event) => setDates(event.target.value)} /></div></label>
              <div className="planner-inline-fields"><label><span>Days</span><div className="field-input"><Clock3 size={17} /><input type="number" min="1" max="365" value={durationDays} onChange={(event) => setDurationDays(Math.max(1, Number(event.target.value) || 1))} /></div></label><label><span>Travellers</span><div className="field-input"><Users size={17} /><input type="number" min="1" max="100" value={travellers} onChange={(event) => setTravellers(Math.max(1, Number(event.target.value) || 1))} /></div></label></div>
              <label><span>What matters most?</span><div className="choice-row">{['Nature', 'Food', 'Slow travel', 'Adventure', 'Culture', 'Wellness', 'Beaches', 'Mountains'].map((item) => <button key={item} className={preferences.includes(item) ? 'chosen' : ''} onClick={() => setPreferences((items) => items.includes(item) ? items.filter((value) => value !== item) : [...items, item])}>{item}</button>)}</div></label>
