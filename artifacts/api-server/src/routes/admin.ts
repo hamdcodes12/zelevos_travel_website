@@ -342,10 +342,13 @@ router.get("/admin/customers/:id", requireAdmin, async (req, res): Promise<void>
         amount: b.amount,
         status: b.status,
         paymentStatus: b.paymentStatus ?? "PENDING",
+         paymentId: b.paymentId ?? null,
+         paymentOrderId: b.paymentOrderId ?? null,
         cancellationDetails: b.cancellationDetails ?? null,
         refundAmount: b.refundAmount ?? null,
         emailStatus: b.emailStatus,
         createdAt: b.createdAt,
+         updatedAt: b.updatedAt,
       };
     });
 
@@ -517,6 +520,7 @@ router.get("/admin/payments", requireAdmin, async (req, res): Promise<void> => {
         failureReason: transaction.failureReason,
         webhookEventType: transaction.webhookEventType,
         createdAt: transaction.createdAt,
+        updatedAt: transaction.updatedAt,
       };
     });
 

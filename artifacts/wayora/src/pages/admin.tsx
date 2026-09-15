@@ -69,9 +69,12 @@ type CustomerDetailBooking = {
   amount: number;
   status: string;
   paymentStatus: string;
+  paymentId: string | null;
+  paymentOrderId: string | null;
   cancellationDetails: any;
   refundAmount: number | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 type CustomerDetailData = {
@@ -127,6 +130,7 @@ type PaymentItem = {
   failureReason: string | null;
   webhookEventType: string | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 function formatCurrency(amount: number): string {
@@ -1559,7 +1563,7 @@ export function AdminPage() {
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>PNR / Reference</th>
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Customer</th>
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Description</th>
-                      <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Date</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Created / Updated</th>
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Amount</th>
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Payment</th>
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Status</th>
@@ -1747,7 +1751,10 @@ export function AdminPage() {
                             )}
                           </td>
                           <td style={{ padding: "12px 16px", color: "#64748b" }}>
-                            {formatDateTime(p.createdAt)}
+                            <span style={{ display: "block" }}>{formatDateTime(p.createdAt)}</span>
+                            <span style={{ display: "block", fontSize: "10px", color: "#94a3b8" }}>
+                              Updated {formatDateTime(p.updatedAt)}
+                            </span>
                           </td>
                         </tr>
                       ))
@@ -2185,6 +2192,9 @@ export function AdminPage() {
                             Ticket: {b.ticketNumber}
                           </span>
                         )}
+                        <span style={{ display: "block", fontSize: "10px", color: "#94a3b8", fontFamily: "monospace", marginTop: "3px" }}>
+                          Order: {b.paymentOrderId || "—"} · Payment: {b.paymentId || "—"}
+                        </span>
                       </div>
 
                       <div style={{ textAlign: "right" }}>

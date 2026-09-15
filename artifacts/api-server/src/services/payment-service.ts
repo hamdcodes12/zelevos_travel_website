@@ -46,6 +46,7 @@ export type PaymentRefundResult = {
 export interface PaymentProvider {
   readonly name: string;
   readonly mode: "LIVE" | "TEST";
+  readonly keyId?: string;
   createOrder(params: PaymentOrderParams): Promise<PaymentOrderResult>;
   verifyPayment(params: PaymentVerifyParams): Promise<PaymentVerifyResult>;
   verifyWebhookSignature(rawBody: Buffer | string, signature: string, customSecret?: string): boolean;
@@ -111,8 +112,10 @@ export class RazorpayPaymentProvider implements PaymentProvider {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Razorpay order creation failed (${response.status}): ${errorText}`);
+      // Do not echo Razorpay's response body: provider errors can contain
+      // request metadata that should stay server-side.
+      await response.text();
+      throw new Error(`Razorpay order creation failed (${response.status}).`);
     }
 
     const data = await response.json() as { id: string; amount: number; currency: string };
@@ -214,13 +217,13 @@ export class RazorpayPaymentProvider implements PaymentProvider {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
+      await response.text();
       return {
         success: false,
         refundId: "",
         amount: params.amount,
         status: "FAILED",
-        message: `Razorpay refund failed (${response.status}): ${errorText}`,
+        message: `Razorpay refund failed (${response.status}).`,
       };
     }
 
@@ -334,9 +337,13 @@ export function getPaymentProvider(): PaymentProvider {
     throw new Error("Payment provider not configured. Set PAYMENT_PROVIDER=razorpay with Razorpay credentials before enabling production mode.");
   }
 
-  // Explicit test mode is reserved for local/test environments. Production
-  // always uses configured live credentials, even if an old test flag remains.
-  if (provider === "test" && process.env.NODE_ENV !== "production") {
+  // An explicit test provider is only honored for the test runner or when
+  // live credentials are absent. This prevents a stale PAYMENT_PROVIDER=test
+  // flag from silently turning real configured payments into fake payments.
+  if (provider === "test" && process.env.NODE_ENV === "test") {
+    return new TestPaymentProvider();
+  }
+  if (provider === "test" && !hasLiveCredentials) {
     return new TestPaymentProvider();
   }
 

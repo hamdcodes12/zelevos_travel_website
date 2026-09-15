@@ -15,6 +15,7 @@ type RouteMapProps = {
 export function RouteMap({ origin, destination }: RouteMapProps) {
   const [route, setRoute] = useState<RouteInfo | null>(null);
   const [state, setState] = useState<"idle" | "loading" | "ready" | "unavailable">("idle");
+  const [imageUnavailable, setImageUnavailable] = useState(false);
 
   useEffect(() => {
     if (!origin || !destination) {
@@ -25,6 +26,7 @@ export function RouteMap({ origin, destination }: RouteMapProps) {
 
     const controller = new AbortController();
     setState("loading");
+    setImageUnavailable(false);
     void fetch(`/api/maps/route?origin=${encodeURIComponent(`${origin} airport`)}&destination=${encodeURIComponent(`${destination} airport`)}`, {
       credentials: "include",
       signal: controller.signal,
@@ -68,8 +70,16 @@ export function RouteMap({ origin, destination }: RouteMapProps) {
             src={`/api/maps/static?origin=${encodeURIComponent(`${origin} airport`)}&destination=${encodeURIComponent(`${destination} airport`)}`}
             alt={`Google Maps route from ${origin} airport to ${destination} airport`}
             style={{ display: "block", width: "100%", height: "190px", objectFit: "cover", background: "#eef2ff" }}
-            onError={(event) => { event.currentTarget.style.display = "none"; }}
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+            setImageUnavailable(true);
+          }}
           />
+          {imageUnavailable && (
+            <div style={{ minHeight: "110px", display: "grid", placeItems: "center", padding: "16px", textAlign: "center", color: "var(--muted)", background: "#f4f7ff", fontSize: "12px" }}>
+              The route summary is available, but the Google Maps image could not be loaded. Open the route in Google Maps for the live map.
+            </div>
+          )}
           <div style={{ display: "flex", gap: "18px", padding: "12px 16px", color: "var(--muted)", fontSize: "11px", flexWrap: "wrap" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><Route size={13} style={{ color: "var(--blue)" }} /> {route.distanceText}</span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><Clock3 size={13} style={{ color: "var(--blue)" }} /> {route.durationText} by road</span>

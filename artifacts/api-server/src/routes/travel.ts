@@ -302,7 +302,16 @@ router.post("/payments/order", requireAuth, async (req, res): Promise<void> => {
     const idempotencyKey = parsed.data.idempotencyKey || `payment-${req.user!.id}-${receipt}`;
     const [existing] = await db.select().from(paymentTransactionsTable).where(eq(paymentTransactionsTable.idempotencyKey, idempotencyKey)).limit(1);
     if (existing?.providerOrderId) {
-      res.status(200).json({ orderId: existing.providerOrderId, amount: existing.amount, amountSubunits: existing.amount * 100, currency: existing.currency, provider: existing.provider, transactionId: existing.id });
+      res.status(200).json({
+        orderId: existing.providerOrderId,
+        amount: existing.amount,
+        amountSubunits: existing.amount * 100,
+        currency: existing.currency,
+        keyId: paymentProvider.keyId,
+        provider: existing.provider,
+        transactionId: existing.id,
+        status: existing.status,
+      });
       return;
     }
     const order = await paymentProvider.createOrder({
@@ -359,12 +368,12 @@ router.post("/payments/verify", requireAuth, async (req, res): Promise<void> => 
       eq(paymentTransactionsTable.userId, req.user!.id),
       eq(paymentTransactionsTable.providerOrderId, parsed.data.orderId),
     )).limit(1);
-    if (paymentProvider.mode === "LIVE" && !transaction) {
-      res.status(400).json({ status: "verification_failed", verified: false, message: "Payment order was not created by this account." });
-      return;
-    }
     if (!transaction && paymentProvider.mode === "LIVE") {
       res.status(400).json({ status: "verification_failed", verified: false, message: "Payment order was not found for this account." });
+      return;
+    }
+    if (transaction && transaction.provider !== "razorpay" && paymentProvider.mode === "LIVE") {
+      res.status(409).json({ status: "verification_failed", verified: false, message: "Payment provider does not match the created order." });
       return;
     }
     if (transaction?.status === "CAPTURED" && transaction.providerPaymentId === parsed.data.paymentId) {
@@ -585,15 +594,28 @@ router.post("/flights/book", requireAuth, async (req, res): Promise<void> => {
   if (!reval.valid || reval.soldOut) {
     // Attempt automatic refund since payment was captured but flight is sold out
     req.log.warn({ offerId, reval }, "Flight offer sold out or invalid after payment");
-    await paymentProvider.refund({
+    const refundResult = await paymentProvider.refund({
       paymentId: payment.paymentId,
       amount: reval.oldPrice || 1000,
       reason: "Flight seats sold out during booking checkout.",
     });
 
+    await db.update(paymentTransactionsTable).set({
+      status: refundResult.success ? "REFUNDED" : "REFUND_PENDING",
+      refundStatus: refundResult.status,
+      refundAmount: refundResult.success ? (reval.oldPrice || 1000) : 0,
+      failureReason: refundResult.success ? null : refundResult.message,
+      updatedAt: new Date(),
+    }).where(and(
+      eq(paymentTransactionsTable.userId, req.user!.id),
+      eq(paymentTransactionsTable.providerOrderId, payment.orderId),
+    ));
+
     res.status(409).json({
       status: "flight_sold_out",
-      message: "The selected flight became sold out before confirmation. Your payment has been automatically refunded.",
+      message: refundResult.success
+        ? "The selected flight became sold out before confirmation. Your payment has been automatically refunded."
+        : "The selected flight became sold out before confirmation. Your payment is queued for refund reconciliation.",
     });
     return;
   }
@@ -607,12 +629,10 @@ router.post("/flights/book", requireAuth, async (req, res): Promise<void> => {
       res.status(409).json({ status: "payment_quote_mismatch", message: "The payment amount does not match the current server-side flight quote." });
       return;
     }
-    await db.update(paymentTransactionsTable).set({
-      providerPaymentId: payment.paymentId,
-      status: "CAPTURED",
-      capturedAmount: expectedAmount,
-      updatedAt: new Date(),
-    }).where(eq(paymentTransactionsTable.id, transaction.id));
+    if (transaction.status !== "CAPTURED" || transaction.providerPaymentId !== payment.paymentId) {
+      res.status(409).json({ status: "payment_not_captured", message: "The payment must be captured and verified before booking confirmation." });
+      return;
+    }
   }
 
   // 4. Create Supplier Booking & Issue Ticket / PNR
@@ -647,11 +667,21 @@ router.post("/flights/book", requireAuth, async (req, res): Promise<void> => {
       }).returning();
 
       // Trigger automatic refund
-      await paymentProvider.refund({
+      const refundResult = await paymentProvider.refund({
         paymentId: payment.paymentId,
         amount: confirmation.amount || 0,
         reason: "Airline reservation failed",
       });
+      await db.update(paymentTransactionsTable).set({
+        status: refundResult.success ? "REFUNDED" : "REFUND_PENDING",
+        refundStatus: refundResult.status,
+        refundAmount: refundResult.success ? (confirmation.amount || 0) : 0,
+        failureReason: refundResult.success ? null : refundResult.message,
+        updatedAt: new Date(),
+      }).where(and(
+        eq(paymentTransactionsTable.userId, req.user!.id),
+        eq(paymentTransactionsTable.providerOrderId, payment.orderId),
+      ));
 
       res.status(502).json({
         status: "provider_booking_failed",
