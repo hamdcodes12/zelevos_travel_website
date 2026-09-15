@@ -1,0 +1,106 @@
+Integrate and fully activate the newly added production API credentials already available in Replit Secrets:
+
+- GOOGLE_MAPS_API_KEY
+- RAZORPAY_KEY_ID
+- RAZORPAY_KEY_SECRET
+
+IMPORTANT:
+DO NOT ask me for the API keys again.
+DO NOT print, expose, log, hardcode, or commit any secret.
+Read them only from server environment variables.
+
+GOOGLE MAPS:
+1. Inspect the entire Wayora codebase and identify every location/map-related feature.
+2. Integrate Google Maps properly wherever relevant:
+   - interactive maps
+   - destination/location selection
+   - hotel/attraction locations
+   - trip map / itinerary map
+   - route visualization
+   - distance/travel-time calculations where applicable
+   - location autocomplete/search where applicable
+3. Use the correct Google Maps API/SDK for each feature.
+4. Do not create fake map data when Google Maps can provide the real functionality.
+5. Keep the Google Maps key secure and use the existing environment variable.
+6. Make sure localhost development and https://zelevos.com production both work.
+7. Add graceful fallback/error handling if a Maps API is unavailable.
+8. Do not break any existing Wayora functionality.
+9. Verify the integration with actual browser testing.
+
+RAZORPAY:
+1. Fully integrate the existing Razorpay production credentials into Wayora's payment system.
+2. Use server-side Razorpay Orders API for every real payment.
+3. NEVER trust the payment amount supplied by the frontend.
+4. Calculate/validate the payable amount server-side from the actual booking/order data.
+5. Create a Razorpay order on the backend and return only the necessary order information to the frontend.
+6. Open Razorpay Standard Checkout on the frontend using the generated order_id.
+7. After checkout success, send:
+   - razorpay_payment_id
+   - razorpay_order_id
+   - razorpay_signature
+   to the backend.
+8. Verify the Razorpay signature SERVER-SIDE using RAZORPAY_KEY_SECRET.
+9. Never mark a booking as paid before successful server-side verification.
+10. Persist payment/order state in the existing payment ledger/database.
+11. Handle:
+   - payment success
+   - payment failure
+   - cancelled checkout
+   - duplicate callbacks
+   - retries
+   - already-paid orders
+   - invalid signatures
+   - webhook events
+12. Use the existing RAZORPAY_WEBHOOK_SECRET architecture if present. If the secret is not configured yet, keep webhook support ready but do not fake verification.
+13. Add proper idempotency so duplicate webhook/callback requests cannot create duplicate bookings/payments.
+14. Keep refunds/failure/reconciliation architecture compatible with the existing admin panel.
+15. Admin panel must show payment status, Razorpay order ID, payment ID, amount, timestamps and booking relation where available.
+16. NEVER expose RAZORPAY_KEY_SECRET to frontend/client code.
+17. NEVER expose secrets in logs, API responses, source code or Git.
+18. Do not use demo payment behavior when real Razorpay credentials are configured.
+
+ENVIRONMENT:
+Use the existing Replit Secrets exactly where appropriate:
+GOOGLE_MAPS_API_KEY
+RAZORPAY_KEY_ID
+RAZORPAY_KEY_SECRET
+
+If the codebase currently expects different variable names, create a clean server-side compatibility mapping instead of breaking existing functionality.
+
+CRITICAL:
+- Inspect the existing implementation before changing anything.
+- Reuse the current payment architecture, database/payment ledger, booking system and admin panel.
+- Do not rebuild working features unnecessarily.
+- Do not remove existing demo providers.
+- Demo travel providers can remain DEMO/TEST, but Razorpay must use the real configured integration.
+- Google Maps must use the real configured integration.
+- No fake "payment successful" responses.
+- No fake map implementation.
+
+FINAL QA:
+Run:
+1. TypeScript check
+2. Production build
+3. Full test suite
+4. Backend API tests
+5. Browser smoke tests
+6. Test Google Maps rendering
+7. Test Razorpay order creation
+8. Test checkout flow safely
+9. Test payment signature verification
+10. Test invalid signature rejection
+11. Test duplicate payment callback handling
+12. Test admin payment visibility
+13. Test mobile responsive payment/map UI
+
+Fix every issue found.
+
+At the end provide a concise integration report containing:
+- Google Maps: PASS/FAIL + exact features integrated
+- Razorpay: PASS/FAIL + exact payment flow
+- Environment variables detected
+- Tests passed/failed
+- Any remaining configuration required
+- Exact production readiness status
+
+Do not ask me for credentials because they are already configured in Replit Secrets.

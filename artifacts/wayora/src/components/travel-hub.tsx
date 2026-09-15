@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, CalendarDays, Car, Check, Hotel, MapPin, Plane, Search, Star, Ticket, Users, X, AlertCircle } from "lucide-react";
+import { LocationAutocomplete } from "@/components/location-autocomplete";
 
 type Provider = { provider: string; mode: "DEMO" | "LIVE"; status: string };
 type HotelResult = { id: string; name: string; destination: string; rating: number; location: string; amenities: string[]; room: string; cancellation: string; pricePerNight: number; image: string; provider: string; mode: "DEMO" | "LIVE" };
@@ -289,7 +290,7 @@ export function TravelHub({
           <form className="travel-search" onSubmit={runSearch}>
             {tab === "hotels" && (
               <>
-                <label><span>Destination</span><div><MapPin size={15} /><input value={hotelForm.destination} onChange={(event) => setHotelForm({ ...hotelForm, destination: event.target.value })} /></div></label>
+                <label><span>Destination</span><div><LocationAutocomplete id="hotel-destination-input" value={hotelForm.destination} onChange={(destination) => setHotelForm({ ...hotelForm, destination })} placeholder="Search city or destination..." /></div></label>
                 <label><span>Check-in</span><div><CalendarDays size={15} /><input type="date" value={hotelForm.checkIn} onChange={(event) => setHotelForm({ ...hotelForm, checkIn: event.target.value })} /></div></label>
                 <label><span>Check-out</span><div><CalendarDays size={15} /><input type="date" value={hotelForm.checkOut} onChange={(event) => setHotelForm({ ...hotelForm, checkOut: event.target.value })} /></div></label>
                 <label><span>Guests / rooms</span><div><Users size={15} /><input type="number" min="1" value={hotelForm.guests} onChange={(event) => setHotelForm({ ...hotelForm, guests: event.target.value })} /></div></label>
@@ -298,8 +299,8 @@ export function TravelHub({
             {tab === "experiences" && <div className="travel-search-copy"><Search size={18} /><span>Explore verified local experiences across India.</span></div>}
             {tab === "transport" && (
               <>
-                <label><span>Pickup</span><div><MapPin size={15} /><input value={transportForm.pickup} onChange={(event) => setTransportForm({ ...transportForm, pickup: event.target.value })} /></div></label>
-                <label><span>Drop</span><div><MapPin size={15} /><input value={transportForm.drop} onChange={(event) => setTransportForm({ ...transportForm, drop: event.target.value })} /></div></label>
+                <label><span>Pickup</span><div><LocationAutocomplete id="transport-pickup-input" value={transportForm.pickup} onChange={(pickup) => setTransportForm({ ...transportForm, pickup })} placeholder="Search pickup location..." /></div></label>
+                <label><span>Drop</span><div><LocationAutocomplete id="transport-drop-input" value={transportForm.drop} onChange={(drop) => setTransportForm({ ...transportForm, drop })} placeholder="Search drop location..." /></div></label>
                 <label><span>Date</span><div><CalendarDays size={15} /><input type="date" value={transportForm.date} onChange={(event) => setTransportForm({ ...transportForm, date: event.target.value })} /></div></label>
                 <label><span>Passengers</span><div><Users size={15} /><input type="number" min="1" value={transportForm.passengers} onChange={(event) => setTransportForm({ ...transportForm, passengers: event.target.value })} /></div></label>
               </>

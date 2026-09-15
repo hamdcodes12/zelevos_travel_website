@@ -1,5 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
-import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 import { bookingsTable } from "./bookings";
 import { adminUsersTable, usersTable } from "./auth";
@@ -25,7 +25,11 @@ export const paymentTransactionsTable = pgTable("payment_transactions", {
   metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}, (table) => ({
+  userIdempotencyIdx: uniqueIndex("payment_transactions_user_idempotency_idx").on(table.userId, table.idempotencyKey),
+  providerOrderIdx: uniqueIndex("payment_transactions_provider_order_idx").on(table.provider, table.providerOrderId),
+  webhookEventIdx: uniqueIndex("payment_transactions_webhook_event_idx").on(table.webhookEventId),
+}));
 
 export const notificationsTable = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),

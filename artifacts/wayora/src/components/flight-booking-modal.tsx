@@ -285,6 +285,8 @@ export function FlightBookingModal({
   const handlePaymentAndBooking = async () => {
     setProcessingPayment(true);
     setValidationErrors([]);
+    let createdOrderId = "";
+    let paymentVerified = false;
 
     try {
       // 1. Create payment order
@@ -312,6 +314,7 @@ export function FlightBookingModal({
       if (!orderRes.ok) {
         throw new Error(orderData.message || "Failed to initiate payment order.");
       }
+      createdOrderId = orderData.orderId;
 
       // 2. Handle payment flow (Live Razorpay vs Test Mode)
       let paymentDetails: { orderId: string; paymentId: string; signature: string };
@@ -362,9 +365,14 @@ export function FlightBookingModal({
                 signature: response.razorpay_signature,
               });
             },
+             payment: {
+               failed: function (response: any) {
+                 reject(new Error(response?.error?.description || "Razorpay could not complete the payment."));
+               },
+             },
             modal: {
               ondismiss: function () {
-                reject(new Error("Payment window was closed before completing transaction."));
+                 reject(new Error("Payment checkout was cancelled before completing the transaction."));
               },
             },
           });
@@ -379,7 +387,21 @@ export function FlightBookingModal({
         };
       }
 
-      // 3. Confirm Flight Booking on Backend
+      // 3. Verify the checkout response server-side before booking anything.
+      // The backend checks the Razorpay HMAC and the account-owned order.
+      const verifyRes = await fetch("/api/payments/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(paymentDetails),
+      });
+      const verifyData = await verifyRes.json() as { verified?: boolean; message?: string };
+      if (!verifyRes.ok || !verifyData.verified) {
+        throw new Error(verifyData.message || "Payment verification failed. No booking was created.");
+      }
+      paymentVerified = true;
+
+      // 4. Confirm Flight Booking on Backend
       const bookRes = await fetch("/api/flights/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -415,6 +437,14 @@ export function FlightBookingModal({
       onToast(`Flight booked! PNR: ${bookData.pnr}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Payment or booking failed.";
+      if (createdOrderId && !paymentVerified) {
+        void fetch("/api/payments/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ orderId: createdOrderId, reason: msg }),
+        }).catch(() => undefined);
+      }
       setValidationErrors([msg]);
       onToast(msg);
     } finally {

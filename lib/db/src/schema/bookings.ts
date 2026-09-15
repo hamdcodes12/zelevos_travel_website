@@ -1,5 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
-import { jsonb, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { jsonb, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 import { usersTable } from "./auth";
 
@@ -33,7 +33,9 @@ export const bookingsTable = pgTable("bookings", {
   payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}, (table) => ({
+  ownerIdempotencyIdx: uniqueIndex("bookings_owner_idempotency_idx").on(table.ownerId, table.idempotencyKey),
+}));
 
 export const insertBookingSchema = createInsertSchema(bookingsTable).omit({
   id: true,

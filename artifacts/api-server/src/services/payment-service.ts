@@ -328,13 +328,21 @@ export function getPaymentProvider(): PaymentProvider {
   const provider = (process.env.PAYMENT_PROVIDER || "").toLowerCase().trim();
   const keyId = (process.env.RAZORPAY_KEY_ID || "").trim();
   const keySecret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
+  const hasLiveCredentials = Boolean(keyId && keySecret);
 
-  if (process.env.NODE_ENV === "production" && provider !== "razorpay") {
+  if (process.env.NODE_ENV === "production" && !hasLiveCredentials) {
     throw new Error("Payment provider not configured. Set PAYMENT_PROVIDER=razorpay with Razorpay credentials before enabling production mode.");
   }
 
-  // If PAYMENT_PROVIDER is explicitly set to razorpay, or live credentials are present
-  if (provider === "razorpay" || (keyId && keySecret && provider !== "test")) {
+  // Explicit test mode is reserved for local/test environments. Production
+  // always uses configured live credentials, even if an old test flag remains.
+  if (provider === "test" && process.env.NODE_ENV !== "production") {
+    return new TestPaymentProvider();
+  }
+
+  // Configured live credentials always take precedence over a stale test-mode
+  // flag. This prevents production from silently falling back to fake payments.
+  if (provider === "razorpay" || hasLiveCredentials) {
     if (!keyId || !keySecret) {
       throw new Error("PAYMENT_PROVIDER is set to 'razorpay' but RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is missing. Please provide your live credentials in .env.");
     }

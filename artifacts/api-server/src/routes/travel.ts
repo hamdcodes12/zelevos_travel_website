@@ -363,12 +363,26 @@ router.post("/payments/verify", requireAuth, async (req, res): Promise<void> => 
       res.status(400).json({ status: "verification_failed", verified: false, message: "Payment order was not created by this account." });
       return;
     }
-    await db.update(paymentTransactionsTable).set({
-      providerPaymentId: parsed.data.paymentId,
-      status: "CAPTURED",
-      capturedAmount: transaction?.amount,
-      updatedAt: new Date(),
-    }).where(and(eq(paymentTransactionsTable.userId, req.user!.id), eq(paymentTransactionsTable.providerOrderId, parsed.data.orderId)));
+    if (!transaction && paymentProvider.mode === "LIVE") {
+      res.status(400).json({ status: "verification_failed", verified: false, message: "Payment order was not found for this account." });
+      return;
+    }
+    if (transaction?.status === "CAPTURED" && transaction.providerPaymentId === parsed.data.paymentId) {
+      res.json({ ...result, duplicate: true });
+      return;
+    }
+    if (transaction?.providerPaymentId && transaction.providerPaymentId !== parsed.data.paymentId) {
+      res.status(409).json({ status: "verification_failed", verified: false, message: "This payment order is already linked to another payment." });
+      return;
+    }
+    if (transaction) {
+      await db.update(paymentTransactionsTable).set({
+        providerPaymentId: parsed.data.paymentId,
+        status: "CAPTURED",
+        capturedAmount: transaction.amount,
+        updatedAt: new Date(),
+      }).where(eq(paymentTransactionsTable.id, transaction.id));
+    }
     // Audit log for payment verification
     try {
       await db.insert(auditLogsTable).values({
@@ -384,6 +398,47 @@ router.post("/payments/verify", requireAuth, async (req, res): Promise<void> => 
   } catch (error) {
     req.log.error({ err: error }, "Payment verification error");
     res.status(500).json({ status: "payment_error", message: error instanceof Error ? error.message : "Verification error." });
+  }
+});
+
+router.post("/payments/cancel", requireAuth, async (req, res): Promise<void> => {
+  const parsed = z.object({
+    orderId: z.string().trim().min(1),
+    reason: z.string().trim().max(200).optional(),
+  }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ status: "invalid_request", message: "A payment order ID is required." });
+    return;
+  }
+
+  try {
+    const [transaction] = await db.select().from(paymentTransactionsTable).where(and(
+      eq(paymentTransactionsTable.userId, req.user!.id),
+      eq(paymentTransactionsTable.providerOrderId, parsed.data.orderId),
+    )).limit(1);
+
+    if (!transaction) {
+      res.status(404).json({ status: "not_found", message: "Payment order was not found." });
+      return;
+    }
+    if (transaction.status === "CAPTURED" || transaction.status === "REFUNDED") {
+      res.status(409).json({ status: "already_processed", message: "This payment order has already been processed." });
+      return;
+    }
+
+    const [updated] = await db.update(paymentTransactionsTable).set({
+      status: "CANCELLED",
+      failureReason: parsed.data.reason || "Checkout was cancelled before payment capture.",
+      updatedAt: new Date(),
+    }).where(and(
+      eq(paymentTransactionsTable.id, transaction.id),
+      eq(paymentTransactionsTable.status, "CREATED"),
+    )).returning();
+
+    res.json({ status: updated?.status || transaction.status, duplicate: !updated });
+  } catch (error) {
+    req.log.error({ err: error }, "Payment cancellation update failed");
+    res.status(500).json({ status: "payment_error", message: "Could not update payment status." });
   }
 });
 
@@ -992,6 +1047,9 @@ router.post("/bookings/:id/cancel", requireAuth, async (req, res): Promise<void>
 router.post("/payments/webhook", async (req, res): Promise<void> => {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET?.trim();
   const signature = req.headers["x-razorpay-signature"] as string | undefined;
+  const rawBody = Buffer.isBuffer((req as any).rawBody)
+    ? (req as any).rawBody as Buffer
+    : Buffer.from(JSON.stringify(req.body || {}), "utf-8");
 
   if (process.env.NODE_ENV === "production" && !secret) {
     res.status(503).json({ status: "not_configured", message: "Payment webhook verification is not configured." });
@@ -1004,13 +1062,8 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
       return;
     }
 
-    const rawBody = (req as any).rawBody || JSON.stringify(req.body);
-    const bodyBuffer = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(rawBody, "utf-8");
-    const expected = crypto.createHmac("sha256", secret).update(bodyBuffer).digest("hex");
-    const expectedBuf = Buffer.from(expected, "utf-8");
-    const sigBuf = Buffer.from(signature, "utf-8");
-
-    if (expectedBuf.length !== sigBuf.length || !crypto.timingSafeEqual(expectedBuf, sigBuf)) {
+    const paymentProvider = getPaymentProvider();
+    if (!paymentProvider.verifyWebhookSignature(rawBody, signature, secret)) {
       res.status(400).json({ status: "invalid_signature", message: "Webhook signature mismatch." });
       return;
     }
@@ -1025,26 +1078,38 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
       if (eventId) {
         const [alreadyProcessed] = await db.select({ id: paymentTransactionsTable.id })
           .from(paymentTransactionsTable)
-          .where(and(
-            eq(paymentTransactionsTable.providerOrderId, paymentPayload.order_id),
-            eq(paymentTransactionsTable.webhookEventId, eventId),
-          ))
+          .where(eq(paymentTransactionsTable.webhookEventId, eventId))
           .limit(1);
         if (alreadyProcessed) {
           res.json({ status: "ok", duplicate: true });
           return;
         }
       }
-      if (event === "payment.captured") {
+
+      const captured = event === "payment.captured" || event === "order.paid";
+      const failed = event === "payment.failed";
+      const status = captured ? "CAPTURED" : failed ? "FAILED" : event === "payment.authorized" ? "AUTHORIZED" : undefined;
+
+      if (status) {
+        await db.update(paymentTransactionsTable).set({
+          providerPaymentId: typeof paymentPayload.id === "string" ? paymentPayload.id : undefined,
+          status,
+          capturedAmount: captured ? Math.round(Number(paymentPayload.amount || 0) / 100) : undefined,
+          failureReason: failed ? (paymentPayload.error_description || "Payment failed.") : undefined,
+          webhookEventId: eventId,
+          webhookEventType: event,
+          updatedAt: new Date(),
+        }).where(eq(paymentTransactionsTable.providerOrderId, paymentPayload.order_id));
+      }
+
+      if (captured) {
         await db.update(bookingsTable)
           .set({ paymentStatus: "CAPTURED", updatedAt: new Date() })
           .where(eq(bookingsTable.paymentOrderId, paymentPayload.order_id));
-          await db.update(paymentTransactionsTable).set({ providerPaymentId: paymentPayload.id, status: "CAPTURED", capturedAmount: Math.round(Number(paymentPayload.amount || 0) / 100), webhookEventId: eventId, webhookEventType: event, updatedAt: new Date() }).where(eq(paymentTransactionsTable.providerOrderId, paymentPayload.order_id));
-      } else if (event === "payment.failed") {
+      } else if (failed) {
         await db.update(bookingsTable)
           .set({ paymentStatus: "FAILED", updatedAt: new Date() })
           .where(eq(bookingsTable.paymentOrderId, paymentPayload.order_id));
-        await db.update(paymentTransactionsTable).set({ providerPaymentId: paymentPayload.id, status: "FAILED", failureReason: paymentPayload.error_description || "Payment failed", webhookEventId: eventId, webhookEventType: event, updatedAt: new Date() }).where(eq(paymentTransactionsTable.providerOrderId, paymentPayload.order_id));
       }
     } catch (err) {
       req.log.error({ err }, "Webhook DB update failed");

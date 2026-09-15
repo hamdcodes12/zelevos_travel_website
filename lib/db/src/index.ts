@@ -160,6 +160,7 @@ const DDL_MIGRATIONS = `
   CREATE INDEX IF NOT EXISTS bookings_owner_id_idx ON bookings(owner_id);
   CREATE INDEX IF NOT EXISTS bookings_pnr_idx ON bookings(pnr);
   CREATE INDEX IF NOT EXISTS bookings_created_at_idx ON bookings(created_at);
+  CREATE UNIQUE INDEX IF NOT EXISTS bookings_owner_idempotency_idx ON bookings(owner_id, idempotency_key);
 
   CREATE TABLE IF NOT EXISTS payment_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -183,6 +184,13 @@ const DDL_MIGRATIONS = `
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS payment_transactions_user_idempotency_idx
+    ON payment_transactions(user_id, idempotency_key);
+  CREATE UNIQUE INDEX IF NOT EXISTS payment_transactions_provider_order_idx
+    ON payment_transactions(provider, provider_order_id);
+  CREATE UNIQUE INDEX IF NOT EXISTS payment_transactions_webhook_event_idx
+    ON payment_transactions(webhook_event_id);
 
   CREATE TABLE IF NOT EXISTS notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

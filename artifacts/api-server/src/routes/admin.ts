@@ -497,6 +497,7 @@ router.get("/admin/payments", requireAdmin, async (req, res): Promise<void> => {
 
       return {
         id: transaction.id,
+        provider: transaction.provider,
         paymentOrderId: transaction.providerOrderId ?? null,
         paymentId: transaction.providerPaymentId ?? null,
         bookingId: transaction.bookingId ?? "",
@@ -508,9 +509,13 @@ router.get("/admin/payments", requireAdmin, async (req, res): Promise<void> => {
           customerId: user.customerId ?? null,
         },
         amount: transaction.amount,
+        currency: transaction.currency,
+        capturedAmount: transaction.capturedAmount,
         status: transaction.status,
         refundStatus: isRefunded ? "REFUNDED" : "NONE",
         refundAmount: transaction.refundAmount,
+        failureReason: transaction.failureReason,
+        webhookEventType: transaction.webhookEventType,
         createdAt: transaction.createdAt,
       };
     });

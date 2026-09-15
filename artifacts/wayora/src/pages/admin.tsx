@@ -107,6 +107,7 @@ type BookingItem = {
 
 type PaymentItem = {
   id: string;
+  provider: string;
   paymentOrderId: string | null;
   paymentId: string | null;
   bookingId: string;
@@ -118,9 +119,13 @@ type PaymentItem = {
     customerId: string | null;
   };
   amount: number;
+  currency: string;
+  capturedAmount: number | null;
   status: string;
   refundStatus: string;
   refundAmount: number;
+  failureReason: string | null;
+  webhookEventType: string | null;
   createdAt: string;
 };
 
@@ -1659,7 +1664,7 @@ export function AdminPage() {
                 <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "12px" }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                      <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Payment ID / Order</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Provider / Payment ID</th>
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Customer</th>
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Booking PNR</th>
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Amount</th>
@@ -1679,6 +1684,7 @@ export function AdminPage() {
                       payments.map((p) => (
                         <tr key={p.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                           <td style={{ padding: "12px 16px" }}>
+                            <span style={{ display: "block", fontSize: "9px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em" }}>{p.provider}</span>
                             <strong style={{ display: "block", color: "#0f172a", fontFamily: "monospace", fontSize: "11px" }}>
                               {p.paymentId || p.paymentOrderId || p.id}
                             </strong>
@@ -1696,7 +1702,10 @@ export function AdminPage() {
                             {p.pnr}
                           </td>
                           <td style={{ padding: "12px 16px", fontWeight: 800, color: "#0f172a" }}>
-                            {formatCurrency(p.amount)}
+                            {formatCurrency(p.amount)} <span style={{ fontSize: "10px", color: "#64748b", fontWeight: 600 }}>{p.currency}</span>
+                            {p.capturedAmount !== null && p.capturedAmount !== p.amount && (
+                              <span style={{ display: "block", fontSize: "10px", color: "#64748b", fontWeight: 500 }}>Captured: {formatCurrency(p.capturedAmount)}</span>
+                            )}
                           </td>
                           <td style={{ padding: "12px 16px" }}>
                             <span
