@@ -63,8 +63,11 @@ export class RazorpayPaymentProvider implements PaymentProvider {
   private readonly baseUrl = "https://api.razorpay.com/v1";
 
   constructor(keyId?: string, keySecret?: string) {
-    this.keyId = (keyId || process.env.RAZORPAY_KEY_ID || "").trim();
-    const secret = (keySecret || process.env.RAZORPAY_KEY_SECRET || "").trim();
+    // An explicit empty override must stay empty. This prevents tests and
+    // callers that intentionally disable credentials from silently inheriting
+    // a process secret, while the no-argument constructor still reads env.
+    this.keyId = ((keyId ?? process.env.RAZORPAY_KEY_ID) || "").trim();
+    const secret = ((keySecret ?? process.env.RAZORPAY_KEY_SECRET) || "").trim();
 
     if (!this.keyId || !secret) {
       throw new Error("Razorpay credentials missing: RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in .env.");

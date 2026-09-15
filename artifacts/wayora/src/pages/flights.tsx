@@ -24,6 +24,7 @@ import {
 import { AirportAutocomplete } from "@/components/airport-autocomplete";
 import { FlightBookingModal, type FlightOffer } from "@/components/flight-booking-modal";
 import { AuthDialog, type AuthUser } from "@/components/auth-dialog";
+import { RouteMap } from "@/components/route-map";
 
 type Provider = { provider: string; mode: "DEMO" | "LIVE"; status: string };
 
@@ -419,6 +420,10 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
             {loading ? "Searching flights..." : "Search flights"}
           </button>
         </form>
+
+        {hasSearched && flightForm.from && flightForm.to && (
+          <RouteMap origin={flightForm.from} destination={flightForm.to} />
+        )}
 
         {/* Validation Error Message */}
         {validationError && (

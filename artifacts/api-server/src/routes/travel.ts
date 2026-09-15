@@ -14,6 +14,12 @@ import { getPaymentProvider } from "../services/payment-service";
 import { getEmailService } from "../services/email-service";
 import { findAirports } from "../services/airports-data";
 import {
+  autocompletePlaces,
+  fetchStaticRouteMap,
+  getRoute,
+  GoogleMapsUnavailableError,
+} from "../services/google-maps";
+import {
   listExperiences,
   providerStatus,
   searchHotels,
@@ -47,6 +53,11 @@ function calculateAge(dobString: string, referenceDate: Date = new Date()): numb
     age--;
   }
   return age;
+}
+
+function calculateBaggagePrice(extraBaggageKg = 0): number {
+  const kg = Math.max(0, Math.min(30, Math.floor(extraBaggageKg / 5) * 5));
+  return (kg / 5) * 1200;
 }
 
 // --------------------------------------------------------------------------
@@ -101,6 +112,69 @@ router.get("/flights/airports", (req, res): void => {
   const exclude = typeof req.query.exclude === "string" ? req.query.exclude : undefined;
   const results = findAirports(query, exclude);
   res.json({ results, airports: results });
+});
+
+// --------------------------------------------------------------------------
+// 1c. Google Maps location and route services (server-side key only)
+// --------------------------------------------------------------------------
+router.get("/maps/autocomplete", async (req, res): Promise<void> => {
+  const query = z.object({
+    input: z.string().trim().min(2),
+    sessionToken: z.string().trim().min(8).max(200).optional(),
+  }).safeParse(req.query);
+  if (!query.success) {
+    res.status(400).json({ status: "invalid_request", message: "At least two location characters are required." });
+    return;
+  }
+
+  try {
+    res.json({ results: await autocompletePlaces(query.data.input, query.data.sessionToken) });
+  } catch (error) {
+    const status = error instanceof GoogleMapsUnavailableError ? 503 : 502;
+    req.log.warn({ status }, "Google Maps autocomplete unavailable");
+    res.status(status).json({ status: "maps_unavailable", message: error instanceof Error ? error.message : "Location search is unavailable.", results: [] });
+  }
+});
+
+router.get("/maps/route", async (req, res): Promise<void> => {
+  const query = z.object({
+    origin: z.string().trim().min(2),
+    destination: z.string().trim().min(2),
+  }).safeParse(req.query);
+  if (!query.success) {
+    res.status(400).json({ status: "invalid_request", message: "Origin and destination are required." });
+    return;
+  }
+
+  try {
+    res.json({ route: await getRoute(query.data.origin, query.data.destination) });
+  } catch (error) {
+    const status = error instanceof GoogleMapsUnavailableError ? 503 : 502;
+    req.log.warn({ status }, "Google Maps route unavailable");
+    res.status(status).json({ status: "maps_unavailable", message: error instanceof Error ? error.message : "Route information is unavailable." });
+  }
+});
+
+router.get("/maps/static", async (req, res): Promise<void> => {
+  const query = z.object({
+    origin: z.string().trim().min(2),
+    destination: z.string().trim().min(2),
+  }).safeParse(req.query);
+  if (!query.success) {
+    res.status(400).type("text/plain").send("Origin and destination are required.");
+    return;
+  }
+
+  try {
+    const route = await getRoute(query.data.origin, query.data.destination);
+    const image = await fetchStaticRouteMap(route);
+    res.set("Cache-Control", "public, max-age=300");
+    res.type("image/png").send(image);
+  } catch (error) {
+    const status = error instanceof GoogleMapsUnavailableError ? 503 : 502;
+    req.log.warn({ status }, "Google Maps static map unavailable");
+    res.status(status).type("text/plain").send("Map image is currently unavailable.");
+  }
 });
 
 // --------------------------------------------------------------------------
@@ -188,26 +262,30 @@ router.post("/flights/revalidate", async (req, res): Promise<void> => {
 // --------------------------------------------------------------------------
 router.post("/payments/order", requireAuth, async (req, res): Promise<void> => {
   const schema = z.object({
-    amount: z.coerce.number().int().positive().max(10_000_000),
+    amount: z.coerce.number().int().positive().max(10_000_000).optional(),
     currency: z.string().trim().default("INR"),
     receipt: z.string().trim().optional(),
     notes: z.record(z.string(), z.string()).optional(),
+    offerId: z.string().trim().min(1).optional(),
+    travellerCount: z.coerce.number().int().min(1).max(9).optional(),
+    extraBaggageKg: z.coerce.number().int().min(0).max(30).optional(),
     idempotencyKey: z.string().trim().min(8).max(120).optional(),
   });
 
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ status: "invalid_request", message: "Valid amount is required.", errors: parsed.error.issues });
+    res.status(400).json({ status: "invalid_request", message: "Valid payment details are required.", errors: parsed.error.issues });
     return;
   }
 
   try {
     const paymentProvider = getPaymentProvider();
-    let requestedAmount = parsed.data.amount;
+    let requestedAmount = parsed.data.amount || 0;
     if (paymentProvider.mode === "LIVE") {
-      const offerId = parsed.data.notes?.offerId;
-      if (!offerId) {
-        res.status(400).json({ status: "invalid_request", message: "A server-side flight offer is required for live payment orders." });
+      const offerId = parsed.data.offerId || parsed.data.notes?.offerId;
+      const travellerCount = parsed.data.travellerCount;
+      if (!offerId || !travellerCount) {
+        res.status(400).json({ status: "invalid_request", message: "A server-side flight offer and traveller count are required for live payment orders." });
         return;
       }
       const revalidation = await getFlightProvider().revalidate(offerId);
@@ -215,7 +293,10 @@ router.post("/payments/order", requireAuth, async (req, res): Promise<void> => {
         res.status(409).json({ status: "quote_unavailable", message: "The live flight quote is no longer available." });
         return;
       }
-      requestedAmount = revalidation.newPrice;
+      requestedAmount = (revalidation.newPrice * travellerCount) + calculateBaggagePrice(parsed.data.extraBaggageKg);
+    } else if (!requestedAmount) {
+      res.status(400).json({ status: "invalid_request", message: "Valid amount is required." });
+      return;
     }
     const receipt = parsed.data.receipt || `rcpt_${crypto.randomUUID().slice(0, 8)}`;
     const idempotencyKey = parsed.data.idempotencyKey || `payment-${req.user!.id}-${receipt}`;
@@ -231,6 +312,9 @@ router.post("/payments/order", requireAuth, async (req, res): Promise<void> => {
       notes: {
         userId: req.user!.id,
         ...parsed.data.notes,
+        ...(parsed.data.offerId ? { offerId: parsed.data.offerId } : {}),
+        ...(parsed.data.travellerCount ? { travellerCount: String(parsed.data.travellerCount) } : {}),
+        ...(parsed.data.extraBaggageKg ? { extraBaggageKg: String(parsed.data.extraBaggageKg) } : {}),
       },
     });
     const [transaction] = await db.insert(paymentTransactionsTable).values({
@@ -271,10 +355,18 @@ router.post("/payments/verify", requireAuth, async (req, res): Promise<void> => 
       res.status(400).json({ status: "verification_failed", verified: false, message: result.error || "Payment verification failed." });
       return;
     }
+    const [transaction] = await db.select().from(paymentTransactionsTable).where(and(
+      eq(paymentTransactionsTable.userId, req.user!.id),
+      eq(paymentTransactionsTable.providerOrderId, parsed.data.orderId),
+    )).limit(1);
+    if (paymentProvider.mode === "LIVE" && !transaction) {
+      res.status(400).json({ status: "verification_failed", verified: false, message: "Payment order was not created by this account." });
+      return;
+    }
     await db.update(paymentTransactionsTable).set({
       providerPaymentId: parsed.data.paymentId,
       status: "CAPTURED",
-      capturedAmount: undefined,
+      capturedAmount: transaction?.amount,
       updatedAt: new Date(),
     }).where(and(eq(paymentTransactionsTable.userId, req.user!.id), eq(paymentTransactionsTable.providerOrderId, parsed.data.orderId)));
     // Audit log for payment verification
@@ -455,10 +547,17 @@ router.post("/flights/book", requireAuth, async (req, res): Promise<void> => {
     const [transaction] = await db.select().from(paymentTransactionsTable)
       .where(and(eq(paymentTransactionsTable.userId, req.user!.id), eq(paymentTransactionsTable.providerOrderId, payment.orderId)))
       .limit(1);
-    if (!transaction || transaction.amount !== reval.newPrice) {
+    const expectedAmount = (reval.newPrice * passengers.length) + calculateBaggagePrice(addons?.extraBaggageKg);
+    if (!transaction || transaction.amount !== expectedAmount) {
       res.status(409).json({ status: "payment_quote_mismatch", message: "The payment amount does not match the current server-side flight quote." });
       return;
     }
+    await db.update(paymentTransactionsTable).set({
+      providerPaymentId: payment.paymentId,
+      status: "CAPTURED",
+      capturedAmount: expectedAmount,
+      updatedAt: new Date(),
+    }).where(eq(paymentTransactionsTable.id, transaction.id));
   }
 
   // 4. Create Supplier Booking & Issue Ticket / PNR
@@ -539,6 +638,14 @@ router.post("/flights/book", requireAuth, async (req, res): Promise<void> => {
         refundable: reval.flight?.refundable ?? true,
       },
     }).returning();
+
+    await db.update(paymentTransactionsTable).set({
+      bookingId: booking.id,
+      updatedAt: new Date(),
+    }).where(and(
+      eq(paymentTransactionsTable.userId, req.user!.id),
+      eq(paymentTransactionsTable.providerOrderId, payment.orderId),
+    ));
 
     // 6. Non-blocking Client Email Notification (Email failure must NOT corrupt confirmed booking)
     try {
@@ -769,6 +876,15 @@ router.post("/bookings/:id/cancel", requireAuth, async (req, res): Promise<void>
           reason: "User requested flight cancellation",
         });
         refundStatus = refundRes.status;
+        await db.update(paymentTransactionsTable).set({
+          status: refundRes.success ? "REFUNDED" : "CAPTURED",
+          refundStatus: refundRes.status,
+          refundAmount: refundRes.success ? cancelResult.refundAmount : 0,
+          updatedAt: new Date(),
+        }).where(and(
+          eq(paymentTransactionsTable.bookingId, booking.id),
+          eq(paymentTransactionsTable.providerPaymentId, booking.paymentId),
+        ));
       }
 
       const [updated] = await db.update(bookingsTable)
@@ -901,20 +1017,34 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
   }
 
   const event = req.body?.event;
+  const eventId = typeof req.body?.id === "string" ? req.body.id : undefined;
   const paymentPayload = req.body?.payload?.payment?.entity;
 
   if (paymentPayload?.order_id) {
     try {
+      if (eventId) {
+        const [alreadyProcessed] = await db.select({ id: paymentTransactionsTable.id })
+          .from(paymentTransactionsTable)
+          .where(and(
+            eq(paymentTransactionsTable.providerOrderId, paymentPayload.order_id),
+            eq(paymentTransactionsTable.webhookEventId, eventId),
+          ))
+          .limit(1);
+        if (alreadyProcessed) {
+          res.json({ status: "ok", duplicate: true });
+          return;
+        }
+      }
       if (event === "payment.captured") {
         await db.update(bookingsTable)
           .set({ paymentStatus: "CAPTURED", updatedAt: new Date() })
           .where(eq(bookingsTable.paymentOrderId, paymentPayload.order_id));
-        await db.update(paymentTransactionsTable).set({ providerPaymentId: paymentPayload.id, status: "CAPTURED", capturedAmount: Math.round(Number(paymentPayload.amount || 0) / 100), webhookEventId: req.body?.id, webhookEventType: event, updatedAt: new Date() }).where(eq(paymentTransactionsTable.providerOrderId, paymentPayload.order_id));
+          await db.update(paymentTransactionsTable).set({ providerPaymentId: paymentPayload.id, status: "CAPTURED", capturedAmount: Math.round(Number(paymentPayload.amount || 0) / 100), webhookEventId: eventId, webhookEventType: event, updatedAt: new Date() }).where(eq(paymentTransactionsTable.providerOrderId, paymentPayload.order_id));
       } else if (event === "payment.failed") {
         await db.update(bookingsTable)
           .set({ paymentStatus: "FAILED", updatedAt: new Date() })
           .where(eq(bookingsTable.paymentOrderId, paymentPayload.order_id));
-        await db.update(paymentTransactionsTable).set({ providerPaymentId: paymentPayload.id, status: "FAILED", failureReason: paymentPayload.error_description || "Payment failed", webhookEventId: req.body?.id, webhookEventType: event, updatedAt: new Date() }).where(eq(paymentTransactionsTable.providerOrderId, paymentPayload.order_id));
+        await db.update(paymentTransactionsTable).set({ providerPaymentId: paymentPayload.id, status: "FAILED", failureReason: paymentPayload.error_description || "Payment failed", webhookEventId: eventId, webhookEventType: event, updatedAt: new Date() }).where(eq(paymentTransactionsTable.providerOrderId, paymentPayload.order_id));
       }
     } catch (err) {
       req.log.error({ err }, "Webhook DB update failed");

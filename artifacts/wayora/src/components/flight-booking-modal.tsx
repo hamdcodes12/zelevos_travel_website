@@ -295,10 +295,15 @@ export function FlightBookingModal({
         body: JSON.stringify({
           amount: totalPayable,
           currency: "INR",
+            offerId: flight.id,
+            travellerCount: passengers.length,
+            extraBaggageKg,
+            idempotencyKey,
           notes: {
             flightNumber: flight.flightNumber,
             from: flight.from,
             to: flight.to,
+              offerId: flight.id,
           },
         }),
       });
