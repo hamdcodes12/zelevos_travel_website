@@ -6,20 +6,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export function loadEnvironment(): void {
-  const candidates: string[] = [
-    path.resolve(process.cwd(), ".env"),
-    path.resolve(process.cwd(), "../.env"),
-    path.resolve(process.cwd(), "../../.env"),
-    path.resolve(process.cwd(), "artifacts/api-server/.env"),
-    path.resolve(__dirname, "../.env"),
-    path.resolve(__dirname, "../../.env"),
-    path.resolve(__dirname, "../../../.env"),
-  ];
+  const envNames = [".env", "..env"];
+  const candidates: string[] = [];
+
+  for (const envName of envNames) {
+    candidates.push(path.resolve(process.cwd(), envName));
+    candidates.push(path.resolve(process.cwd(), `../${envName}`));
+    candidates.push(path.resolve(process.cwd(), `../../${envName}`));
+    candidates.push(path.resolve(process.cwd(), `artifacts/api-server/${envName}`));
+    candidates.push(path.resolve(__dirname, `../${envName}`));
+    candidates.push(path.resolve(__dirname, `../../${envName}`));
+    candidates.push(path.resolve(__dirname, `../../../${envName}`));
+  }
 
   // Walk up from current directory to workspace root
   let curr = process.cwd();
   for (let i = 0; i < 5; i++) {
-    candidates.push(path.resolve(curr, ".env"));
+    for (const envName of envNames) {
+      candidates.push(path.resolve(curr, envName));
+    }
     const parent = path.dirname(curr);
     if (parent === curr) break;
     curr = parent;

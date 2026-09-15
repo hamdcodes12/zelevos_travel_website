@@ -62,7 +62,7 @@ async function askWayora(message: string, history: Array<{ role: 'user' | 'assis
   });
   const payload = (await response.json()) as { response?: string; message?: string };
   if (!response.ok || !payload.response) {
-    throw new Error(payload.message || 'Wayora AI is temporarily unavailable.');
+    throw new Error(payload.message || 'Zelevos AI is temporarily unavailable.');
   }
   return payload.response;
 }
@@ -136,7 +136,7 @@ async function tripRequest<T>(path: string, init: RequestInit = {}) {
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   const response = await fetch(path, { ...init, headers, credentials: 'include' });
   const payload = (await response.json()) as T & { message?: string };
-  if (!response.ok) throw new Error(payload.message || 'Wayora could not complete that trip action.');
+  if (!response.ok) throw new Error(payload.message || 'Zelevos could not complete that trip action.');
   return payload;
 }
 
@@ -193,7 +193,7 @@ async function planTrip(input: Omit<TripDraft, 'itinerary' | 'estimatedCosts' | 
   });
   const payload = (await response.json()) as PlannerResult & { message?: string };
   if (!response.ok || !payload.itinerary || !payload.reasoning) {
-    throw new Error(payload.message || 'Wayora could not build your itinerary.');
+    throw new Error(payload.message || 'Zelevos could not build your itinerary.');
   }
   return payload;
 }
@@ -215,7 +215,7 @@ const services = [
   { icon: Fuel, label: 'Transport', copy: 'Local & private options' },
   { icon: Compass, label: 'Experiences', copy: 'Tours, activities & more' },
   { icon: ShieldCheck, label: 'Travel Insurance', copy: 'Stay protected' },
-  { icon: Wallet, label: 'Wayora Wallet', copy: 'Secure & seamless payments' },
+  { icon: Wallet, label: 'Zelevos Wallet', copy: 'Secure & seamless payments' },
 ];
 
 const destinations = [
@@ -249,10 +249,10 @@ function Logo() {
         setLocation('/');
       }}
       className="brand"
-      aria-label="Wayora home"
+      aria-label="Zelevos home"
     >
       <span className="brand-mark"><span>W</span></span>
-      <span className="brand-word">Wayora</span>
+      <span className="brand-word">Zelevos</span>
     </a>
   );
 }
@@ -524,7 +524,7 @@ function Navbar({
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {user.fullName || 'Wayora Traveller'}
+                        {user.fullName || 'Zelevos Traveller'}
                       </strong>
                       <span
                         style={{
@@ -621,7 +621,7 @@ function Navbar({
                 onCopilot();
               }}
             >
-              <MessageCircle size={16} /> Ask Wayora
+              <MessageCircle size={16} /> Ask Zelevos
             </button>
             {user ? (
               <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #edf1f7', display: 'grid', gap: '6px' }}>
@@ -679,11 +679,11 @@ function Hero({ onSend }: { onSend: (value: string) => void }) {
       <div className="hero-content page-shell">
         <div className="hero-copy">
           <div className="hero-eyebrow">AI TRAVEL OS</div>
-          <h1>Tell Wayora where<br />you want to go.<br /><span>We'll figure out the rest.</span></h1>
+          <h1>Tell Zelevos where<br />you want to go.<br /><span>We'll figure out the rest.</span></h1>
           <p>Flights. Hotels. Experiences. Everything.<br />In one intelligent travel system.</p>
           <form className="hero-input" onSubmit={(event) => { event.preventDefault(); if (value.trim()) onSend(value); }}>
             <Sparkles size={20} className="input-sparkle" />
-            <input id="hero-input" value={value} onChange={(event) => setValue(event.target.value)} placeholder="I have ₹70,000. Take me somewhere beautiful from Pune for 5 days in October..." aria-label="Tell Wayora about your trip" />
+            <input id="hero-input" value={value} onChange={(event) => setValue(event.target.value)} placeholder="I have ₹70,000. Take me somewhere beautiful from Pune for 5 days in October..." aria-label="Tell Zelevos about your trip" />
             <button aria-label="Send trip idea" type="submit"><Send size={17} /></button>
           </form>
           <div className="popular-searches">
@@ -710,11 +710,11 @@ function ServiceStrip({ onSelectService }: { onSelectService?: (service: string)
   };
 
   return (
-    <section className="services-strip page-shell" aria-label="Wayora services">
+    <section className="services-strip page-shell" aria-label="Zelevos services">
       {services.map(({ icon: Icon, label, copy }) => {
         const href = label === 'AI Trip Planner'
           ? '#planner'
-          : label === 'Wayora Wallet'
+          : label === 'Zelevos Wallet'
           ? '#wallet'
           : '#travel-hub';
 
@@ -752,7 +752,7 @@ function AITravelOS({ onStart }: { onStart: () => void }) {
     ['Personalized recommendations', 'Based on your preferences & past trips', Compass],
     ['Real-time trip management', 'Alerts, changes & 24/7 support', Bell],
     ['Smart budget planner', 'Get the best value, always', BarChart3],
-    ['Exclusive deals', 'Only on Wayora', Star],
+    ['Exclusive deals', 'Only on Zelevos', Star],
   ] as const;
   return (
     <aside className="ai-os-panel">
@@ -805,7 +805,7 @@ function Planner({ onToast, onSaved, user, onLogin }: { onToast: (message: strin
       setTripPlan(response);
       onToast('Your itinerary is ready to review.');
     } catch (error) {
-      onToast(error instanceof Error ? error.message : 'Wayora AI is temporarily unavailable.');
+      onToast(error instanceof Error ? error.message : 'Zelevos AI is temporarily unavailable.');
     } finally {
       setLoading(false);
     }
@@ -844,7 +844,7 @@ function Planner({ onToast, onSaved, user, onLogin }: { onToast: (message: strin
   return (
     <section id="planner" className="planner-section">
       <div className="page-shell planner-layout">
-        <div className="planner-intro"><SectionHeading eyebrow="WAYORA AI PLANNER" title={<>From a thought<br />to a <span>trip.</span></>} copy="Tell Wayora what you want. The planner asks the right questions, explains its recommendations, and keeps every decision editable." /><div className="planner-proof"><div className="proof-avatars"><span>MS</span><span>AK</span><span>JL</span></div><span>Built with 14,230 curious travellers</span></div></div>
+        <div className="planner-intro"><SectionHeading eyebrow="ZELEVOS AI PLANNER" title={<>From a thought<br />to a <span>trip.</span></>} copy="Tell Zelevos what you want. The planner asks the right questions, explains its recommendations, and keeps every decision editable." /><div className="planner-proof"><div className="proof-avatars"><span>MS</span><span>AK</span><span>JL</span></div><span>Built with 14,230 curious travellers</span></div></div>
         <div className="planner-card">
           <div className="planner-card-top"><div><span className="mini-label">YOUR TRIP BRIEF</span><h3>Let’s make this yours.</h3></div><span className="planner-status"><span /> AI ready</span></div>
           <div className="planner-fields">
@@ -858,7 +858,7 @@ function Planner({ onToast, onSaved, user, onLogin }: { onToast: (message: strin
            <AnimatePresence>{tripPlan && <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="planner-result"><div className="result-check"><Check size={17} /></div><div><strong>{tripPlan.summary}</strong><span>{tripPlan.reasoning}</span><small>{tripPlan.itinerary.length} days planned · {Object.keys(tripPlan.estimatedCosts).length} cost estimates</small><div className="planner-result-actions"><Button variant="outline" onClick={saveTrip}>{saving ? 'Saving...' : saved ? 'Saved to My Trips' : 'Save Trip'} {!saving && !saved && <ArrowRight size={15} />}</Button></div></div><ChevronRight size={18} /></motion.div>}</AnimatePresence>
         </div>
       </div>
-      <div className="page-shell suggestion-row">{plannerSuggestions.map((suggestion) => <button key={suggestion} onClick={() => onToast(`Wayora is exploring: ${suggestion}`)}><Sparkles size={14} />{suggestion}<ArrowRight size={14} /></button>)}</div>
+      <div className="page-shell suggestion-row">{plannerSuggestions.map((suggestion) => <button key={suggestion} onClick={() => onToast(`Zelevos is exploring: ${suggestion}`)}><Sparkles size={14} />{suggestion}<ArrowRight size={14} /></button>)}</div>
     </section>
   );
 }
@@ -1424,12 +1424,12 @@ function BudgetPanel({ trip }: { trip?: TripRecord | null }) {
 }
 
 function PricePanel() {
-  return <div className="analytics-panel price-panel"><div className="price-score"><span>92</span><small>Wayora price score</small><strong>Best time to book</strong></div><div className="analytics-copy"><span className="mini-label">PRICE INTELLIGENCE · BALI (DPS)</span><h3>₹18,500 <del>₹20,100</del></h3><p><TrendingDown size={15} /> You’re saving ₹1,600 against the market average.</p><svg className="trend-chart" viewBox="0 0 500 120" preserveAspectRatio="none"><path d="M0 88 C60 80 75 100 120 72 S185 68 225 82 S275 28 330 53 S410 15 500 20" fill="none" stroke="#214ECF" strokeWidth="4" /><path d="M0 88 C60 80 75 100 120 72 S185 68 225 82 S275 28 330 53 S410 15 500 20 V120 H0Z" fill="url(#chartFade)" opacity=".5" /><defs><linearGradient id="chartFade" x1="0" x2="0" y1="0" y2="1"><stop stopColor="#214ECF" /><stop offset="1" stopColor="#214ECF" stopOpacity="0" /></linearGradient></defs></svg><div className="similar-flights"><span>Similar flights</span><span>IndiGo <b>₹32,450</b></span><span>Air India <b>₹34,200</b></span></div></div></div>;
+  return <div className="analytics-panel price-panel"><div className="price-score"><span>92</span><small>Zelevos price score</small><strong>Best time to book</strong></div><div className="analytics-copy"><span className="mini-label">PRICE INTELLIGENCE · BALI (DPS)</span><h3>₹18,500 <del>₹20,100</del></h3><p><TrendingDown size={15} /> You’re saving ₹1,600 against the market average.</p><svg className="trend-chart" viewBox="0 0 500 120" preserveAspectRatio="none"><path d="M0 88 C60 80 75 100 120 72 S185 68 225 82 S275 28 330 53 S410 15 500 20" fill="none" stroke="#214ECF" strokeWidth="4" /><path d="M0 88 C60 80 75 100 120 72 S185 68 225 82 S275 28 330 53 S410 15 500 20 V120 H0Z" fill="url(#chartFade)" opacity=".5" /><defs><linearGradient id="chartFade" x1="0" x2="0" y1="0" y2="1"><stop stopColor="#214ECF" /><stop offset="1" stopColor="#214ECF" stopOpacity="0" /></linearGradient></defs></svg><div className="similar-flights"><span>Similar flights</span><span>IndiGo <b>₹32,450</b></span><span>Air India <b>₹34,200</b></span></div></div></div>;
 }
 
 function SafetyPanel() {
   const factors = [['Health & safety', 'Low risk'], ['Political stability', 'Low risk'], ['Weather', 'Moderate'], ['Natural disasters', 'Low risk']];
-  return <div className="analytics-panel safety-panel"><div className="trust-score"><span>8.7</span><small>Trust score / 10</small><strong>LOW RISK</strong></div><div className="analytics-copy"><span className="mini-label">TRAVEL RISK + TRUST</span><h3>Feel prepared, not worried.</h3><p>Wayora watches the signals that matter and keeps emergency help one tap away.</p><div className="risk-list">{factors.map(([name, risk]) => <div key={name}><span><ShieldCheck size={15} />{name}</span><b className={risk === 'Moderate' ? 'moderate' : ''}>{risk}</b></div>)}</div></div></div>;
+  return <div className="analytics-panel safety-panel"><div className="trust-score"><span>8.7</span><small>Trust score / 10</small><strong>LOW RISK</strong></div><div className="analytics-copy"><span className="mini-label">TRAVEL RISK + TRUST</span><h3>Feel prepared, not worried.</h3><p>Zelevos watches the signals that matter and keeps emergency help one tap away.</p><div className="risk-list">{factors.map(([name, risk]) => <div key={name}><span><ShieldCheck size={15} />{name}</span><b className={risk === 'Moderate' ? 'moderate' : ''}>{risk}</b></div>)}</div></div></div>;
 }
 
 function Marketplace({ user, onLogin, onToast }: { user: AuthUser | null; onLogin: () => void; onToast: (message: string) => void }) {
@@ -1449,11 +1449,11 @@ function Marketplace({ user, onLogin, onToast }: { user: AuthUser | null; onLogi
       onToast(error instanceof Error ? error.message : 'Demo experience booking failed.');
     }
   };
-  return <section id="marketplace" className="marketplace"><div className="page-shell"><div className="marketplace-heading"><SectionHeading eyebrow="WAYORA MARKETPLACE" title={<>Go beyond the <span>guidebook.</span></>} copy="Meet local people, trusted suppliers, and experiences worth making room for." /><Button variant="outline" onClick={() => document.querySelector('#travel-hub')?.scrollIntoView({ behavior: 'smooth' })}>Browse all experiences <ArrowRight size={15} /></Button></div><div className="marketplace-grid">{cards.map((card) => <article className="hero-card" key={card.name}><img src={card.image} alt={card.role} /><div className="hero-card-content"><div className="hero-avatar">{card.name.slice(0, 1)}</div><div><strong>{card.name}</strong><span>{card.role}</span></div><span className="rating"><Star size={13} fill="currentColor" /> {card.rating}</span><p>{card.detail}</p><div><strong>₹{card.price.toLocaleString('en-IN')}</strong> <span>/ person · DEMO</span><Button onClick={() => void book(card)}>Book now</Button></div></div></article>)}</div></div></section>;
+  return <section id="marketplace" className="marketplace"><div className="page-shell"><div className="marketplace-heading"><SectionHeading eyebrow="ZELEVOS MARKETPLACE" title={<>Go beyond the <span>guidebook.</span></>} copy="Meet local people, trusted suppliers, and experiences worth making room for." /><Button variant="outline" onClick={() => document.querySelector('#travel-hub')?.scrollIntoView({ behavior: 'smooth' })}>Browse all experiences <ArrowRight size={15} /></Button></div><div className="marketplace-grid">{cards.map((card) => <article className="hero-card" key={card.name}><img src={card.image} alt={card.role} /><div className="hero-card-content"><div className="hero-avatar">{card.name.slice(0, 1)}</div><div><strong>{card.name}</strong><span>{card.role}</span></div><span className="rating"><Star size={13} fill="currentColor" /> {card.rating}</span><p>{card.detail}</p><div><strong>₹{card.price.toLocaleString('en-IN')}</strong> <span>/ person · DEMO</span><Button onClick={() => void book(card)}>Book now</Button></div></div></article>)}</div></div></section>;
 }
 
 function WalletSection({ onToast }: { onToast: (message: string) => void }) {
-  return <section id="wallet" className="wallet-section"><div className="page-shell wallet-layout"><div><SectionHeading eyebrow="WAYORA WALLET" title={<>Travel money,<br /><span>made simple.</span></>} copy="Keep your trip budget, committed bookings, and spending forecast in one calm view." /><Button onClick={() => onToast('Wallet top-up flow opened')}>Open wallet <ArrowRight size={15} /></Button></div><div className="wallet-card"><div className="wallet-card-top"><span><Wallet size={18} /> Available balance</span><span>•••• 0482</span></div><strong>₹32,560</strong><div className="wallet-actions"><button onClick={() => onToast('Add money flow opened')}><Plus size={15} /> Add money</button><button onClick={() => onToast('Withdraw flow opened')}><ArrowRight size={15} /> Withdraw</button></div><div className="transactions"><span>Recent transactions</span><div><span><span className="transaction-icon"><Hotel size={14} /></span>Hotel booking</span><b>− ₹14,500</b></div><div><span><span className="transaction-icon"><Plane size={14} /></span>Flight booking</span><b>− ₹22,000</b></div><div><span><span className="transaction-icon plus"><Plus size={14} /></span>Add money</span><b className="positive">+ ₹50,000</b></div></div></div></div></section>;
+  return <section id="wallet" className="wallet-section"><div className="page-shell wallet-layout"><div><SectionHeading eyebrow="ZELEVOS WALLET" title={<>Travel money,<br /><span>made simple.</span></>} copy="Keep your trip budget, committed bookings, and spending forecast in one calm view." /><Button onClick={() => onToast('Wallet top-up flow opened')}>Open wallet <ArrowRight size={15} /></Button></div><div className="wallet-card"><div className="wallet-card-top"><span><Wallet size={18} /> Available balance</span><span>•••• 0482</span></div><strong>₹32,560</strong><div className="wallet-actions"><button onClick={() => onToast('Add money flow opened')}><Plus size={15} /> Add money</button><button onClick={() => onToast('Withdraw flow opened')}><ArrowRight size={15} /> Withdraw</button></div><div className="transactions"><span>Recent transactions</span><div><span><span className="transaction-icon"><Hotel size={14} /></span>Hotel booking</span><b>− ₹14,500</b></div><div><span><span className="transaction-icon"><Plane size={14} /></span>Flight booking</span><b>− ₹22,000</b></div><div><span><span className="transaction-icon plus"><Plus size={14} /></span>Add money</span><b className="positive">+ ₹50,000</b></div></div></div></div></section>;
 }
 
 function Copilot({ open, onClose, onToast, user }: { open: boolean; onClose: () => void; onToast: (message: string) => void; user: AuthUser | null }) {
@@ -1471,12 +1471,12 @@ function Copilot({ open, onClose, onToast, user }: { open: boolean; onClose: () 
       try {
         setReply(user ? await askConcierge(nextMessage, history) : await askWayora(nextMessage, history));
     } catch (error) {
-      onToast(error instanceof Error ? error.message : 'Wayora AI is temporarily unavailable.');
+    onToast(error instanceof Error ? error.message : 'Zelevos AI is temporarily unavailable.');
     } finally {
       setLoading(false);
     }
   };
-  return <AnimatePresence>{open && <motion.aside initial={{ opacity: 0, y: 20, x: 20 }} animate={{ opacity: 1, y: 0, x: 0 }} exit={{ opacity: 0, y: 20, x: 20 }} className="copilot"><div className="copilot-head"><span className="copilot-avatar"><Sparkles size={17} /></span><div><strong>Ask Wayora</strong><small>AI travel copilot · online</small></div><button onClick={onClose} aria-label="Close copilot"><X size={17} /></button></div><div className="copilot-body"><p className="copilot-message">What can I help you with today?</p>{sent.map((item, index) => <p className="copilot-sent" key={`${item}-${index}`}>{item}</p>)}{reply && <p className="copilot-message">{reply}</p>}{loading && <p className="copilot-message"><span className="typing"><i /><i /><i /></span></p>}<div className="quick-actions">{['Change my hotel to a sea view room', 'Find cheaper flights', 'Suggest 3 more activities', "What's the weather like?"].map((item) => <button onClick={() => setMessage(item)} key={item}>{item}</button>)}</div></div><div className="copilot-input"><input value={message} onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && send()} placeholder="Ask me anything..." /><button onClick={send} aria-label="Send message"><Send size={15} /></button></div></motion.aside>}</AnimatePresence>;
+  return <AnimatePresence>{open && <motion.aside initial={{ opacity: 0, y: 20, x: 20 }} animate={{ opacity: 1, y: 0, x: 0 }} exit={{ opacity: 0, y: 20, x: 20 }} className="copilot"><div className="copilot-head"><span className="copilot-avatar"><Sparkles size={17} /></span><div><strong>Ask Zelevos</strong><small>AI travel copilot · online</small></div><button onClick={onClose} aria-label="Close copilot"><X size={17} /></button></div><div className="copilot-body"><p className="copilot-message">What can I help you with today?</p>{sent.map((item, index) => <p className="copilot-sent" key={`${item}-${index}`}>{item}</p>)}{reply && <p className="copilot-message">{reply}</p>}{loading && <p className="copilot-message"><span className="typing"><i /><i /><i /></span></p>}<div className="quick-actions">{['Change my hotel to a sea view room', 'Find cheaper flights', 'Suggest 3 more activities', "What's the weather like?"].map((item) => <button onClick={() => setMessage(item)} key={item}>{item}</button>)}</div></div><div className="copilot-input"><input value={message} onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && send()} placeholder="Ask me anything..." /><button onClick={send} aria-label="Send message"><Send size={15} /></button></div></motion.aside>}</AnimatePresence>;
 }
 
 function OperationsPanel({ user, onLogin, onToast }: { user: AuthUser | null; onLogin: () => void; onToast: (message: string) => void }) {
@@ -1510,7 +1510,7 @@ function OperationsPanel({ user, onLogin, onToast }: { user: AuthUser | null; on
     try {
       const trips = await listTrips();
       if (!trips[0]) {
-        onToast('Save a trip first so Wayora can monitor it.');
+        onToast('Save a trip first so Zelevos can monitor it.');
         return;
       }
       const response = await profileRequest<{ tripId: string; proposal: { title: string; changes: string[] } }>(`/api/trips/${trips[0].id}/monitor`, { method: 'POST' });
@@ -1539,7 +1539,7 @@ function OperationsPanel({ user, onLogin, onToast }: { user: AuthUser | null; on
     try {
       const result = await profileRequest<{ profile: TravellerProfile }>('/api/profile', { method: 'PUT', body: JSON.stringify(profile) });
       setProfile(result.profile);
-      onToast('Wayora remembers your travel style.');
+      onToast('Zelevos remembers your travel style.');
     } catch (error) {
       onToast(error instanceof Error ? error.message : 'Profile could not be saved.');
     } finally {
@@ -1551,11 +1551,11 @@ function OperationsPanel({ user, onLogin, onToast }: { user: AuthUser | null; on
     <section className="operations-section" id="operations">
       <div className="page-shell">
         <div className="operations-heading">
-          <SectionHeading eyebrow="TRAVELLER OPERATIONS" title={<>The details that make a trip <span>yours.</span></>} copy="Wayora connects your preferences, alerts, budget and decisions so the trip can adapt without losing your intent." />
+          <SectionHeading eyebrow="TRAVELLER OPERATIONS" title={<>The details that make a trip <span>yours.</span></>} copy="Zelevos connects your preferences, alerts, budget and decisions so the trip can adapt without losing your intent." />
           <div className="operations-status"><span className="status-pulse" /> {user ? 'Account systems connected' : 'Log in to activate your Trip OS'}</div>
         </div>
         {!user ? (
-          <div className="operations-login"><UserRound size={23} /><strong>Your traveller graph starts here.</strong><span>Sign in to save preferences, receive alerts and approve itinerary changes.</span><Button onClick={onLogin}>Log in to Wayora <ArrowRight size={15} /></Button></div>
+          <div className="operations-login"><UserRound size={23} /><strong>Your traveller graph starts here.</strong><span>Sign in to save preferences, receive alerts and approve itinerary changes.</span><Button onClick={onLogin}>Log in to Zelevos <ArrowRight size={15} /></Button></div>
         ) : (
           <div className="operations-grid">
             <article className="operation-card memory-card">
@@ -1564,7 +1564,7 @@ function OperationsPanel({ user, onLogin, onToast }: { user: AuthUser | null; on
             </article>
             <article className="operation-card alert-card">
               <div className="operation-card-top"><span className="mini-label">LIVE TRIP MONITORING</span><span className="operation-icon warning-icon"><AlertTriangle size={16} /></span></div>
-              <h3>Watch the moving parts.</h3><p>Simulate a flight delay and let Wayora check the itinerary, rest time and budget before asking you to approve a change.</p>
+              <h3>Watch the moving parts.</h3><p>Simulate a flight delay and let Zelevos check the itinerary, rest time and budget before asking you to approve a change.</p>
               <div className="monitor-event"><span className="event-dot" /><div><strong>Provider status</strong><small>Demo monitor · live feeds not configured</small></div><span className="provider-badge">DEMO / TEST</span></div>
               <Button onClick={() => void simulateMonitoring()}>{monitoring ? 'Checking your trip...' : 'Simulate flight delay'} <ArrowRight size={14} /></Button>
               {proposal && <div className="replan-proposal"><strong>{proposal.title}</strong>{proposal.changes.map((change) => <span key={change}><Check size={12} /> {change}</span>)}<div><Button onClick={() => void approveReplan()}>Approve re-plan</Button><Button variant="ghost" onClick={() => setProposal(null)}>Keep current plan</Button></div></div>}
@@ -1745,14 +1745,14 @@ function AccountPage({ kind }: { kind: 'profile' | 'settings' | 'notifications' 
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 3000); };
   useEffect(() => { void currentUser().then(setUser).catch(() => setUser(null)); }, []);
   const titles = {
-    profile: ['YOUR TRAVELLER PROFILE', 'Wayora remembers how you travel.'],
+    profile: ['YOUR TRAVELLER PROFILE', 'Zelevos remembers how you travel.'],
     settings: ['ACCOUNT SETTINGS', 'Keep your travel system in your control.'],
     notifications: ['NOTIFICATION CENTRE', 'The signals that matter, in one calm place.'],
-    business: ['WAYORA FOR BUSINESS', 'One view for customers, bookings and performance.'],
+    business: ['ZELEVOS FOR BUSINESS', 'One view for customers, bookings and performance.'],
   } as const;
   const [authModal, setAuthModal] = useState<{ open: boolean; mode: 'login' | 'signup' }>({ open: false, mode: 'login' });
   const [eyebrow, title] = titles[kind] || ['ACCOUNT', 'Your Account'];
-  return <div className="account-page"><Navbar onCopilot={() => showToast('Open a trip to use the concierge.')} user={user} authLoading={false} onLogin={(mode = 'login') => setAuthModal({ open: true, mode })} onLogout={() => { void logout().then(() => setUser(null)); }} /><main className="account-main page-shell"><button className="back-link" onClick={() => setLocation('/')}><ArrowRight size={14} className="back-arrow" /> Back to Wayora</button><SectionHeading eyebrow={eyebrow} title={<>{title}</>} copy={kind === 'business' ? 'Supplier and operator tools are separated from traveller data and clearly marked as an operations workspace.' : 'Your private Wayora workspace keeps decisions, preferences and trip signals together.'} />{kind === 'business' ? <BusinessPanel onToast={showToast} /> : <AccountPanel kind={kind} user={user} onLogin={() => setAuthModal({ open: true, mode: 'login' })} onToast={showToast} />}</main>{authModal.open && <AuthDialog initialMode={authModal.mode} onClose={() => setAuthModal((prev) => ({ ...prev, open: false }))} onAuthenticated={(nextUser) => { setUser(nextUser); setAuthModal((prev) => ({ ...prev, open: false })); showToast('You are signed in.'); }} />}{toast && <div className="toast"><Check size={16} />{toast}</div>}</div>;
+  return <div className="account-page"><Navbar onCopilot={() => showToast('Open a trip to use the concierge.')} user={user} authLoading={false} onLogin={(mode = 'login') => setAuthModal({ open: true, mode })} onLogout={() => { void logout().then(() => setUser(null)); }} /><main className="account-main page-shell"><button className="back-link" onClick={() => setLocation('/')}><ArrowRight size={14} className="back-arrow" /> Back to Zelevos</button><SectionHeading eyebrow={eyebrow} title={<>{title}</>} copy={kind === 'business' ? 'Supplier and operator tools are separated from traveller data and clearly marked as an operations workspace.' : 'Your private Zelevos workspace keeps decisions, preferences and trip signals together.'} />{kind === 'business' ? <BusinessPanel onToast={showToast} /> : <AccountPanel kind={kind} user={user} onLogin={() => setAuthModal({ open: true, mode: 'login' })} onToast={showToast} />}</main>{authModal.open && <AuthDialog initialMode={authModal.mode} onClose={() => setAuthModal((prev) => ({ ...prev, open: false }))} onAuthenticated={(nextUser) => { setUser(nextUser); setAuthModal((prev) => ({ ...prev, open: false })); showToast('You are signed in.'); }} />}{toast && <div className="toast"><Check size={16} />{toast}</div>}</div>;
 }
 
 function AccountPanel({ kind, user, onLogin, onToast }: { kind: 'profile' | 'settings' | 'notifications'; user: AuthUser | null; onLogin: () => void; onToast: (message: string) => void }) {
@@ -1772,7 +1772,7 @@ function Footer() {
     const input = (e.currentTarget.elements.namedItem('email') as HTMLInputElement)?.value;
     if (input) alert(`Thanks! We'll be in touch at ${input}`);
   };
-  return <footer><div className="page-shell footer-grid"><div><Logo /><h2>Your next trip<br /><span>starts here.</span></h2><p>Tell Wayora where you want to go.<br />We'll figure out the rest.</p></div><div><strong>Explore</strong><a href="#planner">AI Planner</a><a href="#trip-os">Trip OS</a><a href="#marketplace">Marketplace</a><a href="#wallet">Wallet</a></div><div><strong>For travellers</strong><a href="#travel-hub">Experiences</a><a href="#trip-os">Travel safety</a><a href="mailto:support@wayora.travel">Help centre</a><a href="/forgot-password">Reset password</a></div><div><strong>Stay in the loop</strong><p>New places, better trips, and product notes.</p><form className="footer-email" onSubmit={footerSub}><input name="email" type="email" placeholder="Your email" /><button type="submit" aria-label="Subscribe"><ArrowRight size={16} /></button></form></div></div><div className="page-shell footer-bottom"><span>© 2026 Wayora</span><span>Made for the long way around.</span><span>India · English · ₹ INR</span></div></footer>;
+  return <footer><div className="page-shell footer-grid"><div><Logo /><h2>Your next trip<br /><span>starts here.</span></h2><p>Tell Zelevos where you want to go.<br />We'll figure out the rest.</p></div><div><strong>Explore</strong><a href="#planner">AI Planner</a><a href="#trip-os">Trip OS</a><a href="#marketplace">Marketplace</a><a href="#wallet">Wallet</a></div><div><strong>For travellers</strong><a href="#travel-hub">Experiences</a><a href="#trip-os">Travel safety</a><a href="mailto:support@zelevos.com">Help centre</a><a href="/forgot-password">Reset password</a></div><div><strong>Stay in the loop</strong><p>New places, better trips, and product notes.</p><form className="footer-email" onSubmit={footerSub}><input name="email" type="email" placeholder="Your email" /><button type="submit" aria-label="Subscribe"><ArrowRight size={16} /></button></form></div></div><div className="page-shell footer-bottom"><span>© 2026 Zelevos</span><span>Made for the long way around.</span><span>India · English · ₹ INR</span></div></footer>;
 }
 
 function Home() {
@@ -1870,7 +1870,7 @@ function Home() {
 
       // 3. Smoothly navigate to dedicated /flights route
       setLocation(targetUrl);
-      showToast('Opening Wayora Flights...');
+      showToast('Opening Zelevos Flights...');
       return;
     }
 
@@ -1886,7 +1886,7 @@ function Home() {
     }
   };
 
-  useEffect(() => { document.title = 'Wayora — Your AI Travel OS'; }, []);
+  useEffect(() => { document.title = 'Zelevos — Your AI Travel OS'; }, []);
 
   return (
     <div className="wayora-app">
@@ -1903,7 +1903,7 @@ function Home() {
           {(thinking || answer) && (
             <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="ai-toast">
               {thinking ? (
-                <><span className="typing"><i /><i /><i /></span> Wayora is finding the shape...</>
+                <><span className="typing"><i /><i /><i /></span> Zelevos is finding the shape...</>
               ) : (
                 <><Check size={16} />{answer}<button onClick={() => document.querySelector('#planner')?.scrollIntoView({ behavior: 'smooth' })}>Shape this trip <ArrowRight size={13} /></button></>
               )}
@@ -1929,7 +1929,7 @@ function Home() {
         <WalletSection onToast={showToast} />
       </main>
       <Footer />
-      <button className="floating-copilot" onClick={() => setCopilot(true)}><Sparkles size={18} /><span>Ask Wayora</span></button>
+      <button className="floating-copilot" onClick={() => setCopilot(true)}><Sparkles size={18} /><span>Ask Zelevos</span></button>
       <Copilot open={copilot} onClose={() => setCopilot(false)} onToast={showToast} user={user} />
       {authModal.open && (
         <AuthDialog

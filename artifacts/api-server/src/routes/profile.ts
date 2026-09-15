@@ -21,7 +21,7 @@ const profileFields = z.object({
 
 const defaults = (userId: string) => ({
   userId,
-  displayName: "Wayora traveller",
+  displayName: "Zelevos traveller",
   homeCity: "Pune",
   avatarInitials: "WT",
   budgetStyle: "Value-conscious",

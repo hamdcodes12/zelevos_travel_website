@@ -88,7 +88,7 @@ describe("Wayora Customer Management & Admin Control Panel", () => {
         }),
       });
 
-      assert.equal(res.status, 201);
+      assert.equal(res.status, 201, JSON.stringify(res.body));
       assert.ok(res.body.user);
       assert.equal(res.body.user.email, customerEmailA);
       assert.equal(res.body.user.fullName, "Aarav Sharma");
@@ -223,7 +223,42 @@ describe("Wayora Customer Management & Admin Control Panel", () => {
       assert.ok(searchRes.body.results.length > 0);
       const offer = searchRes.body.results[0];
 
-      // 2. Book flight
+      // 2. Create and capture the test payment so the booking is represented in the payment audit.
+      const paymentId = `pay_test_${Date.now()}`;
+      const paymentOrderRes = await apiRequest("/api/payments/order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: sessionCookieA,
+        },
+        body: JSON.stringify({
+          amount: 1000,
+          currency: "INR",
+          receipt: `receipt_test_${Date.now()}`,
+          idempotencyKey: `payment_idemp_${Date.now()}`,
+        }),
+      });
+
+      assert.equal(paymentOrderRes.status, 201);
+      assert.ok(paymentOrderRes.body.orderId);
+
+      const paymentVerifyRes = await apiRequest("/api/payments/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: sessionCookieA,
+        },
+        body: JSON.stringify({
+          orderId: paymentOrderRes.body.orderId,
+          paymentId,
+          signature: "sig_test_valid",
+        }),
+      });
+
+      assert.equal(paymentVerifyRes.status, 200);
+      assert.equal(paymentVerifyRes.body.verified, true);
+
+      // 3. Book flight
       const bookingPayload = {
         offerId: offer.id,
         passengers: [
@@ -243,8 +278,8 @@ describe("Wayora Customer Management & Admin Control Panel", () => {
         },
         addons: { extraBaggageKg: 0 },
         payment: {
-          orderId: `order_test_${Date.now()}`,
-          paymentId: `pay_test_${Date.now()}`,
+          orderId: paymentOrderRes.body.orderId,
+          paymentId,
           signature: "sig_test_valid",
         },
         idempotencyKey: `idemp_${Date.now()}`,
@@ -442,7 +477,7 @@ describe("Wayora Customer Management & Admin Control Panel", () => {
       const payment = res.body.payments.find((p: any) => p.bookingId === bookingIdA);
       assert.ok(payment);
       assert.ok(payment.amount > 0);
-      assert.equal(payment.status, "PAID");
+      assert.equal(payment.status, "CAPTURED");
       assert.equal(payment.customer.email, customerEmailA);
 
       // Verify no Razorpay secrets anywhere in output

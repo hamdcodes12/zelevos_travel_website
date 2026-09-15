@@ -955,6 +955,15 @@ router.post("/bookings/:id/cancel", requireAuth, async (req, res): Promise<void>
       const flightProvider = getFlightProvider();
       const cancelResult = await flightProvider.cancelBooking(booking.pnr, req.body?.reason);
 
+      if (!cancelResult.success) {
+        res.status(501).json({
+          success: false,
+          status: "supplier_cancellation_unavailable",
+          message: cancelResult.message,
+        });
+        return;
+      }
+
       // Refund payment if paymentId exists
       let refundStatus = "NOT_APPLICABLE";
       if (booking.paymentId && cancelResult.refundAmount > 0) {

@@ -274,7 +274,7 @@ export function AuthDialog({
 
         {/* Header Titles */}
         <span className="mini-label">
-          {mode === "login" ? "WELCOME BACK TO WAYORA" : "JOIN WAYORA TRAVEL"}
+          {mode === "login" ? "WELCOME BACK TO ZELEVOS" : "JOIN ZELEVOS TRAVEL"}
         </span>
         <h3 style={{ margin: "6px 0 6px", fontSize: "24px" }}>
           {mode === "login" ? "Log in to your account" : "Create your account"}

@@ -139,7 +139,7 @@ router.post("/ai/planner", async (req, res) => {
       {
         role: "user",
         content: [
-          "You are Wayora's AI trip planner. Return only valid JSON, with no markdown fences or extra text.",
+          "You are Zelevos AI's trip planner. Return only valid JSON, with no markdown fences or extra text.",
           "Use exactly this shape:",
           JSON.stringify({
             summary: "short preview of the recommended trip",
@@ -219,7 +219,7 @@ router.post("/ai/chat", async (req, res) => {
       {
         role: "user",
         content:
-          "You are Wayora, a trustworthy India-first AI travel operating system. Be concise, practical, and transparent that bookings are not completed by this demo. Help with trip planning, destinations, itineraries, comparisons, budgets, replanning, and travel questions.",
+          "You are Zelevos, a trustworthy India-first AI travel operating system. Be concise, practical, and transparent that bookings are not completed by this demo. Help with trip planning, destinations, itineraries, comparisons, budgets, replanning, and travel questions.",
       },
       ...history,
       { role: "user", content: message },

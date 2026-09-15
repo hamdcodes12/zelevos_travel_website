@@ -7,6 +7,9 @@ import travelRouter from "./travel";
 import profileRouter from "./profile";
 import operationsRouter from "./operations";
 import adminRouter from "./admin";
+import travelpayoutsRouter from "./travelpayouts";
+import flightDataRouter from "./flight-data";
+import ignavRouter from "./ignav";
 
 const router: IRouter = Router();
 
@@ -18,5 +21,8 @@ router.use(travelRouter);
 router.use(profileRouter);
 router.use(operationsRouter);
 router.use(adminRouter);
+router.use(travelpayoutsRouter);
+router.use(flightDataRouter);
+router.use(ignavRouter);
 
 export default router;

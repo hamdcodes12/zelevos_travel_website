@@ -140,7 +140,7 @@ describe("Email Service Unit Tests", () => {
     const service = new EmailService({ isTestMode: true });
     const text = service.generatePlainTextEmail(mockBooking);
 
-    assert.match(text, /WAYORA FLIGHT BOOKING CONFIRMATION/);
+    assert.match(text, /ZELEVOS FLIGHT BOOKING CONFIRMATION/);
     assert.match(text, /PNR \/ Booking Reference: XY9876/);
     assert.match(text, /E-Ticket Number: 098-2345678901/);
     assert.match(text, /Provider Reference: DUFFEL_REF_12345/);
@@ -158,7 +158,7 @@ describe("Email Service Unit Tests", () => {
     const service = new EmailService({ isTestMode: true });
     const html = service.generateHtmlEmail(mockBooking);
 
-    assert.match(html, /WAYORA TRAVEL/);
+    assert.match(html, /ZELEVOS TRAVEL/);
     assert.match(html, /XY9876/);
     assert.match(html, /098-2345678901/);
     assert.match(html, /IndiGo 6E-501/);

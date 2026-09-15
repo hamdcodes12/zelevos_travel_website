@@ -154,19 +154,22 @@ router.get("/admin/stats", requireAdmin, async (req, res): Promise<void> => {
     const totalCustomers = allUsers.length;
     const newCustomers = allUsers.filter((u: typeof usersTable.$inferSelect) => u.createdAt >= thirtyDaysAgo).length;
 
-    // 2. Bookings metrics - include ALL kinds
+    // 2. Flight booking metrics and payment-ledger reconciliation.
     const allBookings = await db.select().from(bookingsTable);
-    const totalFlightBookings = allBookings.length; // renamed to totalBookings in response
-    const confirmedBookings = allBookings.filter((b: typeof bookingsTable.$inferSelect) => b.status === "CONFIRMED").length;
-    const cancelledBookings = allBookings.filter((b: typeof bookingsTable.$inferSelect) => b.status === "CANCELLED").length;
-
-    const totalPaymentAmount = allBookings
-      .filter((b: typeof bookingsTable.$inferSelect) => b.status === "CONFIRMED" || b.paymentStatus === "PAID" || b.paymentStatus === "CAPTURED" || b.paymentStatus === "PAYMENT_CONFIRMED")
-      .reduce((acc: number, b: typeof bookingsTable.$inferSelect) => acc + (b.amount || 0), 0);
-
-    const refundAmount = allBookings
-      .filter((b: typeof bookingsTable.$inferSelect) => b.status === "CANCELLED")
-      .reduce((acc: number, b: typeof bookingsTable.$inferSelect) => acc + (b.refundAmount || 0), 0);
+    const flightBookings = allBookings.filter((b: typeof bookingsTable.$inferSelect) => b.kind === "FLIGHT");
+    const payments = await db.select().from(paymentTransactionsTable);
+    const totalFlightBookings = flightBookings.length;
+    const confirmedBookings = flightBookings.filter((b: typeof bookingsTable.$inferSelect) => b.status === "CONFIRMED").length;
+    const pendingBookings = flightBookings.filter((b: typeof bookingsTable.$inferSelect) => ["SEARCHED", "SELECTED", "VALIDATING", "PAYMENT_PENDING", "PAID", "BOOKING_PENDING"].includes(b.status)).length;
+    const failedBookings = flightBookings.filter((b: typeof bookingsTable.$inferSelect) => b.status === "FAILED").length;
+    const cancelledBookings = flightBookings.filter((b: typeof bookingsTable.$inferSelect) => b.status === "CANCELLED").length;
+    const refundPendingBookings = flightBookings.filter((b: typeof bookingsTable.$inferSelect) => b.status === "REFUND_PENDING" || b.paymentStatus === "REFUND_PENDING").length;
+    const refundedBookings = flightBookings.filter((b: typeof bookingsTable.$inferSelect) => b.status === "REFUNDED" || b.paymentStatus === "REFUNDED").length;
+    const totalBookingValue = flightBookings.reduce((sum: number, booking: typeof bookingsTable.$inferSelect) => sum + (booking.amount || 0), 0);
+    const totalPaymentAmount = payments
+      .filter((payment: typeof paymentTransactionsTable.$inferSelect) => ["CAPTURED", "PAID", "PAYMENT_CONFIRMED"].includes(payment.status))
+      .reduce((sum: number, payment: typeof paymentTransactionsTable.$inferSelect) => sum + (payment.capturedAmount ?? payment.amount ?? 0), 0);
+    const refundAmount = payments.reduce((sum: number, payment: typeof paymentTransactionsTable.$inferSelect) => sum + (payment.refundAmount || 0), 0);
 
     // 3. Recent bookings (with user info)
     const recentBookingsRaw: Array<{ booking: typeof bookingsTable.$inferSelect; user: typeof usersTable.$inferSelect }> = await db
@@ -181,16 +184,16 @@ router.get("/admin/stats", requireAdmin, async (req, res): Promise<void> => {
 
     const recentBookings = recentBookingsRaw.map(({ booking, user }) => {
       const segments = Array.isArray(booking.segments) ? (booking.segments as any[]) : [];
-      const origin = segments[0]?.origin || "DEL";
-      const dest = segments[segments.length - 1]?.destination || "BOM";
-      const airline = segments[0]?.airline || "Airline";
+      const origin = segments[0]?.origin || "N/A";
+      const dest = segments[segments.length - 1]?.destination || "N/A";
+      const airline = segments[0]?.airline || segments[0]?.carrier || "N/A";
       const flightNumber = segments[0]?.flightNumber || "";
       const departureTime = segments[0]?.departureTime || booking.createdAt;
 
       return {
         id: booking.id,
         bookingReference: booking.bookingReference,
-        pnr: booking.pnr ?? "Pending",
+        pnr: booking.pnr ?? "Not issued",
         route: `${origin} → ${dest}`,
         flight: `${airline} ${flightNumber}`.trim(),
         travelDate: departureTime,
@@ -233,8 +236,13 @@ router.get("/admin/stats", requireAdmin, async (req, res): Promise<void> => {
         newCustomers,
         totalBookings: totalFlightBookings,
         totalFlightBookings,
+        pendingBookings,
         confirmedBookings,
+        failedBookings,
         cancelledBookings,
+        refundPendingBookings,
+        refundedBookings,
+        totalBookingValue,
         totalPaymentAmount,
         refundAmount,
       },

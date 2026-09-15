@@ -518,7 +518,7 @@ export function AdminPage() {
                 marginBottom: "4px",
               }}
             >
-              Wayora Control Panel
+              Zelevos Control Panel
             </span>
             <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#0f172a", margin: "0 0 6px" }}>
               Admin Sign In
@@ -667,7 +667,7 @@ export function AdminPage() {
                 cursor: "pointer",
               }}
             >
-              ← Return to Wayora Home
+              ← Return to Zelevos Home
             </button>
           </div>
         </div>
@@ -718,7 +718,7 @@ export function AdminPage() {
               W
             </div>
             <div>
-              <span style={{ fontSize: "16px", fontWeight: 800, letterSpacing: "-0.02em" }}>Wayora Admin</span>
+              <span style={{ fontSize: "16px", fontWeight: 800, letterSpacing: "-0.02em" }}>Zelevos Admin</span>
               <span style={{ display: "block", fontSize: "10px", color: "#94a3b8", fontWeight: 600 }}>
                 Operations Console
               </span>
@@ -942,7 +942,7 @@ export function AdminPage() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "14px", fontWeight: 700, color: "#64748b" }}>Wayora Admin</span>
+            <span style={{ fontSize: "14px", fontWeight: 700, color: "#64748b" }}>Zelevos Admin</span>
             <span style={{ color: "#cbd5e1" }}>/</span>
             <span style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", textTransform: "capitalize" }}>
               {activeTab}
@@ -982,7 +982,7 @@ export function AdminPage() {
                 cursor: "pointer",
               }}
             >
-              View Wayora Site
+              View Zelevos Site
             </button>
           </div>
         </header>

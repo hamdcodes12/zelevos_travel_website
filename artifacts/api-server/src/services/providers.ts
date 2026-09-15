@@ -196,14 +196,14 @@ export function listExperiences(input: { destination?: string; category?: string
 export function searchTransport(input: { pickup: string; drop: string; date: string; passengers: number }): TransportResult[] {
   const mode = modeFor("TRANSPORT_PROVIDER_API_KEY");
   return [
-    ["Airport transfer", "Wayora demo drivers", "Sedan", "45 min", 1800],
-    ["Premium airport transfer", "Wayora demo drivers", "SUV", "50 min", 2600],
-    ["Intercity cab", "Wayora demo drivers", "Innova", "3h 20m", 5400],
-    ["Budget airport shuttle", "Wayora demo drivers", "Shared minivan", "1h 10m", 800],
-    ["Luxury airport transfer", "Wayora demo drivers", "Mercedes", "45 min", 4200],
-    ["City to Gulmarg", "Wayora demo drivers", "SUV", "2h 30m", 3800],
-    ["City to Pahalgam", "Wayora demo drivers", "Innova", "2h 45m", 4100],
-    ["Half-day rental", "Wayora demo drivers", "Sedan with driver", "4 hours", 2400],
+    ["Airport transfer", "Zelevos demo drivers", "Sedan", "45 min", 1800],
+    ["Premium airport transfer", "Zelevos demo drivers", "SUV", "50 min", 2600],
+    ["Intercity cab", "Zelevos demo drivers", "Innova", "3h 20m", 5400],
+    ["Budget airport shuttle", "Zelevos demo drivers", "Shared minivan", "1h 10m", 800],
+    ["Luxury airport transfer", "Zelevos demo drivers", "Mercedes", "45 min", 4200],
+    ["City to Gulmarg", "Zelevos demo drivers", "SUV", "2h 30m", 3800],
+    ["City to Pahalgam", "Zelevos demo drivers", "Innova", "2h 45m", 4100],
+    ["Half-day rental", "Zelevos demo drivers", "Sedan with driver", "4 hours", 2400],
   ].map(([type, provider, vehicle, duration, price], index) => ({
     id: `transport-${index + 1}`,
     type: String(type),

@@ -28,6 +28,21 @@ import { RouteMap } from "@/components/route-map";
 
 type Provider = { provider: string; mode: "DEMO" | "LIVE"; status: string };
 
+type FlightDataPoint = {
+  origin: string;
+  destination: string;
+  origin_airport?: string;
+  destination_airport?: string;
+  price?: number;
+  currency?: string;
+  airline?: string;
+  flight_number?: string | number;
+  departure_at?: string;
+  return_at?: string;
+  transfers?: number;
+  duration?: number;
+};
+
 interface FlightsPageProps {
   user: AuthUser | null;
   authLoading?: boolean;
@@ -48,7 +63,9 @@ function ProviderNote({ provider }: { provider?: Provider }) {
     <p className="provider-note">
       <span className={`provider-dot ${provider.mode === "LIVE" ? "live" : ""}`} />
       {provider.mode === "LIVE"
-        ? `${provider.provider} connected · Live flight inventory`
+        ? provider.provider.toLowerCase().includes("ignav")
+          ? "Ignav connected · LIVE FARE DATA · external booking only"
+          : `${provider.provider} connected · Live flight inventory`
         : "DEMO / TEST flight inventory · no supplier reservation or real-world PNR created"}
     </p>
   );
@@ -80,13 +97,36 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
   const [validationError, setValidationError] = useState("");
   const [provider, setProvider] = useState<Provider>();
   const [flights, setFlights] = useState<FlightOffer[]>([]);
+  const [dataFlights, setDataFlights] = useState<FlightDataPoint[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [dataError, setDataError] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<FlightOffer | null>(null);
   const [toast, setToast] = useState("");
+  const [bookingLinkLoading, setBookingLinkLoading] = useState<string | null>(null);
 
   const showToast = (message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(""), 3500);
+  };
+
+  const openExternalBooking = async (flight: FlightOffer) => {
+    if (!flight.ignavId) return;
+    setBookingLinkLoading(flight.id);
+    try {
+      const response = await fetch("/api/ignav/booking-links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ignavId: flight.ignavId }),
+      });
+      const payload = await response.json() as { url?: string; message?: string };
+      if (!response.ok || !payload.url) throw new Error(payload.message || "External booking link is unavailable.");
+      window.open(payload.url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "External booking link is unavailable.");
+    } finally {
+      setBookingLinkLoading(null);
+    }
   };
 
   const runSearch = async (
@@ -102,6 +142,8 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
     event?.preventDefault();
     setLoading(true);
     setError("");
+    setDataError("");
+    setDataFlights([]);
     setValidationError("");
 
     const currentForm = overrideParams || flightForm;
@@ -153,6 +195,24 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
 
       setProvider({ provider: data.provider, mode: data.mode, status: "READY" });
       setFlights(data.results || []);
+
+      setDataLoading(true);
+      try {
+        const dataResponse = await fetch(`/api/flights/data?${new URLSearchParams({
+          from: fromCode,
+          to: toCode,
+          departure: currentForm.departure,
+          ...(hasReturn && flightForm.returnDate ? { returnDate: flightForm.returnDate } : {}),
+          currency: "INR",
+        })}`, { credentials: "include" });
+        const dataPayload = await dataResponse.json() as { data?: FlightDataPoint[]; message?: string };
+        if (!dataResponse.ok) throw new Error(dataPayload.message || "Historical fare data is unavailable.");
+        setDataFlights(dataPayload.data || []);
+      } catch (dataSearchError) {
+        setDataError(dataSearchError instanceof Error ? dataSearchError.message : "Historical fare data is unavailable.");
+      } finally {
+        setDataLoading(false);
+      }
     } catch (searchError) {
       setError(
         searchError instanceof Error ? searchError.message : "Search could not be completed."
@@ -164,7 +224,7 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
 
   // Run initial search on mount ONLY if explicit intentional query parameters exist in the URL (e.g. from homepage AI search)
   useEffect(() => {
-    document.title = "Wayora — Flights & Airline Booking";
+    document.title = "Zelevos — Flights & Airline Booking";
 
     const params = new URLSearchParams(window.location.search);
     const fromParam = params.get("from")?.trim().toUpperCase();
@@ -234,7 +294,7 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
         onClick={() => setLocation("/")}
         style={{ marginBottom: "20px", cursor: "pointer" }}
       >
-        <ArrowRight size={14} className="back-arrow" /> Back to Wayora
+        <ArrowRight size={14} className="back-arrow" /> Back to Zelevos
       </button>
 
         {/* Dedicated Flight Page Header */}
@@ -244,7 +304,7 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
             FLIGHTS & AIRLINE GDS
           </div>
           <h2>Find your flight.</h2>
-          <p>Compare real flight options, lock your fare and book your journey with Wayora.</p>
+          <p>Compare real flight options, lock your fare and book your journey with Zelevos.</p>
         </div>
 
         {/* Flight Search Form */}
@@ -439,6 +499,41 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
         {/* Provider Note */}
         <ProviderNote provider={provider} />
 
+        <section className="flight-data-panel" aria-live="polite">
+          <div className="flight-data-heading">
+            <div>
+              <span className="mini-label">TRAVELPAYOUTS / AVIASALES DATA</span>
+              <h3>Fare inspiration for this route</h3>
+            </div>
+            <span className="provider-badge">DATA ONLY</span>
+          </div>
+          <p className="flight-data-note">
+            Cached and historical fare data for planning only. These prices are not live inventory and cannot be booked here.
+          </p>
+          {dataLoading && <div className="flight-data-state">Loading fare trends...</div>}
+          {!dataLoading && dataError && (
+            <div className="flight-data-state error">
+              <span>{dataError}</span>
+              <button type="button" onClick={() => void runSearch()}>Retry data</button>
+            </div>
+          )}
+          {!dataLoading && !dataError && hasSearched && dataFlights.length === 0 && (
+            <div className="flight-data-state">No cached fare data was found for this route and date.</div>
+          )}
+          {!dataLoading && dataFlights.length > 0 && (
+            <div className="flight-data-grid">
+              {dataFlights.slice(0, 6).map((item, index) => (
+                <article className="flight-data-card" key={`${item.departure_at || "date"}-${item.airline || "airline"}-${index}`}>
+                  <div><strong>{item.airline || "Airline unavailable"}</strong><span>{item.flight_number ? `Flight ${item.flight_number}` : "Route trend"}</span></div>
+                  <strong>{typeof item.price === "number" ? `${item.currency || "INR"} ${item.price.toLocaleString("en-IN")}` : "Price unavailable"}</strong>
+                  <span>{item.departure_at ? new Date(item.departure_at).toLocaleDateString("en-IN") : flightForm.departure}</span>
+                  <small>{typeof item.transfers === "number" ? `${item.transfers} stop${item.transfers === 1 ? "" : "s"}` : "Stops unavailable"}</small>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* General Error State */}
         {error && (
           <div className="travel-state error" style={{ marginTop: "16px" }}>
@@ -588,13 +683,15 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
                   <div className="result-price">
                     <span>from</span>
                     <strong>₹{flight.price.toLocaleString("en-IN")}</strong>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFlight(flight)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      Select flight <ArrowRight size={14} />
-                    </button>
+                    {flight.externalBooking ? (
+                      <button type="button" onClick={() => void openExternalBooking(flight)} disabled={bookingLinkLoading === flight.id} style={{ cursor: "pointer" }}>
+                        {bookingLinkLoading === flight.id ? "Opening..." : "Book Now"} <ArrowRight size={14} />
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => setSelectedFlight(flight)} style={{ cursor: "pointer" }}>
+                        Select flight <ArrowRight size={14} />
+                      </button>
+                    )}
                   </div>
                 </article>
               );

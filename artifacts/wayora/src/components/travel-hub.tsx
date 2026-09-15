@@ -37,14 +37,14 @@ export type BookingRecord = {
 async function getJson<T>(url: string): Promise<T> {
   const response = await fetch(url, { credentials: "include" });
   const payload = await response.json() as T & { message?: string };
-  if (!response.ok) throw new Error(payload.message || "Wayora could not load that search.");
+  if (!response.ok) throw new Error(payload.message || "Zelevos could not load that search.");
   return payload;
 }
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const payload = await response.json() as T & { message?: string };
-  if (!response.ok) throw new Error(payload.message || "Wayora could not complete that action.");
+  if (!response.ok) throw new Error(payload.message || "Zelevos could not complete that action.");
   return payload;
 }
 
@@ -232,7 +232,7 @@ export function TravelHub({
               key: result.keyId,
               amount: result.amountSubunits,
               currency: result.currency || "INR",
-              name: "Wayora",
+              name: "Zelevos",
               description: `${kind.charAt(0) + kind.slice(1).toLowerCase()} booking`,
               order_id: result.orderId,
               prefill: { email: user.email },
@@ -332,7 +332,7 @@ export function TravelHub({
                 <span style={{ fontSize: "11px", color: "var(--muted)", fontWeight: 600 }}>Dedicated Flight Portal</span>
               </div>
               <h3 style={{ fontSize: "22px", fontWeight: 800, margin: "0 0 10px", color: "var(--text)" }}>
-                Fly anywhere with Wayora
+                Fly anywhere with Zelevos
               </h3>
               <p style={{ margin: "0 0 16px", color: "var(--muted)", fontSize: "13px", lineHeight: "1.6" }}>
                 Search demo Indian and international routes, review fare rules, complete a demo checkout, and save the booking to your account. No supplier reservation or real money is involved.
@@ -564,7 +564,7 @@ function Bookings({ user, onLogin, onToast }: { user: { id: string } | null; onL
     }
   };
 
-  if (!user) return <div className="travel-state"><Ticket size={23} /><strong>Log in to see your bookings.</strong><span>Your flight tickets and reservations are saved privately to your Wayora account.</span><button onClick={onLogin}>Log in <ArrowRight size={14} /></button></div>;
+  if (!user) return <div className="travel-state"><Ticket size={23} /><strong>Log in to see your bookings.</strong><span>Your flight tickets and reservations are saved privately to your Zelevos account.</span><button onClick={onLogin}>Log in <ArrowRight size={14} /></button></div>;
   if (loading) return <div className="travel-state"><span className="typing"><i /><i /><i /></span> Loading your bookings...</div>;
   if (!results.length) return <div className="travel-state"><Ticket size={23} /><strong>No bookings yet.</strong><span>Search for flights or stays above to book and receive live airline PNR tickets.</span></div>;
 

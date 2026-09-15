@@ -106,7 +106,7 @@ const DDL_MIGRATIONS = `
   CREATE TABLE IF NOT EXISTS traveller_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-    display_name TEXT NOT NULL DEFAULT 'Wayora traveller',
+    display_name TEXT NOT NULL DEFAULT 'Zelevos traveller',
     home_city TEXT NOT NULL DEFAULT 'Pune',
     avatar_initials TEXT NOT NULL DEFAULT 'WT',
     budget_style TEXT NOT NULL DEFAULT 'Value-conscious',

@@ -6,7 +6,7 @@ import { usersTable } from "./auth";
 export const travellerProfilesTable = pgTable("traveller_profiles", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().unique().references(() => usersTable.id, { onDelete: "cascade" }),
-  displayName: text("display_name").notNull().default("Wayora traveller"),
+  displayName: text("display_name").notNull().default("Zelevos traveller"),
   homeCity: text("home_city").notNull().default("Pune"),
   avatarInitials: text("avatar_initials").notNull().default("WT"),
   budgetStyle: text("budget_style").notNull().default("Value-conscious"),

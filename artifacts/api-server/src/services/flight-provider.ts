@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { IgnavFlightProvider, getIgnavConfig } from "./ignav";
 
 export type FlightPassengerType = "ADULT" | "CHILD" | "INFANT";
 export type CabinClass = "Economy" | "Premium Economy" | "Business" | "First";
@@ -44,15 +45,18 @@ export type FlightOffer = {
   currency: "INR";
   provider: string;
   mode: "DEMO" | "LIVE";
-  refundable: boolean;
+  refundable?: boolean;
   cabin?: string;
   cabinClass: string;
-  seatsAvailable: number;
+  seatsAvailable?: number;
   segments: FlightSegment[];
   fareRules?: {
     cancellationFee: number;
     changeFee: number;
   };
+  externalBookingUrl?: string;
+  externalBooking?: boolean;
+  ignavId?: string;
 };
 
 export type FlightRevalidationResult = {
@@ -260,36 +264,35 @@ export class DuffelFlightProvider implements FlightProvider {
 
       const firstSeg = segments[0];
       const lastSeg = segments[segments.length - 1];
+      if (offer.total_currency !== "INR") {
+        throw new Error(`Duffel returned unsupported currency ${offer.total_currency}.`);
+      }
       const price = Math.round(Number(offer.total_amount));
-      const baseFare = Math.round(Number(offer.base_amount || price * 0.85));
-      const taxes = Math.round(Number(offer.tax_amount || price * 0.15));
+      const baseFare = Math.round(Number(offer.base_amount || 0));
+      const taxes = Math.round(Number(offer.tax_amount || 0));
 
       return {
         id: offer.id,
-        airline: offer.owner?.name || firstSeg?.carrier || "Airline",
-        flightNumber: firstSeg?.flightNumber || "FL101",
+        airline: offer.owner?.name || firstSeg?.carrier || "",
+        flightNumber: firstSeg?.flightNumber || "",
         from: params.from,
         to: params.to,
-        departure: firstSeg?.departureTime ? new Date(firstSeg.departureTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "08:00",
-        arrival: lastSeg?.arrivalTime ? new Date(lastSeg.arrivalTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "10:30",
-        duration: firstSlice?.duration?.replace("PT", "").toLowerCase() || "2h 30m",
+        departure: firstSeg?.departureTime ? new Date(firstSeg.departureTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "",
+        arrival: lastSeg?.arrivalTime ? new Date(lastSeg.arrivalTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "",
+        duration: firstSlice?.duration?.replace("PT", "").toLowerCase() || "",
         stops: Math.max(0, segments.length - 1),
-        baggage: "15 kg check-in · 7 kg cabin",
+        baggage: "Baggage details unavailable",
         price,
         baseFare,
         taxes,
         currency: "INR" as const,
         provider: "Duffel Live Inventory",
         mode: "LIVE" as const,
-        refundable: true,
+        refundable: undefined,
         cabin: params.cabin || "Economy",
         cabinClass: params.cabin || "Economy",
-        seatsAvailable: 9,
+        seatsAvailable: undefined,
         segments,
-        fareRules: {
-          cancellationFee: 2500,
-          changeFee: 1500,
-        },
       };
     });
   }
@@ -387,33 +390,35 @@ export class DuffelFlightProvider implements FlightProvider {
       body: JSON.stringify({ data: orderData }),
     });
 
-    const pnr = order.booking_reference || `WY${crypto.randomUUID().slice(0, 4).toUpperCase()}`;
-    const ticketNumber = order.documents?.[0]?.unique_identifier || `098-${Date.now().toString().slice(-10)}`;
+    const pnr = order.booking_reference || "";
+    const ticketNumber = order.documents?.[0]?.unique_identifier || "";
 
     return {
       success: true,
       bookingId: order.id,
       pnr,
-      bookingReference: `WY-${pnr}`,
+      bookingReference: pnr ? `WY-${pnr}` : order.id,
       ticketNumber,
       status: "CONFIRMED",
       amount: Math.round(Number(order.total_amount)),
       currency: "INR",
-      airline: "Airline Partner",
+      airline: "",
       segments: [],
       passengers: params.passengers,
-      message: "Flight booked successfully via Duffel API.",
+      message: pnr || ticketNumber
+        ? "Flight booking confirmed by the live supplier."
+        : "Supplier order created, but no PNR or ticket document was returned.",
     };
   }
 
   async cancelBooking(pnr: string, reason?: string): Promise<FlightCancellationResult> {
     return {
-      success: true,
-      cancellationReference: `CNX-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-      refundAmount: 4500,
-      cancellationFee: 2500,
-      status: "CANCELLED",
-      message: `Flight booking ${pnr} cancelled. Refund will be credited per airline policy.`,
+      success: false,
+      cancellationReference: "",
+      refundAmount: 0,
+      cancellationFee: 0,
+      status: "REFUND_PENDING",
+      message: "Live supplier cancellation is not implemented for this provider.",
     };
   }
 
@@ -426,7 +431,7 @@ export class DuffelFlightProvider implements FlightProvider {
 // 2. High-Fidelity Compliant Test Flight Provider
 // --------------------------------------------------------------------------
 export class CompliantTestFlightProvider implements FlightProvider {
-  readonly name = "Wayora Flight Test Engine";
+  readonly name = "Zelevos Flight Test Engine";
   readonly mode: "DEMO" | "LIVE" = "DEMO";
 
   private readonly testBookings = new Map<string, FlightBookingConfirmation>();
@@ -774,6 +779,14 @@ export class CompliantTestFlightProvider implements FlightProvider {
 export function getFlightProvider(): FlightProvider {
   const providerType = (process.env.FLIGHT_PROVIDER || "").toLowerCase().trim();
   const apiKey = (process.env.FLIGHT_PROVIDER_API_KEY || process.env.DUFFEL_ACCESS_TOKEN || "").trim();
+
+  if (providerType === "ignav" || getIgnavConfig().apiKey) {
+    return new IgnavFlightProvider();
+  }
+
+  if (providerType === "tbo") {
+    throw new Error("TBO flight supplier is not configured. Add approved TBO API access and credentials before enabling production flights.");
+  }
 
   if (process.env.NODE_ENV === "production" && !apiKey) {
     throw new Error("Flight provider not configured. Set FLIGHT_PROVIDER_API_KEY or DUFFEL_ACCESS_TOKEN before enabling production mode.");

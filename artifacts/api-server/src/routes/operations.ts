@@ -51,7 +51,7 @@ router.post("/concierge", requireAuth, async (req, res): Promise<void> => {
     const result = await generateGeminiText([
       {
         role: "user",
-        content: "You are Wayora's trip-aware concierge. Be concise, practical, and transparent that demo bookings are not live. Use the supplied trip context, never invent booking confirmations, and ask for approval before consequential changes.",
+        content: "You are Zelevos's trip-aware concierge. Be concise, practical, and transparent that demo bookings are not live. Use the supplied trip context, never invent booking confirmations, and ask for approval before consequential changes.",
       },
       {
         role: "user",

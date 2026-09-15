@@ -345,7 +345,7 @@ export function FlightBookingModal({
             key: orderData.keyId,
             amount: orderData.amountSubunits,
             currency: orderData.currency,
-            name: "Wayora Flights",
+            name: "Zelevos Flights",
             description: `${flight.airline} ${flight.flightNumber} · ${flight.from} to ${flight.to}`,
             order_id: orderData.orderId,
             prefill: {
@@ -757,7 +757,7 @@ export function FlightBookingModal({
                   <div style={{ position: "relative" }}>
                     <input
                       type="email"
-                      placeholder="traveller@wayora.com"
+                      placeholder="traveller@zelevos.com"
                       value={contact.email}
                       onChange={(e) => setContact({ ...contact, email: e.target.value })}
                       style={{ width: "100%", height: "38px", border: "1px solid var(--border)", borderRadius: "6px", padding: "0 10px", background: "white", fontSize: "11px" }}
@@ -997,7 +997,7 @@ export function FlightBookingModal({
                 Flight Confirmed! E-Ticket Issued
               </h3>
               <p style={{ margin: 0, color: "var(--muted)", fontSize: "12px" }}>
-                Your airline reservation has been confirmed and saved to your Wayora account.
+                Your airline reservation has been confirmed and saved to your Zelevos account.
               </p>
             </div>
 
