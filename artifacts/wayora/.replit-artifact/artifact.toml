@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Wayora Travel OS"
+description = "A cinematic AI travel operating system prototype that turns travel intent into a coordinated trip, with frontend-only interactions for planning, monitoring, re-planning, marketplace discovery, wallet, and concierge support."
+version = "1.0.0"
+id = "artifacts/wayora"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19313
+
+[services.development]
+run = "pnpm --filter @workspace/wayora run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/wayora", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/wayora/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19313"
+BASE_PATH = "/"

@@ -1,0 +1,1905 @@
+You are a senior product designer, creative frontend engineer and interaction designer.
+
+Build WAYORA — The AI Travel Operating System.
+
+This is NOT a generic travel booking website.
+
+This must feel like a world-class technology product where travel, AI, premium editorial design and intelligent automation come together.
+
+PRIMARY PRODUCT IDEA:
+
+"Existing travel companies help you book a trip.
+Wayora helps you make the entire trip happen."
+
+WAYORA should immediately communicate:
+
+WAYORA IS NOT JUST A BOOKING WEBSITE.
+WAYORA IS AN AI TRAVEL OPERATING SYSTEM.
+
+
+============================================================
+0. NON-NEGOTIABLE TECHNICAL REQUIREMENTS
+============================================================
+
+Build using:
+
+- React.js
+- Vite
+- Framer Motion
+- Lucide React icons
+- Modern CSS / CSS modules where appropriate
+- Component-based architecture
+- Responsive design
+- Semantic HTML
+- Accessible interactions
+
+DO NOT use:
+- backend
+- database
+- authentication backend
+- real payments
+- real booking APIs
+- real AI APIs
+- real flight APIs
+- real hotel APIs
+
+Everything must use realistic mock data and frontend state.
+
+The frontend should LOOK production-ready even though the functionality is mocked.
+
+
+============================================================
+1. DESIGN PHILOSOPHY
+============================================================
+
+The visual language should feel like:
+
+Apple
+×
+Airbnb
+×
+Stripe
+×
+Linear
+×
+premium travel editorial
+×
+modern AI
+
+But DO NOT copy any of these brands.
+
+Create a unique Wayora identity.
+
+The design should feel:
+
+- premium
+- cinematic
+- intelligent
+- calm
+- trustworthy
+- sophisticated
+- minimal
+- futuristic without looking sci-fi
+- editorial
+- spacious
+- extremely polished
+
+
+PRIMARY COLORS:
+
+Wayora Blue
+Deep Navy
+White
+Soft Sky Blue
+Very subtle Cyan
+
+Avoid:
+- excessive gradients
+- neon overload
+- excessive glassmorphism
+- colorful tourism-template aesthetics
+- cheap cards
+- excessive rounded corners
+- generic SaaS dashboards
+
+
+============================================================
+2. MOST IMPORTANT REQUIREMENT
+3D-LIKE CINEMATIC SCROLL STORYTELLING
+============================================================
+
+THIS IS THE MOST IMPORTANT PART OF THE WEBSITE.
+
+Do NOT create a normal page where images simply appear while scrolling.
+
+The images themselves must become part of the storytelling.
+
+The website should feel like the user is physically moving through a travel experience.
+
+
+HERO IMAGE BEHAVIOR:
+
+At the top:
+
+A beautiful full-screen cinematic destination image occupies the entire viewport.
+
+Hero image:
+
+width: 100vw
+height: 100vh
+
+The image must feel immersive.
+
+When the user begins scrolling:
+
+DO NOT immediately hide the image.
+
+Instead:
+
+1. Image remains pinned.
+2. Image slowly zooms.
+3. Image subtly shifts position.
+4. Hero text begins moving upward.
+5. Hero text slowly fades.
+6. AI input slightly moves and fades.
+7. Image begins transforming from fullscreen into a premium rounded visual.
+8. Image gradually becomes smaller.
+9. Image moves toward the position of the next destination section.
+10. Image transitions visually into the next storytelling section.
+
+IMPORTANT:
+
+There must NEVER be a large ugly empty area on the left or right while the image is shrinking.
+
+The animation must always maintain visual balance.
+
+The image should feel like:
+
+FULLSCREEN IMAGE
+↓
+CINEMATIC ZOOM
+↓
+CONTROLLED RESIZE
+↓
+ROUNDED IMAGE
+↓
+DESTINATION CARD
+↓
+NEXT STORY SECTION
+
+
+Use:
+
+Framer Motion
+useScroll
+useTransform
+useSpring
+Motion values
+
+Use scroll progress to control:
+
+- scale
+- width
+- height
+- x
+- y
+- border radius
+- opacity
+- overlay intensity
+- text position
+- text opacity
+
+
+Do NOT use random timers for scroll animations.
+
+
+============================================================
+3. IMAGE-TO-SECTION MORPHING
+============================================================
+
+The transition must feel like the image is physically traveling into the next section.
+
+Example:
+
+Hero:
+
+FULL SCREEN KASHMIR
+
+User scrolls.
+
+The image starts shrinking.
+
+Instead of disappearing:
+
+the image becomes a rounded cinematic card.
+
+The card moves toward the next section.
+
+The next section introduces:
+
+"Kashmir, your way."
+
+This creates the illusion that the SAME travel image has traveled from the hero into the destination story.
+
+This is extremely important.
+
+
+============================================================
+4. HERO
+============================================================
+
+Create a full-screen cinematic hero.
+
+Headline:
+
+"Tell Wayora where you want to go.
+We’ll figure out the rest."
+
+Supporting copy:
+
+"Flights. Hotels. Experiences. Everything.
+One intelligent travel operating system."
+
+Hero image:
+
+Use high-quality cinematic destination photography.
+
+Do not use generic stock-looking travel images.
+
+The hero should have:
+
+- subtle dark cinematic overlay
+- readable typography
+- elegant AI input
+- voice button
+- send button
+- destination chips
+- subtle animation
+
+
+AI INPUT:
+
+Placeholder:
+
+"I have ₹70,000. Take me somewhere beautiful from Pune for 5 days in October…"
+
+
+Include:
+
+- AI sparkle
+- typing animation
+- microphone
+- send button
+- suggested prompts
+- destination chips
+
+
+Chips:
+
+Kashmir
+Goa
+Kerala
+Rajasthan
+Bali
+
+
+CLICK INTERACTION:
+
+When a user clicks a destination chip:
+
+Do NOT navigate away.
+
+Animate the chip into the AI input.
+
+Example:
+
+Kashmir clicked
+
+Input becomes:
+
+"Take me to Kashmir..."
+
+
+When Send is clicked:
+
+Show frontend-only AI thinking sequence:
+
+"Understanding your preferences…"
+
+then:
+
+"Finding the best options…"
+
+then:
+
+"Optimizing your budget…"
+
+then:
+
+"Building your trip…"
+
+
+Then reveal a beautiful mock AI result.
+
+
+============================================================
+5. NAVBAR
+============================================================
+
+Create a premium sticky navbar.
+
+Transparent over hero.
+
+After scrolling:
+
+transition smoothly into:
+
+white / translucent / blurred background.
+
+Navigation:
+
+WAYORA
+
+Home
+Trips
+Marketplace
+AI Planner
+Wallet
+More
+
+Right:
+
+Search
+Login
+Get Started
+
+
+Interactions:
+
+- smooth hover
+- active indicator
+- subtle underline/motion
+- dropdown
+- mobile menu
+- smooth background transition
+
+
+DO NOT make navbar visually heavy.
+
+
+============================================================
+6. SCROLL EXPERIENCE
+============================================================
+
+The website must feel alive.
+
+Implement:
+
+- scroll reveal
+- parallax
+- image zoom
+- image movement
+- image masking
+- text reveal
+- number animation
+- horizontal scrolling
+- sticky sections
+- progress indicators
+- spring transitions
+- staggered cards
+- section transitions
+
+
+IMPORTANT:
+
+Animations must be intentional.
+
+Never animate everything simultaneously.
+
+Use cinematic pacing.
+
+Some sections should move slowly.
+
+Some elements should remain still to create contrast.
+
+
+============================================================
+7. AI TRAVEL OS STORY
+============================================================
+
+Create a major storytelling section.
+
+Traditional travel:
+
+Dream
+↓
+Search
+↓
+Compare
+↓
+Book
+↓
+WhatsApp
+↓
+Manage everything manually
+
+
+Wayora:
+
+Intent
+↓
+AI understands
+↓
+Plans
+↓
+Books
+↓
+Monitors
+↓
+Re-plans
+↓
+Remembers
+
+
+Create an animated Trip Graph.
+
+The AI should be the central intelligence layer.
+
+Visual:
+
+AI node in the center.
+
+Connected travel nodes around it.
+
+Nodes:
+
+Intent
+Flights
+Hotels
+Transport
+Activities
+Budget
+Weather
+Concierge
+Emergency
+
+
+As user scrolls:
+
+- connection lines draw
+- nodes activate
+- cards appear
+- AI node pulses subtly
+- information flows toward the AI
+
+
+Do NOT make it look like a crypto network.
+
+Keep it elegant and minimal.
+
+
+============================================================
+8. 8 AI MODES
+============================================================
+
+Title:
+
+"Your trip has 8 modes.
+Wayora handles them all."
+
+Create:
+
+1. Explore
+"I want somewhere warm."
+
+2. Plan
+"Plan my trip."
+
+3. Compare
+"Goa or Bali?"
+
+4. Optimize
+"Make this ₹15,000 cheaper."
+
+5. Surprise Me
+"Plan something I wouldn't choose."
+
+6. Execute
+"Book it."
+
+7. Concierge
+"There’s a problem at the hotel."
+
+8. Emergency
+"My flight was cancelled."
+
+
+Cards should feel premium.
+
+Hover:
+
+- slight image movement
+- card elevation
+- icon animation
+- subtle glow
+- text shift
+
+
+Click:
+
+Expand the card.
+
+Show:
+
+- sample conversation
+- AI response
+- relevant destination image
+- supporting UI
+- animated details
+
+
+Frontend only.
+
+
+============================================================
+9. AI TRIP PLANNER
+============================================================
+
+Create a premium AI planner.
+
+Input:
+
+"₹70,000, from Pune, 5 days in October, no crowded tourist places."
+
+
+Processing animation.
+
+Then show:
+
+TRIP A
+Kerala
+₹67,800
+
+TRIP B
+Udaipur + Mount Abu
+₹62,400
+
+TRIP C
+Goa Hidden Beaches
+₹69,200
+
+
+Each card:
+
+- cinematic image
+- destination
+- price
+- duration
+- budget indicator
+- recommendation reason
+- experience tags
+- View Trip
+
+
+Cards must have:
+
+- image zoom on hover
+- subtle tilt
+- floating price
+- animated CTA
+- save interaction
+
+
+============================================================
+10. TRIP OS DASHBOARD
+============================================================
+
+Create:
+
+"Your Trip OS"
+
+
+Example:
+
+KASHMIR
+Oct 12 – Oct 18
+
+
+Trip Health
+94%
+
+
+Budget:
+
+₹63,420 / ₹70,000
+
+
+Status:
+
+✓ Flights
+✓ Hotel
+✓ Transport
+✓ Activities
+
+
+Include:
+
+- timeline
+- itinerary
+- map visual
+- hotel
+- flight
+- activities
+- weather
+- budget
+- AI Copilot
+
+
+Day selector should animate.
+
+Click Day 1
+→ itinerary changes.
+
+Click Day 2
+→ smooth transition.
+
+No hard page refresh.
+
+
+============================================================
+11. REAL-TIME TRIP MONITORING
+============================================================
+
+Create a cinematic simulation.
+
+Notification:
+
+"Your flight has been delayed by 2 hours."
+
+
+Then animate:
+
+Notification
+↓
+AI analysis
+↓
+Options
+
+
+Option 1:
+
+Rebook to 3:20 PM
+
+
+Option 2:
+
+Keep current flight + adjust hotel
+
+
+Option 3:
+
+Alternative route
+
+
+CTA:
+
+"Apply Best Option"
+
+
+Frontend simulation only.
+
+
+============================================================
+12. AI RE-PLANNING
+============================================================
+
+Create a before/after itinerary transformation.
+
+ORIGINAL:
+
+10:00 Fort
+13:00 Lunch
+15:00 Beach
+19:00 Dinner
+
+
+Then:
+
+"Rain detected"
+
+
+AI generates:
+
+11:00 Museum
+13:00 Local Lunch
+15:00 Spa
+18:00 Café
+20:00 Dinner
+
+
+Additional cost:
+
+₹1,200
+
+
+Animation:
+
+Old itinerary should visually transform into the new itinerary.
+
+Do not simply replace the entire list instantly.
+
+Use layout animations / AnimatePresence / motion transitions.
+
+
+============================================================
+13. BUDGET INTELLIGENCE
+============================================================
+
+Create:
+
+WAYORA BUDGET ENGINE
+
+
+Flights
+₹22,000
+
+Hotel
+₹18,000
+
+Food
+₹8,000
+
+Transport
+₹6,000
+
+Experiences
+₹10,000
+
+Buffer
+₹6,000
+
+
+Total:
+
+₹70,000
+
+
+Trip Confidence:
+
+91%
+
+
+Visuals:
+
+- animated circular progress
+- animated numbers
+- spending bars
+- elegant charts
+- category breakdown
+- remaining budget
+
+
+Financial UI should feel like premium fintech.
+
+Not like an Excel dashboard.
+
+
+============================================================
+14. PRICE INTELLIGENCE
+============================================================
+
+Create:
+
+WAYORA PRICE SCORE
+
+
+₹18,500
+
+
+Market Average:
+
+₹20,100
+
+
+Score:
+
+92/100
+
+
+Saving:
+
+₹1,600
+
+
+Add animated price graph.
+
+Graph should draw itself when section enters viewport.
+
+
+============================================================
+15. TRUST & SAFETY
+============================================================
+
+Title:
+
+"Travel with confidence."
+
+
+Create:
+
+Trust Score
+94/100
+
+Trip Risk
+Low
+
+Weather Risk
+Low
+
+Cancellation Risk
+Low
+
+Supplier Reliability
+High
+
+
+Also:
+
+Document reminders.
+
+Use calm visual indicators.
+
+Avoid scary red-heavy dashboards.
+
+
+============================================================
+16. MARKETPLACE
+============================================================
+
+Create premium travel marketplace.
+
+Categories:
+
+Stays
+Flights
+Trains
+Buses
+Cabs
+Guides
+Experiences
+Restaurants
+Attractions
+Events
+Wellness
+Adventure
+
+
+Cards:
+
+large cinematic images.
+
+On hover:
+
+image zoom
+image movement
+price floats
+rating appears
+location appears
+CTA animates
+
+
+Add favorite/save.
+
+Show:
+
+LOCAL HEROES
+
+
+"Meera — Jaipur Food & Culture Host"
+
+4-hour local food walk — ₹1,800
+
+
+"Arjun — Rajasthan Photographer"
+
+Sunrise couple photography — ₹3,500
+
+
+============================================================
+17. FROM VIDEO TO TRIP
+============================================================
+
+Title:
+
+"From Video to Trip"
+
+
+Flow:
+
+Watch Video
+↓
+Discover destination
+↓
+AI extracts places
+↓
+AI builds itinerary
+↓
+Book the trip
+
+
+Create a premium creator/video card.
+
+Large visual.
+
+Animated play button.
+
+When clicked:
+
+video-like interface opens.
+
+Then reveal:
+
+Destinations
+Activities
+Budget
+Duration
+
+
+CTA:
+
+"Plan this trip with Wayora"
+
+
+============================================================
+18. WAYORA CONCIERGE
+============================================================
+
+Premium travel membership feel.
+
+Title:
+
+"Need help?"
+
+
+Cards:
+
+AI Concierge
+Human Concierge
+Emergency Assistance
+
+
+Services:
+
+Medical Assistance
+Lost Passport
+Travel Disruption
+Local Support
+
+
+The section should feel premium and reassuring.
+
+
+============================================================
+19. WAYORA WALLET
+============================================================
+
+Create premium wallet.
+
+Available Balance:
+
+₹32,560
+
+
+Actions:
+
+Add Money
+Withdraw
+
+
+Recent Transactions:
+
+Hotel Booking
+Flight Booking
+Add Money
+
+
+Add:
+
+- spending chart
+- animated balance
+- transaction transitions
+- category breakdown
+
+
+Frontend only.
+
+
+============================================================
+20. WAYORA BUSINESS
+============================================================
+
+Create premium B2B section.
+
+Title:
+
+"Travel, managed like a business."
+
+
+Modules:
+
+Employees
+Trips
+Approvals
+Travel Policy
+Expenses
+Invoices
+GST
+Reports
+
+
+Create a corporate dashboard preview.
+
+It should look like a real enterprise SaaS product.
+
+
+============================================================
+21. IMAGE INTERACTION SYSTEM
+============================================================
+
+THIS IS A CORE FEATURE.
+
+Every major image should have intentional interaction.
+
+Implement:
+
+1. Scroll parallax
+
+2. Scroll scale
+
+3. Hover zoom
+
+4. Cursor-follow movement
+
+5. Image reveal mask
+
+6. Image clipping
+
+7. Slight 3D tilt
+
+8. Smooth image transitions
+
+9. Horizontal galleries
+
+10. Fullscreen lightbox
+
+11. Before/after image transitions
+
+12. Image-to-card morphing
+
+
+IMPORTANT:
+
+Do NOT overdo the effect.
+
+Images should feel expensive.
+
+Think:
+
+cinematic camera movement.
+
+Not:
+
+gaming website animation.
+
+
+============================================================
+22. CURSOR INTERACTION
+============================================================
+
+Desktop:
+
+Add subtle cursor interaction to selected premium elements.
+
+Examples:
+
+Destination cards:
+
+cursor movement slightly changes image position.
+
+CTA:
+
+subtle magnetic movement.
+
+AI button:
+
+slight cursor attraction.
+
+Do NOT apply magnetic effects to everything.
+
+
+============================================================
+23. AI COPILOT
+============================================================
+
+Bottom-right floating AI button.
+
+Minimal.
+
+Premium.
+
+Label:
+
+"Ask Wayora"
+
+
+Click:
+
+Expand into a beautiful floating chat panel.
+
+Animation:
+
+scale
+opacity
+translateY
+
+
+Opening suggestions:
+
+"What can I help you with today?"
+
+"Find cheaper flights"
+
+"Change my hotel"
+
+"Show my itinerary"
+
+"What should I do today?"
+
+"Optimize my trip"
+
+
+Frontend mock interaction.
+
+
+============================================================
+24. MICRO INTERACTIONS
+============================================================
+
+Every interactive component needs feedback.
+
+Implement:
+
+- hover states
+- active states
+- focus states
+- button press
+- card elevation
+- icon animation
+- loading skeleton
+- AI thinking animation
+- progress animation
+- toast
+- save/favorite animation
+- modal transitions
+- accordion
+- tabs
+- bottom sheets
+- page transitions
+
+
+Use spring-based motion where appropriate.
+
+
+============================================================
+25. MOBILE EXPERIENCE
+============================================================
+
+IMPORTANT:
+
+Do NOT simply shrink desktop.
+
+Create a dedicated mobile UX.
+
+Mobile:
+
+- bottom navigation
+- swipe cards
+- horizontal destination carousel
+- full-screen AI planner
+- swipe itinerary
+- mobile timeline
+- floating copilot
+- bottom sheets
+- touch-friendly buttons
+
+
+Bottom navigation:
+
+Home
+Trips
+Explore
+Wallet
+Profile
+
+
+Hero image must still have cinematic scroll behavior on mobile.
+
+However:
+
+Reduce animation complexity on smaller devices.
+
+Never cause:
+
+- horizontal overflow
+- layout jumps
+- overlapping text
+- tiny buttons
+- inaccessible controls
+
+
+============================================================
+26. RESPONSIVE BREAKPOINTS
+============================================================
+
+Support:
+
+small mobile
+large mobile
+tablet
+laptop
+desktop
+large desktop
+
+
+Test:
+
+375px
+390px
+430px
+768px
+1024px
+1280px
+1440px
+1920px
+
+
+Everything should remain visually intentional.
+
+
+============================================================
+27. TYPOGRAPHY
+============================================================
+
+Use a premium modern sans-serif.
+
+Typography hierarchy:
+
+Hero:
+very large
+
+Section titles:
+large
+
+Supporting copy:
+short and readable
+
+Numbers:
+strong and prominent
+
+Labels:
+small uppercase with tracking
+
+
+Never overcrowd a section.
+
+
+============================================================
+28. PAGE ARCHITECTURE
+============================================================
+
+Create reusable React components.
+
+Suggested structure:
+
+src/
+    components/
+        Navbar
+        Hero
+        AIInput
+        DestinationCard
+        ExperienceCard
+        TripCard
+        BookingCard
+        BudgetCard
+        PriceScore
+        TrustScore
+        Timeline
+        Itinerary
+        MapCard
+        TripGraph
+        AIChat
+        Modal
+        BottomSheet
+        Toast
+        Carousel
+        DashboardCard
+        StatCard
+        Footer
+
+    sections/
+        HeroSection
+        TravelOSSection
+        AIModesSection
+        PlannerSection
+        TripOSSection
+        MonitoringSection
+        ReplanningSection
+        BudgetSection
+        PriceSection
+        TrustSection
+        MarketplaceSection
+        CreatorSection
+        ConciergeSection
+        WalletSection
+        BusinessSection
+
+    data/
+        destinations.js
+        trips.js
+        experiences.js
+        mockAI.js
+
+    hooks/
+        useScrollProgress.js
+        useMouseParallax.js
+        useMediaQuery.js
+
+    App.jsx
+    main.jsx
+    styles/
+
+
+Keep components reusable.
+
+Do not put the entire website into one giant component.
+
+
+============================================================
+29. PERFORMANCE
+============================================================
+
+Rich animation must NOT destroy performance.
+
+Use:
+
+- transform instead of layout-heavy animation
+- opacity
+- scale
+- translate
+- GPU-friendly properties
+- lazy images
+- responsive image sizes
+- loading placeholders
+- avoid unnecessary rerenders
+- avoid infinite animation loops
+- respect prefers-reduced-motion
+
+
+For reduced motion:
+
+Disable or simplify:
+
+- parallax
+- cursor effects
+- large transitions
+
+Content must still remain fully usable.
+
+
+============================================================
+30. ACCESSIBILITY
+============================================================
+
+Implement:
+
+- semantic HTML
+- keyboard navigation
+- visible focus states
+- aria-labels
+- accessible buttons
+- readable contrast
+- alt text
+- reduced-motion support
+
+
+Do not sacrifice accessibility for animation.
+
+
+============================================================
+31. IMAGE LOADING
+============================================================
+
+Images are critical.
+
+Use high-quality destination imagery.
+
+Implement:
+
+- lazy loading
+- blur/placeholder loading
+- smooth image reveal
+- object-position control
+- responsive sizing
+
+
+Never show broken image icons.
+
+If remote images fail:
+
+use graceful fallback gradients/placeholders.
+
+
+============================================================
+32. NAVIGATION / PAGE EXPERIENCE
+============================================================
+
+Build the complete frontend product experience:
+
+1. Home
+2. AI Trip Planner
+3. Explore Destinations
+4. Trips
+5. Trip Details
+6. Marketplace
+7. Experiences
+8. Wallet
+9. Concierge
+10. Business
+11. Login UI
+12. Signup UI
+13. Profile
+14. Help / Support
+
+
+All pages must use the same Wayora design system.
+
+
+============================================================
+33. MOCK INTERACTIONS
+============================================================
+
+Even without backend, the website should feel functional.
+
+Buttons can:
+
+- open modals
+- update local state
+- change tabs
+- expand cards
+- show mock loading
+- update mock itinerary
+- change selected destination
+- simulate AI responses
+- show toast notifications
+- open drawers
+- open bottom sheets
+- navigate between frontend routes
+
+
+Never leave important buttons completely dead.
+
+
+============================================================
+34. PREMIUM TRANSITION SYSTEM
+============================================================
+
+Page sections should not feel like separate blocks.
+
+Create visual continuity.
+
+Example:
+
+Hero image
+→
+destination image
+→
+trip card
+→
+itinerary
+→
+marketplace
+
+
+Use shared:
+
+- image language
+- typography
+- spacing
+- motion curves
+- border radii
+- shadows
+
+
+The user should feel like they are moving through ONE PRODUCT.
+
+
+============================================================
+35. SCROLL CHOREOGRAPHY
+============================================================
+
+Create different scroll behaviors for different sections.
+
+SECTION A:
+
+Hero
+
+Sticky cinematic image.
+
+SECTION B:
+
+Image morphs into destination card.
+
+SECTION C:
+
+Trip Graph draws itself.
+
+SECTION D:
+
+AI modes reveal one-by-one.
+
+SECTION E:
+
+Planner cards slide horizontally.
+
+SECTION F:
+
+Trip OS dashboard becomes interactive.
+
+SECTION G:
+
+Budget numbers count upward.
+
+SECTION H:
+
+Price graph draws.
+
+SECTION I:
+
+Marketplace cards parallax.
+
+SECTION J:
+
+Creator video transitions into itinerary.
+
+SECTION K:
+
+Concierge cards appear.
+
+SECTION L:
+
+Wallet dashboard reveals.
+
+SECTION M:
+
+Business dashboard enters.
+
+
+The page should feel like a cinematic product demo.
+
+
+============================================================
+36. ANIMATION QUALITY
+============================================================
+
+Use premium motion.
+
+Preferred:
+
+easeOut
+easeInOut
+spring
+
+Avoid:
+
+linear robotic animations
+extreme bouncing
+overly fast transitions
+random rotations
+constant floating
+
+
+Animation duration guidelines:
+
+micro:
+150–250ms
+
+UI:
+250–450ms
+
+section:
+500–900ms
+
+cinematic:
+900–1600ms
+
+
+Scroll-driven animations can be longer.
+
+
+============================================================
+37. IMPORTANT DESIGN RULE
+============================================================
+
+DO NOT CREATE:
+
+"Hero + cards + footer"
+
+and call it a finished website.
+
+This is not a generic landing page.
+
+The entire website is a STORY.
+
+Every section must answer:
+
+"What is Wayora doing for the traveler?"
+
+
+============================================================
+38. VISUAL HIERARCHY
+============================================================
+
+Every viewport should have:
+
+ONE primary focal point.
+
+Do not make every card compete.
+
+Use:
+
+large imagery
+strong typography
+negative space
+controlled contrast
+
+
+============================================================
+39. FINAL HOME PAGE FLOW
+============================================================
+
+The homepage should approximately flow like this:
+
+NAVBAR
+
+↓
+
+FULLSCREEN CINEMATIC HERO
+
+"Tell Wayora where you want to go."
+
+↓
+
+SCROLL
+
+Hero image zooms and moves
+
+↓
+
+Hero text fades
+
+↓
+
+Image transforms into rounded destination visual
+
+↓
+
+"THE WAYORA DIFFERENCE"
+
+"Inspiration becomes an actual trip."
+
+↓
+
+TRIP GRAPH
+
+Traditional Travel vs Wayora
+
+↓
+
+8 AI MODES
+
+↓
+
+AI TRIP PLANNER
+
+↓
+
+TRIP OS
+
+↓
+
+REAL-TIME MONITORING
+
+↓
+
+AI RE-PLANNING
+
+↓
+
+BUDGET INTELLIGENCE
+
+↓
+
+PRICE INTELLIGENCE
+
+↓
+
+TRUST & SAFETY
+
+↓
+
+MARKETPLACE
+
+↓
+
+FROM VIDEO TO TRIP
+
+↓
+
+CONCIERGE
+
+↓
+
+WALLET
+
+↓
+
+BUSINESS
+
+↓
+
+FINAL BRAND STATEMENT
+
+"WAYORA IS NOT A BOOKING WEBSITE."
+
+↓
+
+PREMIUM FOOTER
+
+
+============================================================
+40. FINAL FOOTER
+============================================================
+
+Create multi-column footer.
+
+EXPLORE:
+
+Destinations
+Holidays
+Experiences
+Pilgrimage
+
+
+BOOK:
+
+Flights
+Hotels
+Buses
+Cabs
+Activities
+
+
+PLAN:
+
+AI Trip Planner
+Custom Trips
+Travel Insurance
+Visa Assistance
+
+
+BUSINESS:
+
+Corporate Travel
+Group Travel
+Travel Partners
+
+
+SUPPORT:
+
+Manage Booking
+Help Centre
+24/7 Travel Assistance
+
+
+Include:
+
+Wayora logo
+social icons
+app download
+newsletter
+legal links
+
+
+============================================================
+41. FINAL QUALITY CHECK
+============================================================
+
+Before finishing, inspect the website like a senior product designer.
+
+Check:
+
+Is it premium?
+
+Does it feel like an AI Travel OS?
+
+Does the hero immediately communicate the product?
+
+Does scrolling feel cinematic?
+
+Does the hero image actually transform instead of simply disappearing?
+
+Does the image transition into the next section?
+
+Is there any ugly empty space?
+
+Are animations smooth?
+
+Are cards too generic?
+
+Are sections visually connected?
+
+Does mobile feel intentionally designed?
+
+Are interactions responsive?
+
+Are buttons functional through mock state?
+
+Are loading states polished?
+
+Are images high quality?
+
+Is typography clean?
+
+Is whitespace generous?
+
+Is the interface trustworthy?
+
+Does anything look like a cheap template?
+
+If YES:
+
+fix it before completing.
+
+
+============================================================
+42. ABSOLUTE FINAL RULE
+============================================================
+
+DO NOT STOP AT A GENERIC LANDING PAGE.
+
+Build a complete, highly polished frontend prototype.
+
+The user should be able to scroll for several minutes and continuously discover new interactions.
+
+The experience should feel like:
+
+A cinematic travel film
++
+a premium SaaS product
++
+an intelligent AI assistant
++
+a modern travel operating system.
+
+
+The final emotional reaction should be:
+
+"THIS IS NOT JUST A TRAVEL WEBSITE."
+
+"THIS FEELS LIKE THE FUTURE OF TRAVEL."
+
+
+Build it now.
+Do not ask unnecessary questions.
+Make reasonable frontend-only decisions where details are unspecified.
+Prioritize visual quality, interaction quality, performance and responsive behavior.

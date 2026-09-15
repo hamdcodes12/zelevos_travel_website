@@ -1,0 +1,199 @@
+AUDIT AND VERIFY GEMINI API INTEGRATION
+
+The client has provided a Gemini API key.
+
+DO NOT ask me to expose the API key in chat or source code.
+
+First inspect the existing project and determine:
+
+1. Where Gemini is currently integrated.
+2. Whether the Gemini SDK/package is installed.
+3. Whether the backend/server has access to the Gemini API key.
+4. Whether the application is using:
+   GEMINI_API_KEY
+   or
+   GOOGLE_API_KEY
+5. Which Gemini model is currently configured.
+6. Whether the current model/API endpoint is valid.
+7. Whether the API key is actually being used by the running application.
+8. Whether there are authentication, quota, model, SDK, or environment-variable errors.
+
+IMPORTANT SECURITY RULE:
+
+NEVER put the Gemini API key directly inside React/Vite frontend code.
+
+NEVER use:
+
+const API_KEY = "..."
+
+inside frontend source files.
+
+The key must remain server-side.
+
+If the project does not already have a backend route for Gemini, create a secure server-side endpoint such as:
+
+POST /api/ai/chat
+
+The frontend should call:
+
+/api/ai/chat
+
+and the backend should call Gemini using the secret environment variable.
+
+================================================
+
+REPLIT SECRETS
+
+Use the Replit Secrets / Environment Variables panel.
+
+The secret name should be:
+
+GEMINI_API_KEY
+
+The value should be the client's Gemini API key.
+
+DO NOT print the actual secret in terminal logs, UI, source code, or error messages.
+
+================================================
+
+CREATE A SAFE TEST
+
+Create a temporary development-only endpoint:
+
+GET /api/ai/health
+
+It should test Gemini connectivity and return only something like:
+
+{
+  "configured": true,
+  "provider": "gemini",
+  "status": "connected",
+  "model": "CURRENT_CONFIGURED_MODEL"
+}
+
+If the key is missing:
+
+{
+  "configured": false,
+  "provider": "gemini",
+  "status": "missing_secret"
+}
+
+If authentication fails:
+
+{
+  "configured": true,
+  "provider": "gemini",
+  "status": "authentication_failed"
+}
+
+If quota/rate limit fails:
+
+{
+  "configured": true,
+  "provider": "gemini",
+  "status": "quota_or_rate_limit"
+}
+
+NEVER return the API key itself.
+
+================================================
+
+ACTUAL GEMINI TEST
+
+Perform one minimal server-side Gemini request:
+
+"Reply with exactly: WAYORA_GEMINI_OK"
+
+Verify that the server receives the expected response.
+
+Do not expose the key.
+
+Do not store the test response permanently.
+
+================================================
+
+WAYORA AI INTEGRATION
+
+After confirming Gemini works, connect it to the existing Wayora AI features.
+
+The AI should support:
+
+• AI Trip Planner
+• AI Travel Copilot
+• destination recommendations
+• itinerary generation
+• trip comparison
+• budget optimization
+• trip re-planning
+• travel questions
+• concierge-style assistance
+
+Keep the AI integration modular.
+
+Create something similar to:
+
+server/
+  services/
+    geminiService.js
+
+server/
+  routes/
+    ai.js
+
+The frontend should never communicate with Gemini using the secret key directly.
+
+================================================
+
+ERROR HANDLING
+
+Handle:
+
+401 / invalid key
+403 / permission issue
+429 / rate limit
+quota exceeded
+model unavailable
+network failure
+missing environment variable
+malformed response
+
+Return safe user-friendly errors.
+
+Never expose internal API credentials.
+
+================================================
+
+FINAL VERIFICATION
+
+After implementation:
+
+1. Restart the application.
+2. Verify GEMINI_API_KEY exists without printing its value.
+3. Call /api/ai/health.
+4. Perform the minimal Gemini test.
+5. Test the Wayora AI chat.
+6. Test the AI planner.
+7. Check browser console.
+8. Check server logs.
+9. Fix all integration errors.
+10. Confirm whether Gemini is genuinely connected.
+
+At the end report:
+
+GEMINI STATUS:
+CONNECTED / NOT CONNECTED
+
+MODEL:
+<model name>
+
+BACKEND:
+CONNECTED / NOT CONNECTED
+
+FRONTEND → BACKEND:
+WORKING / NOT WORKING
+
+AI TEST:
+PASS / FAIL
+
+If anything fails, give me the exact reason and fix it.

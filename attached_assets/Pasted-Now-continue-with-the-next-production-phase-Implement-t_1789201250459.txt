@@ -1,0 +1,62 @@
+Now continue with the next production phase.
+
+Implement these two things only:
+
+1. AUTOMATED REGRESSION TESTING
+- Add backend/API tests for:
+  - GET /api/ai/health
+  - Gemini connectivity
+  - AI proxy request
+  - AI planner request
+- Verify expected response structure.
+- Never expose GEMINI_API_KEY in tests, logs, browser, or client code.
+- Mock Gemini where appropriate for deterministic automated tests.
+- Keep one optional live Gemini smoke test for development/staging.
+- Add clear npm test commands.
+- Make sure all existing functionality continues working.
+
+2. GENERATED TRIP PERSISTENCE
+- Create a proper server-side persistence layer for generated AI trips.
+- When AI Planner generates an itinerary, allow the user to Save Trip.
+- Saved trip must include:
+  - destination
+  - dates/duration
+  - travellers
+  - budget
+  - preferences
+  - itinerary/day-wise activities
+  - estimated costs
+  - transport/hotel information if present
+  - AI-generated reasoning/recommendations
+  - createdAt
+  - updatedAt
+- Add APIs:
+  POST /api/trips
+  GET /api/trips
+  GET /api/trips/:id
+  PUT /api/trips/:id
+  DELETE /api/trips/:id
+- Connect frontend to these APIs.
+- Add a My Trips section/page.
+- Users should be able to:
+  Generate → Preview → Save → View → Edit → Delete.
+- Handle loading, empty, error and success states professionally.
+- Use the project's existing architecture and database if already configured.
+- Do NOT introduce unnecessary new technologies.
+- Keep Gemini integration server-side.
+- Do NOT change the existing premium Wayora UI/theme unnecessarily.
+
+IMPORTANT:
+Before coding, inspect the current project structure and existing database/auth setup.
+Reuse existing services, routes, components and models where possible.
+Do not duplicate functionality.
+After implementation, run the full test suite and manually verify:
+AI Planner → Generate itinerary → Save Trip → My Trips → Open Trip → Edit → Delete.
+
+At the end provide a concise implementation report with:
+- files changed
+- APIs added
+- database/schema changes
+- tests added
+- verification results
+- any remaining limitations

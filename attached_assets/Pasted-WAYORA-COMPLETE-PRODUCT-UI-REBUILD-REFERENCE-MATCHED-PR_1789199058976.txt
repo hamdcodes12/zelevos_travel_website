@@ -1,0 +1,1777 @@
+WAYORA — COMPLETE PRODUCT UI REBUILD
+REFERENCE-MATCHED PREMIUM AI TRAVEL OS
+
+IMPORTANT:
+Do NOT make another generic travel landing page.
+
+I am providing visual reference screenshots showing the exact type of product experience I want.
+
+I want you to rebuild the current Wayora website so it feels like a REAL, COMPLETE, PREMIUM AI TRAVEL OPERATING SYSTEM.
+
+Use the reference screenshots as the PRIMARY visual direction.
+
+The final website should feel like a combination of:
+
+• Premium travel platform
+• AI operating system
+• Modern fintech dashboard
+• High-end consumer app
+• Global travel-tech startup
+• AI assistant
+• Booking marketplace
+
+NOT a simple marketing website.
+
+========================================================
+01 — WAYORA PRODUCT DEFINITION
+========================================================
+
+Brand:
+
+WAYORA
+
+Tagline:
+
+Tell Wayora where you want to go.
+We'll figure out the rest.
+
+Positioning:
+
+THE AI TRAVEL OPERATING SYSTEM FOR INDIA
+
+Wayora is NOT just:
+
+• flight booking
+• hotel booking
+• travel chatbot
+• itinerary generator
+
+Wayora is a persistent AI layer that:
+
+• understands traveller intent
+• remembers preferences
+• plans trips
+• compares options
+• optimizes budget
+• simulates trips
+• books travel
+• monitors trips
+• detects disruptions
+• replans automatically
+• manages the journey
+• provides concierge support
+
+The PRD explicitly defines six connected products:
+
+1. Wayora AI
+2. Wayora Trips
+3. Wayora Marketplace
+4. Wayora Concierge
+5. Wayora Wallet
+6. Wayora Business
+
+All of them should feel connected through the Trip OS.
+
+========================================================
+02 — CRITICAL VISUAL REFERENCE
+========================================================
+
+The provided reference image is NOT inspiration only.
+
+Use it as the visual benchmark.
+
+The current website is too basic.
+
+Replace the current visual language with a much more sophisticated product system.
+
+REFERENCE CHARACTERISTICS:
+
+• White/light UI
+• Strong Wayora blue
+• Dense but clean information architecture
+• Real product screens
+• Mobile + desktop product thinking
+• Cards with useful information
+• Premium spacing
+• Clear hierarchy
+• Blue action states
+• Travel imagery
+• AI interface elements
+• Dashboards
+• Data visualization
+• Timelines
+• Booking interfaces
+• Status indicators
+• Maps
+• Budget charts
+• Risk scores
+• Price intelligence
+• AI recommendations
+
+The final result should look like a REAL PRODUCT that could be launched, not a concept landing page.
+
+========================================================
+03 — NEW BRAND COLOR SYSTEM
+========================================================
+
+REMOVE the current dark navy / teal-heavy visual system.
+
+Use this EXACT primary brand color:
+
+#214ECF
+
+Core palette:
+
+Primary:
+#214ECF
+
+Primary Dark:
+#173AA3
+
+Primary Light:
+#4A72E8
+
+White:
+#FFFFFF
+
+Background:
+#FFFFFF
+
+Soft Background:
+#F7F9FC
+
+Blue Surface:
+#EEF4FF
+
+Text:
+#101828
+
+Secondary Text:
+#667085
+
+Border:
+#D9E2F0
+
+Success:
+#16A36A
+
+Warning:
+#F59E0B
+
+Danger:
+#E5484D
+
+IMPORTANT:
+
+The website must be primarily:
+
+WHITE + #214ECF
+
+Do NOT bring back the previous dark-blue homepage.
+
+Dark colors can only appear in very small areas where necessary for contrast.
+
+Blue must be the recognizable Wayora brand color.
+
+========================================================
+04 — LOGO / BRAND
+========================================================
+
+Create a polished Wayora brand mark.
+
+Logo:
+
+Blue "W" / Wayora mark
+
+Wordmark:
+
+Wayora
+
+Use the brand blue.
+
+Logo should work on:
+
+• desktop
+• mobile
+• navbar
+• footer
+• app-style UI
+• dashboard
+
+========================================================
+05 — GLOBAL NAVIGATION
+========================================================
+
+Create a production-quality navigation system.
+
+Desktop:
+
+LEFT:
+Wayora logo
+
+CENTER:
+
+Home
+Trips
+Marketplace
+AI Planner
+Wallet
+More ▾
+
+RIGHT:
+
+Search
+Login
+Get Started
+
+Use a clean white navbar.
+
+Height:
+64–76px
+
+Sticky on scroll.
+
+Subtle bottom border.
+
+Active page:
+
+blue text + blue underline.
+
+"Get Started":
+
+#214ECF button.
+
+"Login":
+
+outlined blue button.
+
+Search:
+
+small circular/light-blue search button.
+
+MORE dropdown should contain:
+
+• Experiences
+• Concierge
+• Business
+• Travel Insurance
+• Help Centre
+• Settings
+
+========================================================
+06 — HOMEPAGE HERO
+========================================================
+
+Build the hero like the reference screenshot.
+
+Full-width cinematic travel visual.
+
+Use premium travel imagery:
+
+mountains
+lake
+traveller
+road
+Kashmir
+Goa
+Kerala
+Rajasthan
+Bali
+
+Hero content:
+
+Eyebrow:
+
+AI TRAVEL OS
+
+Main:
+
+Tell Wayora where you want to go.
+
+Second line:
+
+We'll figure out the rest.
+
+Make the second line blue.
+
+Description:
+
+Flights. Hotels. Experiences. Everything.
+In one intelligent travel system.
+
+Then create a large AI input.
+
+Placeholder:
+
+"I have ₹70,000. Take me somewhere beautiful from Pune for 5 days in October..."
+
+Input features:
+
+• AI sparkle
+• text input
+• microphone icon
+• send arrow
+• blue interaction
+• focus animation
+
+Below:
+
+Popular searches:
+
+Kashmir
+Goa
+Kerala
+Rajasthan
+Bali
+
+Clicking one must populate the AI planner.
+
+========================================================
+07 — QUICK SERVICES STRIP
+========================================================
+
+Immediately below hero create a horizontal service navigation.
+
+Items:
+
+AI Trip Planner
+Flights
+Hotels
+Transport
+Experiences
+Travel Insurance
+Wayora Wallet
+
+Each item:
+
+Icon
+Title
+Short description
+
+Example:
+
+AI Trip Planner
+Personalized trips in seconds
+
+Flights
+Best prices & flexible options
+
+Hotels
+Verified stays & real reviews
+
+Transport
+Local & private options
+
+Experiences
+Tours, activities & more
+
+Travel Insurance
+Stay protected
+
+Wayora Wallet
+Secure & seamless payments
+
+Hover:
+
+blue icon
+slight lift
+blue accent
+
+========================================================
+08 — POPULAR DESTINATIONS
+========================================================
+
+Create a premium destination discovery section.
+
+Title:
+
+Popular Destinations
+
+Subtitle:
+
+Handpicked destinations for your next adventure
+
+Cards:
+
+Kerala
+Kashmir
+Udaipur
+Goa
+Rajasthan
+
+Each card must contain:
+
+• cinematic image
+• category badge
+• destination
+• starting price
+• arrow
+• hover zoom
+• save icon
+
+Example:
+
+Kashmir
+
+From ₹58,000
+
+Cards should feel like travel products, NOT generic blog cards.
+
+========================================================
+09 — AI TRAVEL OS FEATURE PANEL
+========================================================
+
+Beside destination cards create a prominent panel:
+
+YOUR AI TRAVEL OS
+
+More than a booking platform.
+Your complete travel companion.
+
+Features:
+
+Personalized Recommendations
+Based on your preferences & past trips
+
+Real-time Trip Management
+Alerts, changes & 24/7 support
+
+Smart Budget Planner
+Get the best value, always
+
+Exclusive Deals
+Only on Wayora
+
+Include a beautiful AI assistant illustration / visual.
+
+CTA:
+
+Start Planning with AI →
+
+========================================================
+10 — EXPLORE BY CATEGORY
+========================================================
+
+Create horizontal category navigation.
+
+Categories:
+
+Stays
+Flights
+Trains
+Buses
+Cabs
+Experiences
+Attractions
+Restaurants
+Wellness
+Adventure
+More
+
+Each category has:
+
+• icon
+• label
+• hover
+• active blue state
+
+========================================================
+11 — AI PLANNER PRODUCT
+========================================================
+
+Create a REAL AI planner interface.
+
+Not just a form.
+
+User starts with:
+
+"What do you want?"
+
+Then AI asks intelligent questions.
+
+Destination known?
+
+YES / NO
+
+Dates
+
+Travellers
+
+Budget
+
+Preferences
+
+Then AI generates options.
+
+Example:
+
+₹70,000
+From Pune
+5 days
+October
+No crowded tourist places
+
+Generate:
+
+TRIP A
+Kerala
+₹67,800
+
+TRIP B
+Udaipur + Mount Abu
+₹62,400
+
+TRIP C
+Goa — hidden beaches
+₹69,200
+
+Add explanation:
+
+"I recommend Kerala because it fits your preference for nature, food and slower travel while staying within your budget."
+
+Every recommendation MUST have a reason.
+
+This is directly aligned with the PRD's Wayora AI flow and recommendation model.
+========================================================
+12 — WAYORA AI: 8 MODES
+========================================================
+
+Create a sophisticated AI interaction interface for the eight Wayora AI modes:
+
+01 Explore
+"I want somewhere warm."
+
+02 Plan
+"Plan my trip."
+
+03 Compare
+"Goa or Bali?"
+
+04 Optimize
+"Make this ₹15,000 cheaper."
+
+05 Surprise Me
+"Plan something I wouldn't choose."
+
+06 Execute
+"Book it."
+
+07 Concierge
+"There's a problem at the hotel."
+
+08 Emergency
+"My flight was cancelled."
+
+Use an interactive mode selector.
+
+Clicking a mode changes the example conversation and UI.
+
+========================================================
+13 — TRIP OS DASHBOARD
+========================================================
+
+This is VERY IMPORTANT.
+
+Create an actual Trip OS product screen.
+
+Title:
+
+YOUR TRIP IS ALIVE
+
+Trip:
+
+KASHMIR
+Oct 12 – Oct 18
+
+Trip Health:
+
+94%
+
+Budget:
+
+₹63,420 / ₹70,000
+
+Status:
+
+✓ Flights
+✓ Hotel
+✓ Transport
+✓ Activities
+
+Timeline:
+
+DAY 1
+DAY 2
+DAY 3
+DAY 4
+
+Activities:
+
+08:10
+Dawn shikara before the city wakes
+
+12:40
+Drive through the walnut groves
+
+18:30
+Tea with a family in Harwan
+
+Every activity should show:
+
+time
+location
+duration
+status
+travel time
+weather
+reservation state
+
+Make this look like a real app dashboard.
+
+========================================================
+14 — REAL-TIME TRIP MONITORING
+========================================================
+
+Create a Trip Monitoring interface.
+
+Show:
+
+Flight status
+
+IndiGo 6E 873
+
+PNQ → DPS
+
+Departure:
+10:45 AM
+
+Status:
+
+ON TIME
+
+Add animated route map.
+
+Timeline:
+
+Check-in completed
+Boarding
+Departure
+
+Include live monitoring indicators.
+
+========================================================
+15 — AUTOMATIC TRIP RE-PLANNING
+========================================================
+
+Create a sophisticated AI re-planning screen.
+
+Scenario:
+
+FLIGHT DELAYED
+
+or
+
+RAIN DETECTED
+
+Original plan:
+
+10:00 — Fort
+13:00 — Lunch
+15:00 — Beach
+19:00 — Dinner
+
+AI detects disruption.
+
+NEW PLAN:
+
+11:00 — Museum
+13:00 — Local lunch
+15:00 — Spa
+18:00 — Café
+20:00 — Dinner
+
+Estimated additional cost:
+
+₹1,200
+
+Buttons:
+
+Apply Best Option
+
+Keep Current Plan
+
+View Alternatives
+
+Make the UI clearly show:
+
+PROBLEM
+→ AI ANALYSIS
+→ OPTIONS
+→ USER APPROVAL
+→ UPDATED ITINERARY
+
+========================================================
+16 — TRIP SIMULATOR
+========================================================
+
+Create a "before booking" simulator.
+
+Title:
+
+SIMULATE YOUR TRIP
+
+Wayora checks:
+
+✓ realistic travel times
+✓ sufficient rest
+✓ no overlapping bookings
+✓ affordable transport
+✓ reasonable activity density
+
+Show:
+
+Visual itinerary
+Map
+Cost estimate
+
+Button:
+
+Start Trip Simulation
+
+========================================================
+17 — SMART BUDGET ENGINE
+========================================================
+
+Create a financial dashboard.
+
+Trip budget:
+
+₹70,000
+
+Breakdown:
+
+Flights
+₹22,000
+
+Hotel
+₹18,000
+
+Food
+₹8,000
+
+Transport
+₹6,000
+
+Experiences
+₹10,000
+
+Buffer
+₹6,000
+
+Total:
+₹70,000
+
+Trip Confidence:
+
+91%
+
+Add beautiful donut / ring visualization.
+
+Use #214ECF as the primary visualization color.
+
+========================================================
+18 — PRICE INTELLIGENCE
+========================================================
+
+Create a Price Intelligence dashboard.
+
+Example:
+
+Bali (DPS)
+
+Current Price:
+
+₹18,500
+
+Market Average:
+
+₹20,100
+
+Wayora Price Score:
+
+92/100
+
+Saving:
+
+₹1,600
+
+Add:
+
+Best Time to Book
+
+Price trend graph
+
+Similar flights
+
+IndiGo
+₹32,450
+
+Air India
+₹34,200
+
+Vistara
+₹36,500
+
+Create a clean data visualization.
+
+========================================================
+19 — TRAVEL RISK + TRUST SCORE
+========================================================
+
+Create a Travel Safety dashboard.
+
+Trust Score:
+
+8.7 / 10
+
+Risk:
+
+LOW
+
+Risk factors:
+
+Health & Safety
+LOW RISK
+
+Political Stability
+LOW RISK
+
+Weather
+MODERATE
+
+Natural Disasters
+LOW
+
+Emergency Assistance:
+
+Medical Assistance
+Lost Passport
+Travel Disruption
+Local Support
+
+Also create supplier trust scoring.
+
+Example:
+
+Sample Hotel
+
+94 / 100
+
+Factors:
+
+Cancellation rate
+Complaints
+Response time
+Booking reliability
+Review quality
+Refund performance
+Verification
+Price accuracy
+
+========================================================
+20 — MARKETPLACE
+========================================================
+
+Create a full Wayora Marketplace.
+
+Categories:
+
+Stays
+Flights
+Trains
+Buses
+Cabs
+Guides
+Experiences
+Restaurants
+Attractions
+Events
+Wellness
+Adventure
+Insurance
+Travel Gear
+
+Marketplace should feel like a premium commerce platform.
+
+Include:
+
+filters
+search
+sort
+cards
+ratings
+pricing
+availability
+save
+book
+
+========================================================
+21 — LOCAL HERO MARKETPLACE
+========================================================
+
+Create "Local Heroes".
+
+Examples:
+
+Meera
+Jaipur Food & Culture Host
+
+4-hour local food walk
+
+₹1,800
+
+Arjun
+Rajasthan Photographer
+
+Sunrise couple photography
+
+₹3,500
+
+Cards should include:
+
+profile
+rating
+location
+experience
+price
+availability
+Book Now
+
+========================================================
+22 — CREATOR TO TRIP
+========================================================
+
+Create a creator-driven travel experience.
+
+Scenario:
+
+User watches:
+
+"7 Hidden Places in Meghalaya"
+
+CTA:
+
+Plan this trip with Wayora
+
+AI extracts:
+
+destinations
+activities
+budget
+duration
+
+Then generates a bookable itinerary.
+
+This should visually demonstrate:
+
+CONTENT
+→ AI EXTRACTION
+→ TRIP
+→ BOOKING
+
+========================================================
+23 — WAYORA CONCIERGE
+========================================================
+
+Create:
+
+AI + HUMAN CONCIERGE
+
+24/7 Support
+
+Actions:
+
+Chat with AI
+Call Concierge
+Live Agent
+
+Emergency assistance:
+
+Medical Assistance
+Lost Passport
+Travel Disruption
+Local Support
+
+Make this feel premium and trustworthy.
+
+========================================================
+24 — WAYORA WALLET
+========================================================
+
+Create a real Wallet interface.
+
+Show:
+
+Available Balance
+
+₹32,560
+
+Actions:
+
+Add Money
+Withdraw
+
+Recent Transactions:
+
+Hotel Booking
+- ₹14,500
+
+Flight Booking
+- ₹22,000
+
+Add Money
++ ₹50,000
+
+Also show:
+
+trip budget
+committed amount
+spent amount
+forecasted spend
+
+========================================================
+25 — WAYORA BUSINESS
+========================================================
+
+Create a corporate travel dashboard.
+
+Wayora Business
+
+Corporate Travel Management
+
+Modules:
+
+Employees
+Trips
+Approvals
+Travel Policy
+Expenses
+Invoices
+GST
+Reports
+
+Show:
+
+Total bookings
+Total spend
+Employees
+Pending approvals
+
+Add corporate booking workflow.
+
+========================================================
+26 — REVIEWS + SUPPLIERS
+========================================================
+
+Create:
+
+Reviews & Suppliers
+
+Reviews
+
+Sarah M.
+Amazing experience!
+
+4.8
+
+Suppliers:
+
+The Palm Hotel & Resort
+
+Verified Supplier
+
+Rating:
+
+4.7
+
+Show verification badge.
+
+========================================================
+27 — AI TRIP COPILOT
+========================================================
+
+Create a floating AI assistant.
+
+Bottom-right desktop.
+
+Button:
+
+Ask Wayora
+
+When opened:
+
+"What can I help you with today?"
+
+Quick actions:
+
+Change my hotel to a sea view room
+Find cheaper flights
+Suggest 3 more activities
+What's the weather like?
+Show my daily itinerary
+
+Input:
+
+Ask me anything...
+
+The chatbot must feel like a real Wayora AI product.
+
+========================================================
+28 — MOBILE EXPERIENCE
+========================================================
+
+The reference includes strong mobile product screens.
+
+Build a dedicated mobile UI.
+
+Do NOT just shrink desktop.
+
+Mobile navigation:
+
+Home
+Trips
+Plan
+Wallet
+Profile
+
+Mobile AI:
+
+"Where do you want to go?"
+
+Mobile Trip OS:
+
+Trip
+Itinerary
+Bookings
+AI Copilot
+
+Mobile Flights:
+
+From
+To
+Date
+Travellers
+Class
+
+Mobile Experiences:
+
+image
+rating
+price
+Book Now
+
+Mobile AI Copilot:
+
+chat interface
+quick actions
+
+Mobile must feel like a real travel app.
+
+========================================================
+29 — WHATSAPP EXPERIENCE
+========================================================
+
+Wayora product vision includes:
+
+WEB + MOBILE + WHATSAPP
+
+Create a visual WhatsApp-style assistant preview.
+
+Example:
+
+Wayora:
+
+"Your Bali trip is confirmed."
+
+12 Oct – 20 Oct
+
+Flight:
+IndiGo 6E...
+
+Hotel:
+The Palm Resort
+
+"Need anything else? Just reply here."
+
+This should be a product showcase section, not an actual WhatsApp integration yet.
+
+========================================================
+30 — HOMEPAGE STORY FLOW
+========================================================
+
+Homepage should tell this story:
+
+1.
+I have an idea.
+
+2.
+Wayora understands it.
+
+3.
+AI builds my trip.
+
+4.
+Wayora compares and optimizes it.
+
+5.
+I simulate it.
+
+6.
+I book it.
+
+7.
+Wayora monitors it.
+
+8.
+Something changes.
+
+9.
+Wayora replans it.
+
+10.
+Wayora manages the rest.
+
+This is the CORE STORY.
+
+========================================================
+31 — INTERACTIONS
+========================================================
+
+Everything should feel alive.
+
+Use:
+
+React
+Framer Motion
+Lucide React
+
+Interactions:
+
+• hover states
+• image zoom
+• card lift
+• button animation
+• tab transitions
+• accordion
+• modal
+• drawer
+• bottom sheets
+• AI typing
+• loading state
+• progress
+• counters
+• charts
+• timeline animation
+• map animation
+• scroll reveal
+• parallax
+• horizontal scrolling
+• sticky sections
+
+Keep animations sophisticated.
+
+No childish animation.
+
+No excessive bouncing.
+
+========================================================
+32 — HERO SCROLL EXPERIENCE
+========================================================
+
+The hero image must NOT simply disappear.
+
+As user scrolls:
+
+Hero image scales
+
+↓
+
+moves into the next content
+
+↓
+
+becomes destination visual
+
+↓
+
+connects into Trip OS storytelling
+
+The transition should look continuous.
+
+Use Framer Motion:
+
+useScroll
+useTransform
+useSpring
+
+Make the movement smooth.
+
+========================================================
+33 — IMAGE QUALITY
+========================================================
+
+Use high-quality cinematic travel imagery.
+
+Images should include:
+
+Kashmir
+Goa
+Kerala
+Rajasthan
+Udaipur
+Himachal
+Bali
+Japan
+Mountains
+Beaches
+Local experiences
+
+Use consistent image treatment.
+
+Avoid random stock-looking images.
+
+Images should feel editorial and premium.
+
+========================================================
+34 — UI COMPONENT SYSTEM
+========================================================
+
+Build reusable components.
+
+Suggested:
+
+components/
+
+Navbar
+Hero
+AIInput
+ServiceStrip
+DestinationCard
+DestinationCarousel
+AIPlanner
+AIModeSelector
+TripCard
+TripTimeline
+TripDashboard
+FlightCard
+HotelCard
+ExperienceCard
+BudgetChart
+PriceIntelligence
+RiskScore
+TrustScore
+MarketplaceCard
+LocalHeroCard
+CreatorTrip
+ConciergePanel
+WalletDashboard
+BusinessDashboard
+Copilot
+Footer
+
+========================================================
+35 — ROUTING
+========================================================
+
+Create proper React routes.
+
+/
+
+Home
+
+/planner
+
+/trips
+
+/trips/:id
+
+/flights
+
+/hotels
+
+/experiences
+
+/marketplace
+
+/wallet
+
+/concierge
+
+/business
+
+/login
+
+/signup
+
+/profile
+
+/help
+
+Even if backend does not exist yet, create realistic mock data and functional UI states.
+
+========================================================
+36 — FUNCTIONALITY
+========================================================
+
+DO NOT create dead buttons.
+
+These should work:
+
+Start Planning
+Ask Wayora
+Search
+Login
+Get Started
+AI suggestions
+Destination cards
+Marketplace filters
+Trip tabs
+Budget controls
+AI mode selection
+Trip simulation
+Replanning
+Wallet actions
+Copilot
+Navigation
+Mobile menu
+
+Use mock state where backend isn't implemented.
+
+Do NOT pretend a real booking/payment has happened.
+
+Clearly structure mock functionality so APIs can be connected later.
+
+========================================================
+37 — BACKEND-READY ARCHITECTURE
+========================================================
+
+Although this phase can use mock data, architecture must be ready for backend integration.
+
+Separate:
+
+UI
+state
+data
+API services
+
+Create:
+
+services/
+  ai.js
+  flights.js
+  hotels.js
+  experiences.js
+  payments.js
+  trips.js
+  wallet.js
+
+Do not hardcode everything inside components.
+
+========================================================
+38 — PRD-ACCURATE PRODUCT MODEL
+========================================================
+
+Keep these concepts central:
+
+TRAVELLER GRAPH
+
+Preferences:
+
+Budget
+Beach affinity
+Food interest
+Adventure
+Museums
+Crowd tolerance
+
+TRIP GRAPH
+
+Flight
+Hotel
+Transport
+Restaurants
+Attractions
+Activities
+Tickets
+Weather
+Budget
+Documents
+People
+
+TRAVELLER MEMORY
+
+Remember:
+
+likes
+dislikes
+hotel preferences
+food preferences
+flight preferences
+budget behaviour
+
+EXECUTION ENGINE
+
+Wayora should progressively:
+
+find
+compare
+optimize
+book
+monitor
+manage
+
+These concepts come directly from the Wayora PRD and must influence the UI architecture.
+
+========================================================
+39 — DESIGN LANGUAGE
+========================================================
+
+Use:
+
+WHITE
+#214ECF
+LIGHT BLUE SURFACES
+DARK TEXT
+
+Avoid:
+
+❌ dark navy backgrounds everywhere
+❌ teal theme
+❌ purple gradients
+❌ excessive glassmorphism
+❌ excessive rounded cards
+❌ generic SaaS design
+❌ giant meaningless empty spaces
+❌ random animations
+❌ generic travel template
+❌ fake AI neon effects
+
+Instead:
+
+✓ clean
+✓ sharp
+✓ premium
+✓ intelligent
+✓ editorial
+✓ product-focused
+✓ information-rich
+✓ cinematic
+✓ trustworthy
+
+========================================================
+40 — RESPONSIVE REQUIREMENTS
+========================================================
+
+Perfectly support:
+
+320px
+375px
+390px
+430px
+768px
+1024px
+1280px
+1440px
+1920px
+
+Fix:
+
+horizontal overflow
+text clipping
+overlapping cards
+broken nav
+broken buttons
+image cropping
+excessive whitespace
+
+========================================================
+41 — PERFORMANCE
+========================================================
+
+Optimize everything.
+
+Use:
+
+lazy images
+GPU-friendly transforms
+Framer Motion carefully
+IntersectionObserver
+code splitting where useful
+responsive images
+
+Avoid:
+
+expensive continuous JS scroll handlers
+huge unnecessary libraries
+massive DOM structures
+
+Respect:
+
+prefers-reduced-motion
+
+========================================================
+42 — ACCESSIBILITY
+========================================================
+
+Implement:
+
+semantic HTML
+keyboard navigation
+ARIA labels
+focus states
+accessible forms
+proper contrast
+reduced motion
+
+========================================================
+43 — FINAL QUALITY BAR
+========================================================
+
+Before finishing:
+
+Run the project.
+
+Check console.
+
+Fix ALL errors.
+
+Test every route.
+
+Test every button.
+
+Test desktop.
+
+Test mobile.
+
+Test tablet.
+
+Test navigation.
+
+Test AI interactions.
+
+Test cards.
+
+Test modals.
+
+Test dropdowns.
+
+Test animations.
+
+Test responsive behavior.
+
+Remove:
+
+Lorem ipsum
+placeholder content
+broken images
+dead buttons
+console errors
+unused imports
+layout bugs
+
+========================================================
+44 — MOST IMPORTANT INSTRUCTION
+========================================================
+
+DO NOT interpret this as:
+
+"Make a nice Wayora landing page."
+
+Interpret this as:
+
+"BUILD THE FRONTEND OF A REAL AI TRAVEL OPERATING SYSTEM."
+
+The reference screenshots show the LEVEL OF PRODUCT DETAIL required.
+
+The PRD defines the PRODUCT LOGIC.
+
+Combine both.
+
+Reference = visual/product UI benchmark.
+
+PRD = product functionality and architecture source.
+
+Final experience:
+
+WAYORA
+
+AI understands the traveller.
+
+AI builds the trip.
+
+AI optimizes the trip.
+
+AI books the trip.
+
+AI monitors the trip.
+
+AI replans the trip.
+
+AI manages the journey.
+
+The website should make users think:
+
+"Finally, I don't have to manage my own trip."
+
+========================================================
+45 — FINAL COLOR CHECK
+========================================================
+
+Before completing the build, verify globally:
+
+Primary brand = #214ECF
+
+Main background = WHITE
+
+Text = DARK
+
+Surfaces = LIGHT BLUE / WHITE
+
+Buttons = #214ECF
+
+Active states = #214ECF
+
+Links = #214ECF
+
+Charts = #214ECF
+
+Icons = #214ECF
+
+Do NOT revert to the old navy/teal theme.
+
+========================================================
+FINAL COMMAND
+========================================================
+
+Rebuild the existing Wayora frontend now.
+
+Do not give me a plan.
+
+Do not just describe what you would do.
+
+Actually modify the project.
+
+Use the provided screenshots as the visual benchmark.
+
+Use the provided Wayora PRD as the product source of truth.
+
+Make the result dramatically more sophisticated than the current implementation.
+
+The final product must feel like a premium,
+production-ready,
+AI-powered,
+India-first Travel Operating System.
+
+WAYORA
+"Tell Wayora where you want to go.
+We'll figure out the rest."

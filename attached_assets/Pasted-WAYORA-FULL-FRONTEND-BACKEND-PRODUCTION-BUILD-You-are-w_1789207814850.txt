@@ -1,0 +1,1265 @@
+WAYORA — FULL FRONTEND + BACKEND PRODUCTION BUILD
+
+You are working on WAYORA, an AI Travel Operating System for India.
+
+IMPORTANT:
+The existing Gemini integration, authentication, trip persistence and CRUD functionality are already working. DO NOT break or rewrite them.
+
+The remaining third-party API credentials are currently pending from the client.
+Therefore, build the COMPLETE frontend + backend architecture now using clean provider adapters/mock data where real credentials are unavailable.
+
+When API credentials arrive, they must be plug-and-play replacements, NOT require rebuilding the application.
+
+==================================================
+1. FIRST: AUDIT THE EXISTING PROJECT
+==================================================
+
+Before changing anything:
+
+- Inspect the complete repository.
+- Understand current React/Vite frontend.
+- Understand Node/Express backend.
+- Inspect authentication.
+- Inspect database/schema.
+- Inspect existing Gemini integration.
+- Inspect existing Trip APIs and ownership.
+- Inspect current routes/components/services.
+- Reuse existing working code.
+- Do NOT duplicate existing functionality.
+- Do NOT migrate frameworks unnecessarily.
+- Do NOT replace working architecture just for preference.
+
+Create/update replit.md with the actual architecture after implementation.
+
+==================================================
+2. WAYORA PRODUCT VISION
+==================================================
+
+WAYORA is NOT just:
+
+"AI chatbot + flight booking + hotel booking."
+
+It is an AI Travel Operating System.
+
+The user gives intent.
+
+Wayora:
+Understand → Plan → Compare → Optimize → Book → Manage → Monitor → Re-plan.
+
+Every trip should become a connected object containing:
+
+- traveller
+- destination
+- dates
+- travellers
+- flights
+- hotels
+- transport
+- activities
+- restaurants
+- tickets
+- budget
+- payments
+- documents
+- weather
+- alerts
+- bookings
+- memories/preferences
+
+Build the architecture around:
+
+- Traveller Graph
+- Trip Graph
+- Supplier Graph
+- Traveller Memory
+- Execution Engine
+
+==================================================
+3. DESIGN SYSTEM
+==================================================
+
+Use the existing Wayora visual direction.
+
+PRIMARY:
+#214ECF
+
+BACKGROUND:
+White / extremely light neutral surfaces.
+
+Style:
+
+- premium
+- modern
+- cinematic
+- minimal
+- trustworthy
+- Apple-level polish
+- travel-tech SaaS
+- subtle glass effects where appropriate
+- smooth Framer Motion animations
+- excellent typography
+- generous whitespace
+- responsive
+- accessibility focused
+
+DO NOT make it look like a generic travel template.
+
+Desktop, tablet and mobile must all be properly designed.
+
+Use consistent:
+
+- buttons
+- cards
+- inputs
+- modals
+- drawers
+- badges
+- tabs
+- skeleton loaders
+- toast notifications
+- empty states
+- error states
+- confirmation dialogs
+
+==================================================
+4. COMPLETE FRONTEND
+==================================================
+
+Build all major product surfaces.
+
+PUBLIC:
+
+/
+ /discover
+ /destinations
+ /stays
+ /flights
+ /experiences
+ /guides
+ /concierge
+ /ai-planner
+
+AUTH:
+
+/login
+/signup
+/forgot-password
+/profile
+
+USER APP:
+
+/dashboard
+/trips
+/trips/:id
+/planner
+/marketplace
+/flights
+/hotels
+/experiences
+/wallet
+/concierge
+/settings
+/notifications
+
+BUSINESS:
+
+/business
+/business/dashboard
+/business/bookings
+/business/customers
+/business/analytics
+
+==================================================
+5. HOMEPAGE
+==================================================
+
+Create a revolutionary Wayora homepage.
+
+Navigation:
+
+WAYORA logo
+
+Discover
+Trips
+Marketplace
+AI Planner
+Wallet
+More
+
+Search
+
+Login
+Get Started
+
+Hero:
+
+"Travel is complicated.
+Your trip shouldn't be."
+
+Large AI travel input.
+
+Example:
+
+"I have ₹70,000. Take me somewhere beautiful from Pune for 5 days in October."
+
+CTA:
+
+Plan my trip
+
+Explore destinations
+
+Show:
+
+- AI recommendation cards
+- destination imagery
+- popular destinations
+- travel categories
+- AI Travel OS explanation
+- Trip OS preview
+- booking ecosystem
+- traveller memory
+- AI copilot
+- real-time monitoring
+- social/creator-to-trip concept
+- concierge
+- final CTA
+
+Everything must feel like one actual product, not disconnected landing-page sections.
+
+==================================================
+6. AI PLANNER
+==================================================
+
+Create a complete AI planning experience.
+
+Flow:
+
+User intent
+↓
+Destination
+↓
+Dates
+↓
+Travellers
+↓
+Budget
+↓
+Preferences
+↓
+AI analysis
+↓
+Trip simulation
+↓
+Itinerary
+↓
+Budget
+↓
+Recommendations
+↓
+Book / Save Trip
+
+Modes:
+
+EXPLORE
+PLAN
+COMPARE
+OPTIMIZE
+SURPRISE ME
+EXECUTE
+CONCIERGE
+EMERGENCY
+
+Use existing Gemini service.
+
+Never call Gemini directly from frontend.
+
+Frontend:
+React → Backend API → Gemini service.
+
+Show:
+
+- reasoning
+- confidence
+- estimated budget
+- day-by-day itinerary
+- travel time
+- hotel recommendations
+- flight recommendations
+- activities
+- food
+- optimization suggestions
+
+==================================================
+7. TRIP OS
+==================================================
+
+Build the main Wayora Trip Operating System.
+
+Trip header:
+
+Destination
+Dates
+Travellers
+Trip status
+Budget
+AI confidence
+
+Tabs:
+
+Overview
+Itinerary
+Flights
+Hotels
+Transport
+Activities
+Food
+Tickets
+Documents
+Expenses
+AI Copilot
+
+Show:
+
+- timeline
+- map placeholder
+- booking cards
+- expenses
+- weather
+- alerts
+- upcoming events
+- trip progress
+
+AI Copilot:
+
+"Ask Wayora anything about this trip."
+
+Examples:
+
+"Move today's beach visit to tomorrow."
+
+"Find a cheaper hotel."
+
+"My flight is delayed."
+
+"Where should I eat tonight?"
+
+"How much have I spent?"
+
+==================================================
+8. TRAVELLER MEMORY
+==================================================
+
+Create traveller profile/preferences system.
+
+Store/display:
+
+- budget preferences
+- hotel preferences
+- travel style
+- food preferences
+- activities
+- destinations
+- crowd tolerance
+- previous trips
+- saved places
+
+Show:
+
+"Wayora remembers how you travel."
+
+Use this information in AI Planner requests.
+
+==================================================
+9. FLIGHTS
+==================================================
+
+Build complete flight search UI.
+
+Inputs:
+
+From
+To
+Departure
+Return
+Travellers
+Cabin
+
+Filters:
+
+Price
+Stops
+Airline
+Departure time
+Arrival time
+Duration
+
+Results:
+
+Flight cards
+Fare
+Baggage
+Duration
+Stops
+Price
+Provider
+Select button
+
+CURRENTLY:
+Use mock provider data.
+
+ARCHITECTURE:
+
+FlightProvider interface/service
+
+MockFlightProvider
+RealFlightProvider placeholder
+
+When API credentials arrive, replace provider implementation without changing frontend.
+
+==================================================
+10. HOTELS
+==================================================
+
+Complete hotel search.
+
+Inputs:
+
+Destination
+Check-in
+Check-out
+Guests
+Rooms
+
+Filters:
+
+Price
+Rating
+Property type
+Amenities
+Location
+
+Cards:
+
+Image
+Name
+Rating
+Location
+Amenities
+Room
+Price
+Cancellation
+Select
+
+Create:
+
+HotelProvider
+MockHotelProvider
+RealHotelProvider placeholder
+
+==================================================
+11. EXPERIENCES MARKETPLACE
+==================================================
+
+Categories:
+
+Activities
+Guides
+Restaurants
+Attractions
+Events
+Wellness
+Adventure
+Local experiences
+
+Build:
+
+- search
+- filters
+- category navigation
+- experience cards
+- detail page
+- availability UI
+- booking CTA
+- reviews
+- supplier information
+
+Use mock data until provider credentials arrive.
+
+==================================================
+12. TRANSPORT
+==================================================
+
+Build:
+
+Cabs
+Airport transfers
+Drivers
+Intercity transport
+
+Show:
+
+- pickup
+- drop
+- date/time
+- vehicle
+- passenger count
+- price
+- provider
+- booking status
+
+Create provider adapter architecture.
+
+==================================================
+13. BOOKING ENGINE
+==================================================
+
+Create a unified booking architecture.
+
+Booking types:
+
+FLIGHT
+HOTEL
+ACTIVITY
+TRANSPORT
+
+Every booking should support:
+
+- search
+- selection
+- pending
+- payment
+- confirmation
+- cancellation
+- refund status
+- provider reference
+- booking reference
+
+Create clean backend services.
+
+Do NOT pretend a mock booking is a real booking.
+
+Clearly distinguish:
+
+MOCK / DEMO
+vs
+LIVE
+
+==================================================
+14. PAYMENT
+==================================================
+
+Prepare Razorpay integration architecture.
+
+Environment variables:
+
+RAZORPAY_KEY_ID
+RAZORPAY_KEY_SECRET
+RAZORPAY_WEBHOOK_SECRET
+
+Do not hardcode credentials.
+
+Build:
+
+Create Order
+Payment verification
+Webhook handling
+Payment status
+Failed payment
+Refund architecture
+
+Until credentials arrive:
+
+Use a safe mock/test payment adapter.
+
+Never claim a real payment succeeded when using mock mode.
+
+==================================================
+15. WALLET
+==================================================
+
+Build Wayora Wallet UI.
+
+Show:
+
+- balance
+- transactions
+- refunds
+- booking payments
+- credits
+- receipts
+
+Do NOT implement a real financial wallet unless the required backend/payment architecture is actually available.
+
+Keep current implementation as a travel payment/transaction interface.
+
+==================================================
+16. BUDGET ENGINE
+==================================================
+
+Build smart trip budget UI.
+
+Categories:
+
+Flights
+Hotels
+Food
+Transport
+Experiences
+Buffer
+
+Show:
+
+Estimated total
+Current total
+Remaining
+Category breakdown
+Budget health
+
+Add:
+
+Price Score
+Savings
+Budget confidence
+
+Use existing AI planner data where available.
+
+==================================================
+17. PRICE INTELLIGENCE
+==================================================
+
+Create UI for:
+
+Current price
+Market comparison
+Potential savings
+Price score
+Recommendation
+
+Architecture must allow real supplier pricing later.
+
+Never fabricate "live market price" claims when using mock data.
+
+Label mock/demo data appropriately.
+
+==================================================
+18. TRIP SIMULATOR
+==================================================
+
+Build Trip Simulator UI.
+
+Check:
+
+- travel time
+- overlaps
+- rest time
+- affordability
+- itinerary conflicts
+
+Show warnings such as:
+
+"Day 2 is too tightly scheduled."
+
+"This activity conflicts with your flight."
+
+"Travel time exceeds recommended limit."
+
+==================================================
+19. REAL-TIME TRIP MONITORING
+==================================================
+
+Build the architecture/UI for:
+
+- flight delays
+- cancellations
+- weather changes
+- activity availability
+- transport issues
+- hotel issues
+
+Create:
+
+Trip monitoring service
+Notification service
+Replanning service
+
+For now use mock event simulation.
+
+Example:
+
+FLIGHT DELAYED
+
+Wayora:
+
+"Your flight is delayed by 2h 15m."
+
+Then:
+
+"Your museum booking is now at risk."
+
+Show alternative:
+
+"Move museum to 5:30 PM?"
+
+==================================================
+20. AUTONOMOUS RE-PLANNING
+==================================================
+
+Build the UI and service architecture.
+
+Input event:
+
+Weather / Delay / Cancellation / User change
+
+AI evaluates:
+
+Current itinerary
+Constraints
+Budget
+Preferences
+Bookings
+
+Then generates:
+
+Alternative plan
+
+User approval required before making consequential real bookings.
+
+==================================================
+21. CONCIERGE
+==================================================
+
+Build floating right-side Wayora AI chatbot.
+
+It must know:
+
+- Wayora product
+- user's trip
+- itinerary
+- bookings
+- budget
+- preferences
+
+Example:
+
+"Where is my hotel?"
+
+"What is my next activity?"
+
+"How much budget is left?"
+
+"Find dinner near me."
+
+"Flight changed."
+
+Architecture:
+
+Frontend chatbot
+→ backend
+→ context builder
+→ Gemini
+→ tools/services
+
+Do not expose Gemini credentials.
+
+==================================================
+22. EMERGENCY ASSISTANCE
+==================================================
+
+Create emergency UI:
+
+Emergency assistance
+Call support
+Trip details
+Booking references
+Hotel
+Transport
+Important documents
+
+Human concierge escalation architecture.
+
+==================================================
+23. CREATOR-TO-TRIP
+==================================================
+
+Build UI for:
+
+Travel creator
+Video/post
+Destination
+"Plan this trip"
+
+User can convert inspiration into:
+
+AI-generated itinerary.
+
+==================================================
+24. LOCAL HERO MARKETPLACE
+==================================================
+
+Create:
+
+Local guides
+Drivers
+Experiences
+Hosts
+Restaurants
+
+Profiles:
+
+- rating
+- reviews
+- location
+- expertise
+- price
+- verification
+- availability
+
+==================================================
+25. REVIEWS + SUPPLIERS
+==================================================
+
+Build supplier/review architecture.
+
+Reviews:
+
+Rating
+Text
+Photos
+Trip association
+Verified booking badge
+
+Supplier dashboard:
+
+Profile
+Listings
+Bookings
+Reviews
+Analytics
+
+==================================================
+26. NOTIFICATIONS
+==================================================
+
+Create notification center.
+
+Types:
+
+Booking
+Payment
+Flight
+Hotel
+Weather
+Trip
+AI recommendation
+Emergency
+
+Unread/read state.
+
+==================================================
+27. ADMIN / OPERATIONS
+==================================================
+
+Create an internal operations-ready architecture.
+
+Admin dashboard:
+
+Users
+Trips
+Bookings
+Suppliers
+Payments
+AI usage
+Errors
+Support requests
+Analytics
+
+Do not expose admin routes to normal users.
+
+==================================================
+28. BACKEND ARCHITECTURE
+==================================================
+
+Organize backend cleanly.
+
+Suggested structure:
+
+server/
+  routes/
+  controllers/
+  services/
+  providers/
+  middleware/
+  models/
+  db/
+  utils/
+  ai/
+  notifications/
+  payments/
+
+Use service/provider abstraction.
+
+Example:
+
+providers/
+  flights/
+    FlightProvider.js
+    MockFlightProvider.js
+    RealFlightProvider.js
+
+  hotels/
+    HotelProvider.js
+    MockHotelProvider.js
+    RealHotelProvider.js
+
+  activities/
+  transport/
+  payments/
+
+Never tightly couple frontend to third-party APIs.
+
+==================================================
+29. API DESIGN
+==================================================
+
+Create/complete APIs for:
+
+/api/auth/*
+/api/ai/*
+/api/trips/*
+/api/flights/*
+/api/hotels/*
+/api/activities/*
+/api/transport/*
+/api/bookings/*
+/api/payments/*
+/api/profile/*
+/api/preferences/*
+/api/notifications/*
+/api/concierge/*
+
+Use consistent:
+
+success response
+error response
+validation
+authentication
+authorization
+logging
+
+Use Zod or the project's existing validation system where appropriate.
+
+==================================================
+30. DATABASE
+==================================================
+
+Inspect the existing database first.
+
+Extend existing schema rather than duplicating.
+
+Prepare entities for:
+
+User
+TravellerProfile
+TravellerPreference
+Trip
+TripDay
+ItineraryItem
+Booking
+FlightBooking
+HotelBooking
+ActivityBooking
+TransportBooking
+Payment
+Notification
+Review
+Supplier
+Experience
+TripExpense
+TravellerMemory
+
+Only create tables/models that are actually required by the implementation.
+
+==================================================
+31. SECURITY
+==================================================
+
+Critical:
+
+- No API keys in frontend.
+- No secrets in Git.
+- No secrets in logs.
+- No Gemini key in browser.
+- Authenticate protected APIs.
+- Enforce ownership.
+- Validate request bodies.
+- Prevent IDOR.
+- Secure admin routes.
+- Verify payment webhooks.
+- Sanitize external/provider data.
+- Rate-limit sensitive AI endpoints where appropriate.
+
+==================================================
+32. API CREDENTIAL ARCHITECTURE
+==================================================
+
+Current available:
+
+GEMINI_API_KEY
+
+Pending:
+
+Flight provider credentials
+Hotel provider credentials
+Razorpay credentials
+Maps/Places credentials
+Weather credentials
+Activities provider credentials
+Transport provider credentials
+
+DO NOT invent credentials.
+
+Create environment-variable configuration with clear documentation.
+
+When credentials are absent:
+
+provider status = NOT_CONFIGURED
+
+Do not crash the application.
+
+==================================================
+33. MOCK DATA
+==================================================
+
+Build realistic mock datasets for:
+
+Flights
+Hotels
+Activities
+Transport
+Destinations
+Reviews
+Suppliers
+Weather
+Prices
+
+Every mock provider must clearly be replaceable with real provider.
+
+Add development/demo indicators where needed.
+
+==================================================
+34. UX QUALITY
+==================================================
+
+Every feature needs:
+
+Loading state
+Skeleton
+Empty state
+Error state
+Success state
+Mobile layout
+Responsive interaction
+
+No dead buttons.
+
+If a feature is not connected to a live provider yet:
+
+show a proper "Coming soon / provider not connected" state or demo mode.
+
+Never fake production success.
+
+==================================================
+35. PERFORMANCE
+==================================================
+
+Optimize:
+
+- API calls
+- React rendering
+- image loading
+- lazy loading
+- route splitting
+- caching where appropriate
+- debounce search
+- skeletons
+- error boundaries
+
+Do not over-engineer.
+
+==================================================
+36. FINAL END-TO-END FLOWS
+==================================================
+
+These must work using real backend + mock providers:
+
+FLOW 1:
+
+Signup
+→ Login
+→ Dashboard
+→ AI Planner
+→ Gemini generates itinerary
+→ Save Trip
+→ My Trips
+→ Open Trip
+→ Edit
+→ Delete
+
+FLOW 2:
+
+Login
+→ Flight Search
+→ Mock results
+→ Select flight
+→ Booking flow
+→ Mock payment
+→ Booking record
+→ Trip OS
+
+FLOW 3:
+
+Login
+→ Hotel Search
+→ Select hotel
+→ Booking flow
+→ Trip OS
+
+FLOW 4:
+
+AI Planner
+→ Generated itinerary
+→ Add flight
+→ Add hotel
+→ Add activity
+→ Budget calculation
+→ Trip OS
+
+FLOW 5:
+
+Trip OS
+→ simulated flight delay
+→ monitoring detects event
+→ AI proposes re-plan
+→ user approves
+→ itinerary updates
+
+==================================================
+37. TESTING
+==================================================
+
+Add automated tests for:
+
+Auth
+Trip ownership
+Trip CRUD
+AI health
+AI planner
+Flight search
+Hotel search
+Booking creation
+Payment mock
+Authorization
+Invalid requests
+Provider-not-configured behavior
+
+Run:
+
+npm test
+
+and all existing tests.
+
+Fix regressions.
+
+==================================================
+38. API-READY REQUIREMENT
+==================================================
+
+MOST IMPORTANT:
+
+When the client gives actual API credentials later, the workflow should be:
+
+Add secret
+→ configure provider
+→ provider health check
+→ test
+→ live data
+
+NOT:
+
+Rewrite frontend
+Rewrite backend
+Rewrite database.
+
+Build proper adapter interfaces now.
+
+==================================================
+39. DO NOT DO
+==================================================
+
+Do NOT:
+
+- rewrite working Gemini integration
+- expose API keys
+- invent real bookings
+- claim mock data is live
+- create fake payment success
+- use hardcoded secrets
+- remove existing authentication
+- break trip persistence
+- introduce unnecessary frameworks
+- rebuild the project from scratch
+- make only a landing page
+- leave major buttons non-functional
+- create disconnected demo screens
+
+==================================================
+40. FINAL QA
+==================================================
+
+After implementation:
+
+1. Start frontend.
+2. Start backend.
+3. Verify database.
+4. Verify authentication.
+5. Verify Gemini.
+6. Verify AI planner.
+7. Verify trip persistence.
+8. Verify ownership.
+9. Verify mock flight search.
+10. Verify mock hotel search.
+11. Verify mock activities.
+12. Verify booking flow.
+13. Verify payment mock.
+14. Verify Trip OS.
+15. Verify chatbot.
+16. Verify monitoring/replanning simulation.
+17. Test mobile viewport.
+18. Check browser console.
+19. Check server logs.
+20. Run automated tests.
+
+Fix every obvious error before finishing.
+
+==================================================
+FINAL REPORT
+==================================================
+
+At the end provide:
+
+- Complete features implemented
+- Frontend routes
+- Backend APIs
+- Database models
+- Provider adapters
+- Mock providers
+- Existing integrations preserved
+- Tests passed
+- Security checks
+- Current provider status
+- Which client API credentials are still required
+- Exact next step once credentials arrive
+
+IMPORTANT:
+Do not stop after creating UI mockups.
+Implement the actual frontend + backend architecture and connect every possible feature to the backend now.

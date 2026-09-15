@@ -1,0 +1,74 @@
+Now implement the next production phase for Wayora: ACCOUNT-BACKED TRIP OWNERSHIP.
+
+Do not redesign the existing UI or restructure the working application.
+
+First inspect the existing authentication, database, trip model/schema, API routes and frontend architecture. Reuse what already exists.
+
+Requirements:
+
+1. AUTHENTICATION
+- Implement/use the project's existing auth system.
+- Signup
+- Login
+- Logout
+- Current authenticated user/session endpoint
+- Protected trip APIs
+- Proper loading/error states
+- Never expose passwords, tokens or secrets to the client unnecessarily.
+
+2. TRIP OWNERSHIP
+- Add userId/ownerId to the existing Trip model if it does not already exist.
+- Every newly created trip must belong to the currently authenticated user.
+- GET /api/trips must return ONLY the authenticated user's trips.
+- GET /api/trips/:id must reject access if the trip belongs to another user.
+- PUT /api/trips/:id must reject unauthorized ownership.
+- DELETE /api/trips/:id must reject unauthorized ownership.
+- Never trust a userId supplied by the frontend. Derive ownership from the authenticated session/token.
+
+3. AI PLANNER
+Connect the existing AI Planner save flow to the authenticated user:
+Generate itinerary → Preview → Save Trip → persist with authenticated userId.
+
+4. MY TRIPS
+Verify that My Trips displays only the current user's saved trips.
+Show:
+- destination
+- dates
+- budget
+- travelers
+- created/updated date
+- trip status if already supported
+
+5. SECURITY
+- Prevent IDOR/insecure direct object access.
+- Users must never be able to load, edit or delete another user's trip by changing the trip ID.
+- Do not expose GEMINI_API_KEY.
+- Keep Gemini completely server-side.
+
+6. VERIFICATION
+Create/execute tests for:
+- User signup/login
+- Authenticated trip creation
+- User A can list their own trips
+- User B cannot see User A's trips
+- User B cannot load User A's trip
+- User B cannot update User A's trip
+- User B cannot delete User A's trip
+- User A can update/delete their own trip
+- Logout/session behavior
+- Existing Gemini health/planner functionality still works
+
+Run the complete test suite and perform a manual end-to-end check.
+
+Do not add unnecessary features.
+Do not change the existing Wayora visual design.
+Do not break existing working APIs.
+
+At the end provide:
+- files changed
+- auth implementation used
+- database/schema changes
+- security/ownership checks
+- tests performed
+- final PASS/FAIL status
+- remaining limitations

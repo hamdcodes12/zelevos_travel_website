@@ -1,0 +1,4 @@
+- [Hero image morph choreography](hero-morph-choreography.md) — keep the handoff pinned and bridge the rounded image into the next story without overlap at page load.
+- [Imported pnpm workspaces](imported-pnpm-workspaces.md) — restore the locked dependency tree before running artifact checks; package helper installs may target the workspace root instead.
+- [Gemini model latency](gemini-model-latency.md) — some Gemini 3.x models can spend small output budgets on reasoning; use a fast verified model for health checks and interactive calls.
+- [Orval Zod barrel exports](orval-zod-barrel.md) — keep generated response interface and validator names distinct before regenerating OpenAPI clients.
