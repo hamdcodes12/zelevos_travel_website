@@ -45,29 +45,6 @@ app.use(
     },
   }),
 );
-app.use(cors({
-  credentials: true,
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-      return;
-    }
-    callback(new Error("Origin is not allowed by CORS policy."));
-  },
-}));
-app.use(cookieParser());
-app.use(
-  express.json({
-    verify: (req: any, _res, buf) => {
-      req.rawBody = buf;
-    },
-  })
-);
-app.use(express.urlencoded({ extended: true }));
-app.use("/api/auth", authRateLimit);
-app.use("/api/payments", sensitiveRateLimit);
-app.use("/api", authMiddleware);
-app.use("/api", router);
 
 const frontendCandidates = [
   path.resolve(process.cwd(), "../wayora/dist/public"),
@@ -85,14 +62,52 @@ if (frontendRoot) {
     req.log?.info({ requestedPath: insideAssetRoot ? requestedPath : "<invalid-path>", exists: insideAssetRoot && fs.existsSync(requestedPath) }, "Static asset request");
     next();
   });
-  app.use("/assets", express.static(path.join(frontendRoot, "assets")));
-  app.use(express.static(frontendRoot));
+  const staticHeaders = (res: express.Response, filePath: string) => {
+    if (filePath.endsWith("index.html")) {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+      return;
+    }
+    if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    }
+  };
+  app.use("/assets", express.static(path.join(frontendRoot, "assets"), { setHeaders: staticHeaders }));
+  app.use(express.static(frontendRoot, { setHeaders: staticHeaders }));
+}
+
+const apiCors = cors({
+  credentials: true,
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Origin is not allowed by CORS policy."));
+  },
+});
+
+app.use("/api", apiCors);
+app.use(cookieParser());
+app.use(
+  express.json({
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
+app.use(express.urlencoded({ extended: true }));
+app.use("/api/auth", authRateLimit);
+app.use("/api/payments", sensitiveRateLimit);
+app.use("/api", authMiddleware);
+app.use("/api", router);
+
+if (frontendRoot) {
   app.use((req, res, next) => {
     if (req.method !== "GET" || req.path.startsWith("/api/") || req.path === "/api" || req.path.startsWith("/assets/") || !req.accepts("html")) {
       next();
       return;
     }
-    res.sendFile(path.join(frontendRoot, "index.html"));
+    res.sendFile(path.join(frontendRoot, "index.html"), { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } });
   });
 }
 
