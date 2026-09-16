@@ -70,6 +70,7 @@ app.use("/api", authMiddleware);
 app.use("/api", router);
 
 const frontendCandidates = [
+  path.resolve(process.cwd(), "../wayora/dist/public"),
   path.resolve(process.cwd(), "artifacts/wayora/dist/public"),
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../wayora/dist/public"),
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../artifacts/wayora/dist/public"),
@@ -77,6 +78,13 @@ const frontendCandidates = [
 const frontendRoot = frontendCandidates.find((candidate) => fs.existsSync(path.join(candidate, "index.html")));
 
 if (frontendRoot) {
+  logger.info({ frontendRoot }, "Frontend production assets configured");
+  app.use("/assets", (req, _res, next) => {
+    const requestedPath = path.resolve(frontendRoot, "assets", `.${req.path}`);
+    const insideAssetRoot = requestedPath.startsWith(`${path.resolve(frontendRoot, "assets")}${path.sep}`);
+    req.log?.info({ requestedPath: insideAssetRoot ? requestedPath : "<invalid-path>", exists: insideAssetRoot && fs.existsSync(requestedPath) }, "Static asset request");
+    next();
+  });
   app.use("/assets", express.static(path.join(frontendRoot, "assets")));
   app.use(express.static(frontendRoot));
   app.use((req, res, next) => {
