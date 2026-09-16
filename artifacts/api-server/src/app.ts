@@ -70,15 +70,17 @@ app.use("/api", authMiddleware);
 app.use("/api", router);
 
 const frontendCandidates = [
+  path.resolve(process.cwd(), "artifacts/wayora/dist/public"),
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../wayora/dist/public"),
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../artifacts/wayora/dist/public"),
 ];
 const frontendRoot = frontendCandidates.find((candidate) => fs.existsSync(path.join(candidate, "index.html")));
 
 if (frontendRoot) {
+  app.use("/assets", express.static(path.join(frontendRoot, "assets")));
   app.use(express.static(frontendRoot));
   app.use((req, res, next) => {
-    if (req.method !== "GET" || req.path.startsWith("/api/") || req.path === "/api" || !req.accepts("html")) {
+    if (req.method !== "GET" || req.path.startsWith("/api/") || req.path === "/api" || req.path.startsWith("/assets/") || !req.accepts("html")) {
       next();
       return;
     }
@@ -89,7 +91,13 @@ if (frontendRoot) {
 app.use((error: unknown, req: any, res: any, _next: unknown) => {
   req.log?.error({ err: error }, "Unhandled request error");
   if (res.headersSent) return;
-  res.status(500).json({ status: "internal_error", message: "An unexpected server error occurred." });
+  const statusCode = typeof error === "object" && error !== null && "statusCode" in error && typeof error.statusCode === "number"
+    ? error.statusCode
+    : 500;
+  res.status(statusCode >= 400 && statusCode < 600 ? statusCode : 500).json({
+    status: statusCode === 404 ? "not_found" : "internal_error",
+    message: statusCode === 404 ? "Resource not found." : "An unexpected server error occurred.",
+  });
 });
 
 export default app;
