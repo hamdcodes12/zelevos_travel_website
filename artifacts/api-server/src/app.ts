@@ -1,4 +1,7 @@
 import "./lib/env";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express, { type Express } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -66,6 +69,23 @@ app.use("/api/payments", sensitiveRateLimit);
 app.use(authMiddleware);
 
 app.use("/api", router);
+
+const frontendCandidates = [
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../wayora/dist/public"),
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../artifacts/wayora/dist/public"),
+];
+const frontendRoot = frontendCandidates.find((candidate) => fs.existsSync(path.join(candidate, "index.html")));
+
+if (frontendRoot) {
+  app.use(express.static(frontendRoot));
+  app.use((req, res, next) => {
+    if (req.method !== "GET" || req.path.startsWith("/api/") || req.path === "/api" || !req.accepts("html")) {
+      next();
+      return;
+    }
+    res.sendFile(path.join(frontendRoot, "index.html"));
+  });
+}
 
 app.use((error: unknown, req: any, res: any, _next: unknown) => {
   req.log?.error({ err: error }, "Unhandled request error");
