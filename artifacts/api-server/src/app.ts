@@ -66,8 +66,7 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRateLimit);
 app.use("/api/payments", sensitiveRateLimit);
-app.use(authMiddleware);
-
+app.use("/api", authMiddleware);
 app.use("/api", router);
 
 const frontendCandidates = [
