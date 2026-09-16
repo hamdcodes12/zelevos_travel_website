@@ -20,7 +20,12 @@ const configuredOrigins = (process.env.CORS_ALLOWED_ORIGINS || process.env.FRONT
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
-const allowedOrigins = configuredOrigins;
+const trustedProductionOrigins = [
+  "https://zelevos.com",
+  "https://www.zelevos.com",
+  "https://zelevos.onrender.com",
+];
+const allowedOrigins = Array.from(new Set([...trustedProductionOrigins, ...configuredOrigins]));
 
 if (process.env.NODE_ENV === "production" && configuredOrigins.some((origin) => origin === "*" || !origin.startsWith("https://"))) {
   throw new Error("Production CORS configuration must contain only explicit HTTPS origins.");
@@ -88,6 +93,16 @@ const apiCors = cors({
   },
 });
 
+app.use("/api", (req, _res, next) => {
+  const origin = req.headers.origin;
+  logger.info({
+    path: req.path,
+    method: req.method,
+    origin: origin || null,
+    allowed: !origin || allowedOrigins.includes(origin),
+  }, "API CORS origin check");
+  next();
+});
 app.use("/api", apiCors);
 app.use(cookieParser());
 app.use(
