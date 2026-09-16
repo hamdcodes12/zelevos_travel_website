@@ -43,6 +43,10 @@ export type FlightOffer = {
   refundable?: boolean;
   cabinClass?: string;
   seatsAvailable?: number;
+  /** Ignav fare ID — used to fetch the external booking link via POST /api/ignav/booking-links */
+  ignavId?: string;
+  /** True for Ignav fares: booking opens the airline/OTA website; Zelevos does not issue PNR or tickets */
+  externalBooking?: boolean;
   segments?: Array<{
     carrier: string;
     flightNumber: string;

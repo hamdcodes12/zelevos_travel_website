@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, CalendarDays, Car, Check, Hotel, MapPin, Plane, Search, Star, Ticket, Users, X, AlertCircle } from "lucide-react";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
 import { RouteMap } from "@/components/route-map";
+import { filterHotelResults, paginateHotelResults } from "@/lib/hotel-results";
+import { syncHotelGuestRooms, toHotelbedsGuestRooms, validateHotelGuestRooms, type HotelGuestRoom } from "@/lib/hotel-guests";
 
 declare global {
   interface Window {
@@ -9,8 +11,12 @@ declare global {
   }
 }
 
-type Provider = { provider: string; mode: "DEMO" | "LIVE"; status: string };
-type HotelResult = { id: string; name: string; destination: string; rating: number; location: string; amenities: string[]; room: string; cancellation: string; pricePerNight: number; image: string; provider: string; mode: "DEMO" | "LIVE" };
+type Provider = { provider: string; mode: "DEMO" | "LIVE" | "TEST"; status: string };
+type HotelbedsRate = { rateKey: string; rateType: string; hotelbedsHotelId: string; hotelName: string; category?: string; destination?: string; address?: string; roomType?: string; boardType?: string; price: number; currency: string; cancellationPolicies: Array<Record<string, unknown>>; rateCommentsId?: string; rateComments?: string; refundable?: boolean; children: number; childAges: number[] };
+type HotelRoomOccupancy = { adults: number; children: number; childAges: number[] };
+type HotelGuestUpdate = { firstName?: string; surname?: string; age?: number };
+type HotelContent = { name?: string; category?: string; address?: string; destination?: string; images: string[]; description?: string; facilities: string[]; rooms: Array<{ name?: string; code?: string; roomType?: string; facilities: string[] }>; boards: Array<{ name?: string; code?: string }>; pointsOfInterest: Array<{ name: string; distance?: number }> };
+type HotelResult = { id: string; name: string; destination: string; rating: number; location: string; amenities: string[]; room: string; cancellation: string; pricePerNight: number; image: string; provider: string; mode: "DEMO" | "LIVE" | "TEST"; hotelbedsRate?: HotelbedsRate };
 type Experience = { id: string; name: string; category: string; description: string; location: string; duration: string; price: number; rating: number; supplier: string; verified: boolean; image: string; provider: string; mode: "DEMO" | "LIVE" };
 type Transport = { id: string; type: string; provider: string; pickup: string; drop: string; vehicle: string; duration: string; price: number; passengers: number; status: string; mode: "DEMO" | "LIVE" };
 type Tab = "flights" | "hotels" | "experiences" | "transport" | "bookings";
@@ -44,7 +50,12 @@ async function getJson<T>(url: string): Promise<T> {
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const payload = await response.json() as T & { message?: string };
-  if (!response.ok) throw new Error(payload.message || "Zelevos could not complete that action.");
+  if (!response.ok) {
+    const error = new Error(payload.message || "Zelevos could not complete that action.") as Error & { status?: number; payload?: unknown };
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
+  }
   return payload;
 }
 
@@ -67,7 +78,10 @@ async function loadRazorpayCheckout(): Promise<void> {
   if (!window.Razorpay) throw new Error("Razorpay checkout SDK is unavailable.");
 }
 
-function DemoBadge({ mode }: { mode: "DEMO" | "LIVE" }) {
+function DemoBadge({ mode }: { mode: "DEMO" | "LIVE" | "TEST" }) {
+  if (mode === "TEST") {
+    return <span className="provider-badge">HOTELBEDS TEST</span>;
+  }
   if (mode === "LIVE") {
     return <span className="provider-badge live">Live inventory</span>;
   }
@@ -84,6 +98,21 @@ function ProviderNote({ provider }: { provider?: Provider }) {
         : "DEMO / TEST provider · no supplier reservation or real-world PNR created"}
     </p>
   );
+}
+
+function supplierPolicyText(policy: Record<string, unknown>): string {
+  const labels: Array<[string, string]> = [
+    ["from", "Effective"],
+    ["to", "Until"],
+    ["date", "Date"],
+    ["amount", "Fee"],
+    ["currency", "Currency"],
+    ["percent", "Percent"],
+  ];
+  const parts = labels.flatMap(([key, label]) => policy[key] === undefined || policy[key] === null || policy[key] === "" ? [] : [`${label}: ${String(policy[key])}`]);
+  const knownKeys = new Set(labels.map(([key]) => key));
+  const extra = Object.entries(policy).filter(([key, value]) => !knownKeys.has(key) && value !== undefined && value !== null && value !== "").map(([key, value]) => `${key}: ${typeof value === "object" ? JSON.stringify(value) : String(value)}`);
+  return [...parts, ...extra].join(" · ") || "Supplier cancellation terms returned without displayable fields.";
 }
 
 export type FlightSearchPrefill = {
@@ -116,13 +145,42 @@ export function TravelHub({
   const [error, setError] = useState("");
   const [provider, setProvider] = useState<Provider>();
   const [hotels, setHotels] = useState<HotelResult[]>([]);
+  const [hotelContent, setHotelContent] = useState<Record<string, HotelContent>>({});
+  const [hotelComments, setHotelComments] = useState<Record<string, string>>({});
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [transport, setTransport] = useState<Transport[]>([]);
   const [sortBy, setSortBy] = useState<"recommended" | "price-low" | "rating-high">("recommended");
+  const [hotelRooms, setHotelRooms] = useState<HotelRoomOccupancy[]>([{ adults: 2, children: 0, childAges: [] }]);
+  const [hotelGuestRooms, setHotelGuestRooms] = useState<HotelGuestRoom[]>([]);
+  const [hotelBookingState, setHotelBookingState] = useState("");
+  const [hotelFilters, setHotelFilters] = useState<{ search: string; minPrice: string; maxPrice: string; category: string; board: string; refundable: "all" | "yes" | "no" }>({ search: "", minPrice: "", maxPrice: "", category: "", board: "", refundable: "all" });
+  const [hotelPage, setHotelPage] = useState(1);
   const [experienceCategory, setExperienceCategory] = useState("");
-  const [hotelForm, setHotelForm] = useState({ destination: "Kashmir", checkIn: "2026-10-12", checkOut: "2026-10-17", guests: "2", rooms: "1" });
+  const [hotelForm, setHotelForm] = useState({ destination: "Kashmir", checkIn: "2026-10-12", checkOut: "2026-10-17", guests: "2", children: "0", childAges: "", rooms: "1" });
   const [transportForm, setTransportForm] = useState({ pickup: "Srinagar Airport", drop: "Gulmarg", date: "2026-10-12", passengers: "2" });
   const [validationError, setValidationError] = useState("");
+
+  const loadHotelContent = async (hotel: HotelResult) => {
+    if (hotelContent[hotel.id] || !hotel.hotelbedsRate) return;
+    try {
+      const payload = await getJson<{ result: HotelContent }>(`/api/hotelbeds/content/${encodeURIComponent(hotel.hotelbedsRate.hotelbedsHotelId)}`);
+      setHotelContent((current) => ({ ...current, [hotel.id]: payload.result }));
+    } catch (contentError) {
+      onToast(contentError instanceof Error ? contentError.message : "Hotel content is unavailable.");
+    }
+  };
+
+  const loadHotelComments = async (hotel: HotelResult) => {
+    const rate = hotel.hotelbedsRate;
+    if (!rate?.rateCommentsId || hotelComments[hotel.id]) return;
+    try {
+      const payload = await getJson<{ result?: { rateComments?: Array<{ description?: string }> } }>(`/api/hotelbeds/rate-comments?code=${encodeURIComponent(rate.rateCommentsId)}&date=${encodeURIComponent(hotelForm.checkIn)}`);
+      const comment = payload.result?.rateComments?.map((item) => item.description).filter(Boolean).join(" ");
+      if (comment) setHotelComments((current) => ({ ...current, [hotel.id]: comment }));
+    } catch (commentError) {
+      onToast(commentError instanceof Error ? commentError.message : "Supplier comments are unavailable.");
+    }
+  };
 
   const setTab = (newTab: Tab) => {
     setTabState(newTab);
@@ -135,6 +193,16 @@ export function TravelHub({
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    if (tab !== "hotels") return;
+    for (const hotel of hotels) {
+      if (hotel.hotelbedsRate) {
+        void loadHotelContent(hotel);
+        void loadHotelComments(hotel);
+      }
+    }
+  }, [hotels, tab]);
+
   const runSearch = async (event?: FormEvent) => {
     event?.preventDefault();
     if (tab === "bookings" || tab === "flights") return;
@@ -143,7 +211,8 @@ export function TravelHub({
     setValidationError("");
     try {
       if (tab === "hotels") {
-        const payload = await getJson<{ provider: Provider; results: HotelResult[] }>(`/api/hotels/search?${new URLSearchParams(hotelForm)}`);
+        const params = new URLSearchParams({ ...hotelForm, guests: String(hotelRooms[0]?.adults || 1), children: String(hotelRooms[0]?.children || 0), childAges: (hotelRooms[0]?.childAges || []).join(","), rooms: String(hotelRooms.length), roomOccupancies: JSON.stringify(hotelRooms) });
+        const payload = await getJson<{ provider: Provider; results: HotelResult[] }>(`/api/hotels/search?${params}`);
         setProvider(payload.provider);
         setHotels(payload.results);
       } else if (tab === "experiences") {
@@ -174,8 +243,10 @@ export function TravelHub({
     if (tab === "experiences") void runSearch();
   }, [experienceCategory]);
 
+  const filteredHotels = filterHotelResults(hotels.map((hotel) => ({ ...hotel, category: hotel.hotelbedsRate?.category || String(hotel.rating), boardType: hotel.hotelbedsRate?.boardType, refundable: hotel.hotelbedsRate?.refundable })), hotelFilters);
+
   // Sorting logic: recommended = best value (rating/price ratio), price-low = cheapest first, rating-high = highest rated first
-  const sortedHotels = [...hotels].sort((a, b) => {
+  const sortedHotels = [...filteredHotels].sort((a, b) => {
     if (sortBy === "price-low") return a.pricePerNight - b.pricePerNight;
     if (sortBy === "rating-high") return b.rating - a.rating;
     // recommended: balance of rating and value (rating/price ratio)
@@ -183,6 +254,34 @@ export function TravelHub({
     const scoreB = (b.rating / (b.pricePerNight / 1000));
     return scoreB - scoreA;
   });
+  const { items: visibleHotels, page: currentHotelPage, pageCount: hotelPageCount } = paginateHotelResults(sortedHotels, hotelPage, 6);
+
+  useEffect(() => {
+    setHotelPage(1);
+  }, [hotelFilters, sortBy, hotels]);
+
+  const updateHotelRoom = (index: number, update: Partial<HotelRoomOccupancy>) => {
+    setHotelRooms((rooms) => rooms.map((room, roomIndex) => roomIndex === index ? { ...room, ...update } : room));
+  };
+
+  useEffect(() => {
+    const userName = String(user?.fullName || user?.name || user?.email?.split("@")[0] || "").trim().split(/\s+/);
+    setHotelGuestRooms((existing) => syncHotelGuestRooms(existing, hotelRooms, userName[0] ? { firstName: userName[0], surname: userName.slice(1).join(" ") } : undefined));
+  }, [hotelRooms, user]);
+
+  const updateHotelGuest = (roomIndex: number, group: "adults" | "children", guestIndex: number, update: HotelGuestUpdate) => {
+    setHotelGuestRooms((rooms) => rooms.map((room, index) => {
+      if (index !== roomIndex) return room;
+      if (group === "adults") {
+        const adults = [...room.adults];
+        adults[guestIndex] = { ...adults[guestIndex], firstName: update.firstName ?? adults[guestIndex].firstName, surname: update.surname ?? adults[guestIndex].surname };
+        return { ...room, adults };
+      }
+      const children = [...room.children];
+      children[guestIndex] = { ...children[guestIndex], firstName: update.firstName ?? children[guestIndex].firstName, surname: update.surname ?? children[guestIndex].surname };
+      return { ...room, children };
+    }));
+  };
 
   const sortedExperiences = [...experiences].sort((a, b) => {
     if (sortBy === "price-low") return a.price - b.price;
@@ -276,6 +375,75 @@ export function TravelHub({
     }
   };
 
+  const makeHotelbedsBooking = async (hotel: HotelResult) => {
+    if (!hotel.hotelbedsRate) return;
+    if (!user) { onLogin(); return; }
+    const userName = String(user.fullName || user.name || user.email?.split("@")[0] || "Guest").trim().split(/\s+/);
+    const holder = { name: userName[0] || "Guest", surname: userName.slice(1).join(" ") || "Guest", email: String(user.email || "guest@example.com"), phone: String(user.phone || "0000000000") };
+    try {
+      const guestValidationError = validateHotelGuestRooms(hotelGuestRooms);
+      if (guestValidationError) {
+        setValidationError(guestValidationError);
+        onToast(guestValidationError);
+        return;
+      }
+      setHotelBookingState("Preparing final Hotelbeds price...");
+      const checkout = await postJson<{ booking: { id: string }; orderId: string; amount: number; amountSubunits: number; currency: string; keyId?: string; provider?: string }>("/api/hotelbeds/checkout", {
+        rateKey: hotel.hotelbedsRate.rateKey,
+        rateType: hotel.hotelbedsRate.rateType,
+        hotelName: hotel.name,
+        hotelCategory: hotel.hotelbedsRate.category,
+        hotelAddress: hotel.location,
+        destination: hotel.destination,
+        checkIn: hotelForm.checkIn,
+        checkOut: hotelForm.checkOut,
+        roomType: hotel.room,
+        boardType: hotel.hotelbedsRate.boardType,
+        currency: hotel.hotelbedsRate.currency,
+        rateComments: hotelComments[hotel.id] || hotel.hotelbedsRate.rateComments,
+        cancellationPolicies: hotel.hotelbedsRate.cancellationPolicies,
+        holder,
+        rooms: toHotelbedsGuestRooms(hotelGuestRooms),
+        idempotencyKey: `hotelbeds-${hotel.hotelbedsRate.rateKey}`,
+      });
+      setHotelBookingState("Payment pending...");
+      await loadRazorpayCheckout();
+      if (!window.Razorpay) throw new Error("Razorpay checkout SDK is unavailable.");
+      const payment = await new Promise<{ orderId: string; paymentId: string; signature: string }>((resolve, reject) => {
+        const checkoutWindow = new window.Razorpay({
+          key: checkout.keyId,
+          amount: checkout.amountSubunits,
+          currency: checkout.currency,
+          name: "Zelevos",
+          description: `${hotel.name} · Hotelbeds stay`,
+          order_id: checkout.orderId,
+          prefill: { name: `${holder.name} ${holder.surname}`, email: holder.email, contact: holder.phone },
+          theme: { color: "#214ecf" },
+          handler: (response: any) => {
+            if (!response?.razorpay_payment_id || !response?.razorpay_signature) { reject(new Error("Incomplete Razorpay payment response.")); return; }
+            resolve({ orderId: response.razorpay_order_id || checkout.orderId, paymentId: response.razorpay_payment_id, signature: response.razorpay_signature });
+          },
+          payment: { failed: (response: any) => reject(new Error(response?.error?.description || "Razorpay payment failed.")) },
+          modal: { ondismiss: () => reject(new Error("Payment was cancelled before completion.")) },
+        });
+        checkoutWindow.open();
+      });
+      setHotelBookingState("Payment captured. Confirming hotel with Hotelbeds...");
+      const finalized = await postJson<{ success: boolean; status: string; hotelbedsReference?: string; message: string }>(`/api/hotelbeds/bookings/${checkout.booking.id}/payment`, payment);
+      if (finalized.status === "SUPPLIER_CONFIRMED") {
+        setHotelBookingState(`Hotel confirmed · ${finalized.hotelbedsReference || "supplier reference received"}`);
+        onToast(`Hotelbeds booking confirmed: ${finalized.hotelbedsReference || "supplier confirmation received"}`);
+      } else {
+        setHotelBookingState(finalized.status === "RECONCILIATION_REQUIRED" ? "Payment captured; supplier reconciliation is required." : `Hotel booking status: ${finalized.status}`);
+        onToast(finalized.message);
+      }
+    } catch (bookingError) {
+      const failure = bookingError as Error & { payload?: { status?: string; message?: string } };
+      const failureStatus = failure.payload?.status;
+      setHotelBookingState(failureStatus === "RECONCILIATION_REQUIRED" ? "Payment captured; supplier reconciliation is required." : failureStatus === "REFUND_PROCESSED" || failureStatus === "REFUND_PENDING" ? `Supplier booking failed; ${failureStatus.replaceAll("_", " ").toLowerCase()}.` : bookingError instanceof Error ? bookingError.message : "Hotel booking could not be completed.");
+      onToast(bookingError instanceof Error ? bookingError.message : "Hotelbeds booking failed.");
+    }
+  };
   const tabs: Array<{ id: Tab; label: string; icon: typeof Plane }> = [
     { id: "flights", label: "Flights", icon: Plane },
     { id: "hotels", label: "Hotels", icon: Hotel },
@@ -382,7 +550,16 @@ export function TravelHub({
                 <label><span>Destination</span><div><LocationAutocomplete id="hotel-destination-input" value={hotelForm.destination} onChange={(destination) => setHotelForm({ ...hotelForm, destination })} placeholder="Search city or destination..." /></div></label>
                 <label><span>Check-in</span><div><CalendarDays size={15} /><input type="date" value={hotelForm.checkIn} onChange={(event) => setHotelForm({ ...hotelForm, checkIn: event.target.value })} /></div></label>
                 <label><span>Check-out</span><div><CalendarDays size={15} /><input type="date" value={hotelForm.checkOut} onChange={(event) => setHotelForm({ ...hotelForm, checkOut: event.target.value })} /></div></label>
-                <label><span>Guests / rooms</span><div><Users size={15} /><input type="number" min="1" value={hotelForm.guests} onChange={(event) => setHotelForm({ ...hotelForm, guests: event.target.value })} /></div></label>
+                <div style={{ gridColumn: "1 / -1", display: "grid", gap: "8px" }}>
+                  {hotelRooms.map((room, index) => <div key={index} style={{ display: "flex", gap: "8px", alignItems: "end", flexWrap: "wrap", padding: "8px", border: "1px solid var(--border)", borderRadius: "8px" }}>
+                    <strong style={{ fontSize: "11px", marginRight: "4px" }}>Room {index + 1}</strong>
+                    <label><span>Adults</span><div><Users size={15} /><input aria-label={`Room ${index + 1} adults`} type="number" min="1" max="9" value={room.adults} onChange={(event) => updateHotelRoom(index, { adults: Number(event.target.value) || 1 })} /></div></label>
+                    <label><span>Children</span><div><Users size={15} /><input aria-label={`Room ${index + 1} children`} type="number" min="0" max="8" value={room.children} onChange={(event) => { const children = Number(event.target.value) || 0; updateHotelRoom(index, { children, childAges: room.childAges.slice(0, children) }); }} /></div></label>
+                    {room.children > 0 && <label><span>Child ages</span><div><input aria-label={`Room ${index + 1} child ages`} type="text" placeholder="e.g. 7, 12" value={room.childAges.join(", ")} onChange={(event) => updateHotelRoom(index, { childAges: event.target.value.split(",").map(Number).filter((age) => Number.isInteger(age) && age >= 0 && age <= 17).slice(0, room.children) })} /></div></label>}
+                    {hotelRooms.length > 1 && <button type="button" onClick={() => setHotelRooms((rooms) => rooms.filter((_, roomIndex) => roomIndex !== index))} style={{ border: "0", background: "transparent", color: "var(--danger)", fontSize: "11px" }}>Remove room</button>}
+                  </div>)}
+                  {hotelRooms.length < 8 && <button type="button" onClick={() => setHotelRooms((rooms) => [...rooms, { adults: 2, children: 0, childAges: [] }])} style={{ justifySelf: "start", border: "1px solid var(--border)", background: "white", color: "var(--blue)", borderRadius: "6px", padding: "6px 9px", fontSize: "11px", fontWeight: 700 }}>+ Add room</button>}
+                </div>
               </>
             )}
             {tab === "experiences" && <div className="travel-search-copy"><Search size={18} /><span>Explore verified local experiences across India.</span></div>}
@@ -402,6 +579,26 @@ export function TravelHub({
             )}
           </form>
         )}
+        {tab === "hotels" && hotelGuestRooms.length > 0 && (
+          <div style={{ display: "grid", gap: "10px", marginTop: "12px", padding: "14px", border: "1px solid var(--border)", borderRadius: "10px", background: "var(--soft)" }}>
+            <div><strong style={{ fontSize: "13px" }}>Guest details</strong><span style={{ display: "block", color: "var(--muted)", fontSize: "11px", marginTop: "3px" }}>Names are required for every guest. Child ages come from your search and are sent to Hotelbeds unchanged.</span></div>
+            {hotelGuestRooms.map((room, roomIndex) => <div key={roomIndex} style={{ display: "grid", gap: "8px", paddingTop: "8px", borderTop: "1px solid var(--border)" }}>
+              <strong style={{ fontSize: "11px" }}>Room {roomIndex + 1}</strong>
+              {room.adults.map((guest, guestIndex) => <div key={`adult-${guestIndex}`} style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <span style={{ width: "70px", fontSize: "10px", color: "var(--muted)", paddingTop: "9px" }}>Adult {guestIndex + 1}</span>
+                <input aria-label={`Room ${roomIndex + 1} adult ${guestIndex + 1} first name`} placeholder="First name" value={guest.firstName} onChange={(event) => updateHotelGuest(roomIndex, "adults", guestIndex, { firstName: event.target.value })} style={{ flex: "1 1 140px", minWidth: "120px", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px" }} />
+                <input aria-label={`Room ${roomIndex + 1} adult ${guestIndex + 1} surname`} placeholder="Surname" value={guest.surname} onChange={(event) => updateHotelGuest(roomIndex, "adults", guestIndex, { surname: event.target.value })} style={{ flex: "1 1 140px", minWidth: "120px", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px" }} />
+              </div>)}
+              {room.children.map((guest, guestIndex) => <div key={`child-${guestIndex}`} style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <span style={{ width: "70px", fontSize: "10px", color: "var(--muted)", paddingTop: "9px" }}>Child {guestIndex + 1} · {guest.age}</span>
+                <input aria-label={`Room ${roomIndex + 1} child ${guestIndex + 1} first name`} placeholder="First name" value={guest.firstName} onChange={(event) => updateHotelGuest(roomIndex, "children", guestIndex, { firstName: event.target.value })} style={{ flex: "1 1 140px", minWidth: "120px", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px" }} />
+                <input aria-label={`Room ${roomIndex + 1} child ${guestIndex + 1} surname`} placeholder="Surname" value={guest.surname} onChange={(event) => updateHotelGuest(roomIndex, "children", guestIndex, { surname: event.target.value })} style={{ flex: "1 1 140px", minWidth: "120px", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px" }} />
+              </div>)}
+            </div>)}
+            {validationError && <span style={{ color: "var(--danger)", fontSize: "11px" }}>{validationError}</span>}
+            {hotelBookingState && <span style={{ color: hotelBookingState.includes("confirmed") ? "var(--success)" : "var(--muted)", fontSize: "11px", fontWeight: 700 }}>{hotelBookingState}</span>}
+          </div>
+        )}
         {tab === "transport" && transportForm.pickup && transportForm.drop && (
           <RouteMap origin={transportForm.pickup} destination={transportForm.drop} />
         )}
@@ -420,6 +617,14 @@ export function TravelHub({
                 <option value="">All</option><option value="Nature">Nature</option><option value="Food">Food</option><option value="Wellness">Wellness</option><option value="Adventure">Adventure</option>
               </select>
             </label>}
+            {tab === "hotels" && <>
+              <input aria-label="Search hotels" placeholder="Search hotel or destination" value={hotelFilters.search} onChange={(event) => setHotelFilters({ ...hotelFilters, search: event.target.value })} style={{ minWidth: "190px", padding: "6px 8px", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "11px" }} />
+              <input aria-label="Minimum hotel price" type="number" min="0" placeholder="Min price" value={hotelFilters.minPrice} onChange={(event) => setHotelFilters({ ...hotelFilters, minPrice: event.target.value })} style={{ width: "90px", padding: "6px 8px", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "11px" }} />
+              <input aria-label="Maximum hotel price" type="number" min="0" placeholder="Max price" value={hotelFilters.maxPrice} onChange={(event) => setHotelFilters({ ...hotelFilters, maxPrice: event.target.value })} style={{ width: "90px", padding: "6px 8px", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "11px" }} />
+              <select aria-label="Hotel category" value={hotelFilters.category} onChange={(event) => setHotelFilters({ ...hotelFilters, category: event.target.value })} style={{ padding: "6px 8px", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "11px" }}><option value="">All categories</option>{Array.from(new Set(hotels.map((hotel) => hotel.hotelbedsRate?.category || String(hotel.rating)))).map((category) => <option key={category} value={category}>{category}</option>)}</select>
+              <select aria-label="Hotel board type" value={hotelFilters.board} onChange={(event) => setHotelFilters({ ...hotelFilters, board: event.target.value })} style={{ padding: "6px 8px", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "11px" }}><option value="">All boards</option>{Array.from(new Set(hotels.map((hotel) => hotel.hotelbedsRate?.boardType).filter(Boolean))).map((board) => <option key={board} value={board}>{board}</option>)}</select>
+              <select aria-label="Refundability" value={hotelFilters.refundable} onChange={(event) => setHotelFilters({ ...hotelFilters, refundable: event.target.value as "all" | "yes" | "no" })} style={{ padding: "6px 8px", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "11px" }}><option value="all">All cancellation</option><option value="yes">Refundable</option><option value="no">Non-refundable</option></select>
+            </>}
           </div>
         )}
         {error && tab !== "flights" && (
@@ -430,29 +635,61 @@ export function TravelHub({
           </div>
         )}
         {!error && tab === "hotels" && (
+          <>
           <div className="travel-results">
-            {sortedHotels.map((hotel) => (
+            {visibleHotels.map((hotel) => (
               <article className="travel-result-card hotel-result" key={hotel.id}>
-                <img src={hotel.image} alt="" />
+                {(hotelContent[hotel.id]?.images[0] || hotel.image) && <img src={hotelContent[hotel.id]?.images[0] || hotel.image} alt={hotel.name} />}
                 <div className="travel-result-main">
                   <DemoBadge mode={hotel.mode} />
                   <div className="result-title">
                     <strong>{hotel.name}</strong>
-                    <span><Star size={12} fill="currentColor" /> {hotel.rating} · {hotel.location}</span>
+                    <span><Star size={12} fill="currentColor" /> {hotel.hotelbedsRate?.category || hotel.rating} · {hotel.location}</span>
                   </div>
                   <p>{hotel.room} · {hotel.amenities.join(" · ")}</p>
-                  <small>{hotel.cancellation}</small>
+                  {hotel.hotelbedsRate && (
+                    <div style={{ display: "grid", gap: "5px", fontSize: "11px" }}>
+                      <strong>{hotel.hotelbedsRate.boardType || "Board not specified"} · {hotel.hotelbedsRate.rateType}</strong>
+                      {hotel.hotelbedsRate.refundable === false && <strong>Non-refundable rate</strong>}
+                      {hotel.hotelbedsRate.cancellationPolicies.length > 0 ? hotel.hotelbedsRate.cancellationPolicies.map((policy, index) => (
+                        <span key={index}>Cancellation policy: {supplierPolicyText(policy)}</span>
+                      )) : <span>Cancellation policy not supplied by Hotelbeds.</span>}
+                      {(hotel.hotelbedsRate.rateComments || hotelComments[hotel.id]) && <span>Supplier comments: {hotelComments[hotel.id] || hotel.hotelbedsRate.rateComments}</span>}
+                      {hotel.hotelbedsRate.rateCommentsId && <>
+                        {hotelComments[hotel.id] && <span>Supplier comments: {hotelComments[hotel.id]}</span>}
+                        <button type="button" onClick={() => void loadHotelComments(hotel)} style={{ justifySelf: "start", padding: "0", border: "0", background: "transparent", color: "var(--blue)", cursor: "pointer" }}>
+                          {hotelComments[hotel.id] ? "Supplier comments loaded" : "View supplier rate comments"}
+                        </button>
+                      </>}
+                      <button type="button" onClick={() => void loadHotelContent(hotel)} style={{ justifySelf: "start", padding: "0", border: "0", background: "transparent", color: "var(--blue)", cursor: "pointer" }}>
+                        {hotelContent[hotel.id] ? "Supplier content loaded" : "View supplier content"}
+                      </button>
+                    </div>
+                  )}
+                  {!hotel.hotelbedsRate && <small>{hotel.cancellation}</small>}
+                  {hotelContent[hotel.id] && (
+                    <div style={{ display: "grid", gap: "5px", marginTop: "8px", fontSize: "11px" }}>
+                      {hotelContent[hotel.id].description && <span>{hotelContent[hotel.id].description}</span>}
+                      {hotelContent[hotel.id].facilities.length > 0 && <span>Facilities: {hotelContent[hotel.id].facilities.join(" · ")}</span>}
+                      {hotelContent[hotel.id].rooms.length > 0 && <span>Rooms: {hotelContent[hotel.id].rooms.map((room) => room.name || room.roomType || room.code).filter(Boolean).join(" · ")}</span>}
+                      {hotelContent[hotel.id].boards.length > 0 && <span>Boards: {hotelContent[hotel.id].boards.map((board) => board.name || board.code).filter(Boolean).join(" · ")}</span>}
+                      {hotelContent[hotel.id].pointsOfInterest.length > 0 && <span>Nearby: {hotelContent[hotel.id].pointsOfInterest.map((point) => point.name).join(" · ")}</span>}
+                    </div>
+                  )}
                 </div>
                 <div className="result-price">
                   <span>per night</span>
-                  <strong>₹{hotel.pricePerNight.toLocaleString("en-IN")}</strong>
-                  <button onClick={() => void makeBooking("HOTEL", hotel.id, hotel.pricePerNight, hotel)}>
-                    Select stay <ArrowRight size={14} />
+                  <strong>{hotel.hotelbedsRate?.currency || "INR"} {hotel.pricePerNight.toLocaleString("en-IN")}</strong>
+                  <button onClick={() => hotel.provider === "HOTELBEDS" ? void makeHotelbedsBooking(hotel) : void makeBooking("HOTEL", hotel.id, hotel.pricePerNight, hotel)}>
+                    {hotel.provider === "HOTELBEDS" ? "Book TEST stay" : "Select stay"} <ArrowRight size={14} />
                   </button>
                 </div>
               </article>
             ))}
           </div>
+          {!visibleHotels.length && <div className="travel-state"><strong>No hotels match these filters.</strong><span>Adjust the price, category, board, cancellation, or search filters.</span></div>}
+          {hotelPageCount > 1 && <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "12px", marginTop: "16px" }}><button type="button" disabled={currentHotelPage === 1} onClick={() => setHotelPage((page) => page - 1)} aria-label="Previous hotel page">Previous</button><span style={{ fontSize: "11px", color: "var(--muted)" }}>Page {currentHotelPage} of {hotelPageCount}</span><button type="button" disabled={currentHotelPage === hotelPageCount} onClick={() => setHotelPage((page) => page + 1)} aria-label="Next hotel page">Next</button></div>}
+          </>
         )}
         {!error && tab === "experiences" && (
           <div className="travel-experience-grid">
@@ -564,6 +801,21 @@ function Bookings({ user, onLogin, onToast }: { user: { id: string } | null; onL
     }
   };
 
+  const downloadHotelVoucher = async (booking: BookingRecord) => {
+    try {
+      const response = await fetch("/api/hotelbeds/voucher", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bookingId: booking.id }) });
+      if (!response.ok) throw new Error((await response.json() as { message?: string }).message || "Voucher could not be downloaded.");
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `zelevos-hotel-${booking.bookingReference}.pdf`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Voucher could not be downloaded.");
+    }
+  };
+
   if (!user) return <div className="travel-state"><Ticket size={23} /><strong>Log in to see your bookings.</strong><span>Your flight tickets and reservations are saved privately to your Zelevos account.</span><button onClick={onLogin}>Log in <ArrowRight size={14} /></button></div>;
   if (loading) return <div className="travel-state"><span className="typing"><i /><i /><i /></span> Loading your bookings...</div>;
   if (!results.length) return <div className="travel-state"><Ticket size={23} /><strong>No bookings yet.</strong><span>Search for flights or stays above to book and receive live airline PNR tickets.</span></div>;
@@ -571,7 +823,7 @@ function Bookings({ user, onLogin, onToast }: { user: { id: string } | null; onL
   return (
     <div className="booking-list" style={{ display: "grid", gap: "12px" }}>
       {results.map((booking) => {
-        const isConfirmed = booking.status === "CONFIRMED";
+        const isConfirmed = booking.status === "CONFIRMED" || booking.status === "SUPPLIER_CONFIRMED";
         const isCancelled = booking.status === "CANCELLED" || booking.status === "DEMO_CANCELLED";
 
         return (
@@ -660,6 +912,10 @@ function Bookings({ user, onLogin, onToast }: { user: { id: string } | null; onL
                 <span style={{ fontSize: "10px", color: "var(--muted)", display: "block" }}>Total Paid</span>
                 <b style={{ fontSize: "14px" }}>₹{booking.amount.toLocaleString("en-IN")}</b>
               </div>
+
+              {isConfirmed && (
+                booking.providerMode === "HOTELBEDS_TEST" ? <button type="button" onClick={() => void downloadHotelVoucher(booking)} style={{ padding: "6px 10px", border: "1px solid var(--blue)", borderRadius: "6px", background: "var(--blue-surface)", color: "var(--blue)", fontSize: "11px", fontWeight: 700 }}>Download voucher</button> : null
+              )}
 
               {isConfirmed && (
                 <button

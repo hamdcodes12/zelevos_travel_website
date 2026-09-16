@@ -50,9 +50,9 @@ interface FlightsPageProps {
   onLogout: () => void;
 }
 
-function DemoBadge({ mode }: { mode: "DEMO" | "LIVE" }) {
+function DemoBadge({ mode, isIgnav }: { mode: "DEMO" | "LIVE"; isIgnav: boolean }) {
   if (mode === "LIVE") {
-    return <span className="provider-badge live">Live inventory</span>;
+    return <span className="provider-badge live">{isIgnav ? "LIVE FARE" : "Live inventory"}</span>;
   }
   return <span className="provider-badge">Test / Demo</span>;
 }
@@ -111,7 +111,18 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
   };
 
   const openExternalBooking = async (flight: FlightOffer) => {
-    if (!flight.ignavId) return;
+    if (!flight.ignavId) {
+      showToast("External booking link is unavailable for this fare.");
+      return;
+    }
+
+    // Reserve the tab during the user gesture so browser popup blockers do not reject it after fetch resolves.
+    const bookingWindow = window.open("about:blank", "_blank");
+    if (!bookingWindow) {
+      showToast("Your browser blocked the booking tab. Allow popups and try again.");
+      return;
+    }
+
     setBookingLinkLoading(flight.id);
     try {
       const response = await fetch("/api/ignav/booking-links", {
@@ -119,10 +130,13 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ignavId: flight.ignavId }),
       });
+      console.info("Ignav booking-link request", { status: response.status, ok: response.ok });
       const payload = await response.json() as { url?: string; message?: string };
       if (!response.ok || !payload.url) throw new Error(payload.message || "External booking link is unavailable.");
-      window.open(payload.url, "_blank", "noopener,noreferrer");
+      bookingWindow.location.href = payload.url;
     } catch (error) {
+      console.warn("Ignav booking-link request failed", { message: error instanceof Error ? error.message : "Unknown error" });
+      bookingWindow.close();
       showToast(error instanceof Error ? error.message : "External booking link is unavailable.");
     } finally {
       setBookingLinkLoading(null);
@@ -565,13 +579,46 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
                 hasConnectingSegments && flight.segments
                   ? flight.segments[0].destination
                   : undefined;
+              const isIgnav = flight.externalBooking === true;
+              const showBaggage = flight.baggage && flight.baggage.trim().length > 0;
 
               return (
                 <article className="travel-result-card" key={flight.id}>
                   <div className="travel-result-main">
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                      <DemoBadge mode={flight.mode} />
-                      {flight.refundable ? (
+                      <DemoBadge mode={flight.mode} isIgnav={isIgnav} />
+                      {/* Ignav: LIVE FARE DATA badge — clearly indicates external live data */}
+                      {isIgnav && (
+                        <span
+                          style={{
+                            fontSize: "8px",
+                            fontWeight: 700,
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            background: "#dbeafe",
+                            color: "#1d4ed8",
+                            letterSpacing: "0.04em",
+                          }}
+                        >
+                          LIVE FARE DATA
+                        </span>
+                      )}
+                      {/* Ignav: EXTERNAL BOOKING badge */}
+                      {isIgnav && (
+                        <span
+                          style={{
+                            fontSize: "8px",
+                            fontWeight: 700,
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            background: "#fef9c3",
+                            color: "#854d0e",
+                          }}
+                        >
+                          EXTERNAL BOOKING
+                        </span>
+                      )}
+                      {flight.refundable !== undefined && (flight.refundable ? (
                         <span
                           style={{
                             fontSize: "8px",
@@ -597,7 +644,7 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
                         >
                           Non-refundable
                         </span>
-                      )}
+                      ))}
                       <span
                         style={{
                           fontSize: "8px",
@@ -629,7 +676,7 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
                     <div className="result-title">
                       <strong>{flight.airline}</strong>
                       <span>
-                        {flight.flightNumber} · {flight.baggage}
+                        {flight.flightNumber}{showBaggage ? ` · ${flight.baggage}` : ""}
                       </span>
                     </div>
 
@@ -676,6 +723,24 @@ export function FlightsPage({ user, authLoading = false, onLogin, onLogout }: Fl
                             </span>
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Ignav: external booking disclaimer — Zelevos does not issue PNR/tickets */}
+                    {isIgnav && (
+                      <div
+                        style={{
+                          marginTop: "10px",
+                          padding: "8px 12px",
+                          background: "#fffbeb",
+                          borderRadius: "6px",
+                          fontSize: "10px",
+                          color: "#78350f",
+                          border: "1px solid #fde68a",
+                        }}
+                      >
+                        <AlertCircle size={11} style={{ display: "inline", marginRight: "5px", verticalAlign: "middle" }} />
+                        <strong>External booking only.</strong> "Book Now" opens the airline or OTA website. Zelevos does not process this booking and does not issue PNRs or tickets through this provider.
                       </div>
                     )}
                   </div>

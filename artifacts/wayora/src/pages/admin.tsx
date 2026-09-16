@@ -410,6 +410,19 @@ export function AdminPage() {
     }
   };
 
+  const reconcileHotelBooking = async (bookingId: string) => {
+    try {
+      const res = await fetch(`/api/hotelbeds/bookings/${bookingId}/reconcile`, { method: "POST", credentials: "include" });
+      const data = await res.json() as { message?: string; status?: string };
+      if (!res.ok && res.status !== 202) throw new Error(data.message || "Reconciliation failed.");
+      showToast(data.message || `Reconciliation status: ${data.status || "updated"}.`);
+      await loadBookings();
+      await viewBookingDetail(bookingId);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Reconciliation failed.");
+    }
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError("");
@@ -1530,6 +1543,12 @@ export function AdminPage() {
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="CONFIRMED">CONFIRMED</option>
+                  <option value="SUPPLIER_CONFIRMED">SUPPLIER_CONFIRMED</option>
+                  <option value="SUPPLIER_BOOKING_PENDING">SUPPLIER_BOOKING_PENDING</option>
+                  <option value="SUPPLIER_FAILED">SUPPLIER_FAILED</option>
+                  <option value="RECONCILIATION_REQUIRED">RECONCILIATION_REQUIRED</option>
+                  <option value="REFUND_PENDING">REFUND_PENDING</option>
+                  <option value="REFUND_FAILED">REFUND_FAILED</option>
                   <option value="CANCELLED">CANCELLED</option>
                   <option value="SEARCHED">SEARCHED</option>
                   <option value="FAILED">FAILED</option>
@@ -1615,6 +1634,9 @@ export function AdminPage() {
                             </span>
                           </td>
                           <td style={{ padding: "12px 16px", textAlign: "right" }}>
+                            {((b as any).kind === "HOTEL" && ["RECONCILIATION_REQUIRED", "SUPPLIER_BOOKING_PENDING", "SUPPLIER_FAILED", "REFUND_FAILED"].includes((b as any).status)) && <button type="button" onClick={() => reconcileHotelBooking(b.id)} style={{ padding: "5px 10px", marginRight: "6px", background: "#fff7ed", border: "1px solid #fdba74", borderRadius: "6px", color: "#9a3412", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>
+                              Reconcile
+                            </button>}
                             <button type="button" onClick={() => viewBookingDetail(b.id)} style={{ padding: "5px 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", color: "#0f172a", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>
                               Details
                             </button>

@@ -32,6 +32,15 @@ const changePasswordSchema = z.object({
   confirmNewPassword: z.string().min(8).max(128).optional(),
 });
 
+function publicAdminBooking(booking: typeof bookingsTable.$inferSelect) {
+  if (booking.kind !== "HOTEL") return booking;
+  const payload = { ...(booking.payload || {}) } as Record<string, unknown>;
+  const fareSnapshot = { ...(booking.fareSnapshot || {}) } as Record<string, unknown>;
+  delete payload.rateKey;
+  delete fareSnapshot.rateKey;
+  return { ...booking, payload, fareSnapshot };
+}
+
 // --------------------------------------------------------------------------
 // 1. Admin Authentication (Login, Logout, Me, Change Password)
 // --------------------------------------------------------------------------
@@ -474,7 +483,7 @@ router.get("/admin/bookings/:id", requireAdmin, async (req, res): Promise<void> 
 
     res.json({
       booking: {
-        ...booking,
+        ...publicAdminBooking(booking),
         customer: {
           id: user.id,
           customerId: user.customerId ?? null,

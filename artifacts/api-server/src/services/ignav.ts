@@ -5,13 +5,19 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 
 type IgnavRecord = Record<string, unknown>;
 
-type IgnavResponse = IgnavRecord & {
+type IgnavResponse = (IgnavRecord & {
   data?: unknown;
   results?: unknown;
   fares?: unknown;
   itineraries?: unknown;
   error?: unknown;
   message?: unknown;
+}) | IgnavRecord[];
+
+export type IgnavFlexibleSlice = {
+  origin: string;
+  destination: string;
+  departure: string;
 };
 
 export class IgnavError extends Error {
@@ -50,6 +56,7 @@ function firstNumber(record: IgnavRecord, keys: string[]): number | undefined {
 }
 
 function collectItems(payload: IgnavResponse): IgnavRecord[] {
+  if (Array.isArray(payload)) return payload.map(asRecord).filter((value): value is IgnavRecord => Boolean(value));
   const candidates = [payload.data, payload.results, payload.fares, payload.itineraries];
   for (const candidate of candidates) {
     if (Array.isArray(candidate)) return candidate.map(asRecord).filter((value): value is IgnavRecord => Boolean(value));
@@ -67,30 +74,105 @@ function normalizeSegment(record: IgnavRecord, params: FlightSearchParams): Flig
   const origin = firstString(record, ["origin", "from", "departure_airport", "departureAirport"]) || params.from.toUpperCase();
   const destination = firstString(record, ["destination", "to", "arrival_airport", "arrivalAirport"]) || params.to.toUpperCase();
   return {
-    carrier: firstString(record, ["airline", "carrier", "marketing_airline", "marketingAirline"]) || "",
+    carrier: firstString(record, ["airline", "carrier", "marketing_airline", "marketingAirline", "operating_carrier_name"]) || firstString(record, ["marketing_carrier_code"]) || "",
     flightNumber: firstString(record, ["flight_number", "flightNumber", "number"]) || "",
     origin,
     destination,
-    departureTime: firstString(record, ["departure", "departure_at", "departureAt", "depart_at"]) || "",
-    arrivalTime: firstString(record, ["arrival", "arrival_at", "arrivalAt", "arrive_at"]) || "",
+    departureTime: firstString(record, ["departure", "departure_at", "departureAt", "depart_at", "departure_time_local"]) || "",
+    arrivalTime: firstString(record, ["arrival", "arrival_at", "arrivalAt", "arrive_at", "arrival_time_local"]) || "",
     duration: firstString(record, ["duration", "duration_minutes", "durationMinutes"]) || "",
     cabin: firstString(record, ["cabin", "cabin_class", "cabinClass"]) || params.cabin || "Economy",
     aircraft: firstString(record, ["aircraft", "aircraft_type", "aircraftType"]),
   };
 }
 
+function normalizeSegmentFromSlice(record: IgnavRecord, origin: string, destination: string, cabin: string): FlightSegment {
+  return {
+    carrier: firstString(record, ["airline", "carrier", "marketing_airline", "marketingAirline"]) || "",
+    flightNumber: firstString(record, ["flight_number", "flightNumber", "number"]) || "",
+    origin: firstString(record, ["origin", "from", "departure_airport", "departureAirport"]) || origin,
+    destination: firstString(record, ["destination", "to", "arrival_airport", "arrivalAirport"]) || destination,
+    departureTime: firstString(record, ["departure", "departure_at", "departureAt", "depart_at"]) || "",
+    arrivalTime: firstString(record, ["arrival", "arrival_at", "arrivalAt", "arrive_at"]) || "",
+    duration: firstString(record, ["duration", "duration_minutes", "durationMinutes"]) || "",
+    cabin: firstString(record, ["cabin", "cabin_class", "cabinClass"]) || cabin || "Economy",
+    aircraft: firstString(record, ["aircraft", "aircraft_type", "aircraftType"]),
+  };
+}
+
 function normalizeFare(item: IgnavRecord, params: FlightSearchParams): FlightOffer | null {
   const nested = asRecord(item.itinerary) || asRecord(item.flight) || item;
-  const segmentsValue = Array.isArray(nested.segments) ? nested.segments : Array.isArray(nested.legs) ? nested.legs : [nested];
+  const outbound = asRecord(nested.outbound);
+  const segmentsValue = outbound && Array.isArray(outbound.segments) ? outbound.segments
+    : Array.isArray(nested.segments) ? nested.segments : Array.isArray(nested.legs) ? nested.legs : [nested];
   const segments = segmentsValue.map(asRecord).filter((value): value is IgnavRecord => Boolean(value)).map((value) => normalizeSegment(value, params));
   const first = segments[0];
   const last = segments[segments.length - 1];
-  const price = firstNumber(nested, ["price", "amount", "total_price", "totalPrice", "fare"]);
+  const priceRecord = asRecord(nested.price);
+  const price = firstNumber(priceRecord || nested, ["amount", "price", "total_price", "totalPrice", "fare"]);
   const ignavId = firstString(item, ["ignav_id", "ignavId", "id"]) || firstString(nested, ["ignav_id", "ignavId", "id"]);
   if (!ignavId || price === undefined || !first || !last) return null;
 
   const bookingUrl = firstString(item, ["booking_url", "bookingUrl", "deep_link", "deepLink"])
     || firstString(nested, ["booking_url", "bookingUrl", "deep_link", "deepLink"]);
+
+  // Only set baggage when Ignav actually returns it — do not show "unavailable" for live data
+  const baggageRaw = firstString(nested, ["baggage", "baggage_allowance", "baggageAllowance"]);
+
+  return {
+    id: `ignav:${ignavId}`,
+    ignavId,
+    airline: firstString(outbound || nested, ["airline", "carrier"]) || first.carrier,
+    flightNumber: first.flightNumber,
+    from: first.origin,
+    to: last.destination,
+    departure: first.departureTime ? new Date(first.departureTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "",
+    arrival: last.arrivalTime ? new Date(last.arrivalTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "",
+    duration: firstString(outbound || nested, ["duration", "duration_minutes", "durationMinutes"]) || first.duration,
+    stops: Math.max(0, segments.length - 1),
+    // Only set baggage when Ignav returns it; leave undefined so UI can omit it
+    baggage: baggageRaw ?? "",
+    price,
+    baseFare: firstNumber(nested, ["base_fare", "baseFare"]) || price,
+    taxes: firstNumber(nested, ["taxes", "tax", "taxAmount"]) || 0,
+    currency: (firstString(priceRecord || nested, ["currency", "currency_code", "currencyCode"]) || "INR") as "INR",
+    provider: "Ignav Flight API",
+    mode: "LIVE",
+    refundable: typeof nested.refundable === "boolean" ? nested.refundable : undefined,
+    cabin: first.cabin,
+    cabinClass: first.cabin,
+    segments,
+    fareRules: undefined,
+    externalBookingUrl: bookingUrl,
+    externalBooking: true,
+  };
+}
+
+function normalizeFareFromFlexible(item: IgnavRecord, slices: IgnavFlexibleSlice[]): FlightOffer | null {
+  const nested = asRecord(item.itinerary) || asRecord(item.flight) || item;
+  const cabin = firstString(nested, ["cabin", "cabin_class", "cabinClass"]) || "Economy";
+  const firstSlice = slices[0];
+  const lastSlice = slices[slices.length - 1];
+
+  const legs = Array.isArray(nested.legs) ? nested.legs : [];
+  const segmentsValue = legs.length ? legs.flatMap((leg) => {
+    const legRecord = asRecord(leg);
+    return legRecord && Array.isArray(legRecord.segments) ? legRecord.segments : [];
+  }) : Array.isArray(nested.segments) ? nested.segments : [nested];
+  const segments = segmentsValue.map(asRecord).filter((v): v is IgnavRecord => Boolean(v))
+    .map((v) => normalizeSegmentFromSlice(v, firstSlice?.origin || "", lastSlice?.destination || "", cabin));
+
+  const priceRecord = asRecord(nested.price);
+  const price = firstNumber(priceRecord || nested, ["amount", "price", "total_price", "totalPrice", "fare"]);
+  const ignavId = firstString(item, ["ignav_id", "ignavId", "id"]) || firstString(nested, ["ignav_id", "ignavId", "id"]);
+  if (!ignavId || price === undefined || !segments.length) return null;
+
+  const first = segments[0];
+  const last = segments[segments.length - 1];
+  const bookingUrl = firstString(item, ["booking_url", "bookingUrl", "deep_link", "deepLink"])
+    || firstString(nested, ["booking_url", "bookingUrl", "deep_link", "deepLink"]);
+  const baggageRaw = firstString(nested, ["baggage", "baggage_allowance", "baggageAllowance"]);
+
   return {
     id: `ignav:${ignavId}`,
     ignavId,
@@ -102,16 +184,16 @@ function normalizeFare(item: IgnavRecord, params: FlightSearchParams): FlightOff
     arrival: last.arrivalTime ? new Date(last.arrivalTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "",
     duration: first.duration,
     stops: Math.max(0, segments.length - 1),
-    baggage: firstString(nested, ["baggage", "baggage_allowance", "baggageAllowance"]) || "Baggage details unavailable",
+    baggage: baggageRaw ?? "",
     price,
     baseFare: firstNumber(nested, ["base_fare", "baseFare"]) || price,
     taxes: firstNumber(nested, ["taxes", "tax", "taxAmount"]) || 0,
-    currency: (firstString(nested, ["currency", "currency_code", "currencyCode"]) || "INR") as "INR",
+    currency: (firstString(priceRecord || nested, ["currency", "currency_code", "currencyCode"]) || "INR") as "INR",
     provider: "Ignav Flight API",
     mode: "LIVE",
     refundable: typeof nested.refundable === "boolean" ? nested.refundable : undefined,
-    cabin: first.cabin,
-    cabinClass: first.cabin,
+    cabin,
+    cabinClass: cabin,
     segments,
     fareRules: undefined,
     externalBookingUrl: bookingUrl,
@@ -140,7 +222,10 @@ export class IgnavFlightProvider implements FlightProvider {
         signal: controller.signal,
       });
       const payload = await response.json() as IgnavResponse;
-      if (!response.ok) throw new IgnavError(response.status === 401 || response.status === 403 ? 502 : 502, "Ignav API request failed.");
+      if (!response.ok) {
+        const statusCode = response.status === 401 || response.status === 403 ? 401 : 502;
+        throw new IgnavError(statusCode, "Ignav API request failed.");
+      }
       return payload;
     } catch (error) {
       if (error instanceof IgnavError) throw error;
@@ -152,12 +237,13 @@ export class IgnavFlightProvider implements FlightProvider {
   }
 
   async health() {
-    await this.request("/airports");
+    await this.request("/health");
     return { connected: true as const, provider: "ignav" as const, service: "flight-api" as const };
   }
 
   async airports(query?: string) {
-    const path = query ? `/airports?query=${encodeURIComponent(query)}` : "/airports";
+    if (!query?.trim()) throw new IgnavError(400, "An airport search query is required.");
+    const path = `/airports?q=${encodeURIComponent(query.trim())}`;
     const payload = await this.request(path);
     return collectItems(payload);
   }
@@ -166,21 +252,43 @@ export class IgnavFlightProvider implements FlightProvider {
     const body = {
       origin: params.from.toUpperCase(),
       destination: params.to.toUpperCase(),
-      departure: params.departure,
-      returnDate: params.returnDate,
-      travellers: params.travellers || 1,
-      cabin: params.cabin || "Economy",
+      departure_date: params.departure,
+      ...(params.returnDate ? { return_date: params.returnDate } : {}),
+      adults: params.adults || params.travellers || 1,
+      cabin_class: (params.cabin || "Economy").toLowerCase().replace(/ /g, "_"),
     };
     const endpoint = params.returnDate ? "/fares/round-trip" : "/fares/one-way";
     const payload = await this.request(endpoint, body);
     return collectItems(payload).map((item) => normalizeFare(item, params)).filter((value): value is FlightOffer => Boolean(value));
   }
 
+  /**
+   * Flexible / multi-city fare search using POST /fares/search.
+   * Each slice is { origin, destination, departure }.
+   */
+  async flexibleSearch(slices: IgnavFlexibleSlice[], options: { travellers?: number; cabin?: string } = {}): Promise<FlightOffer[]> {
+    const body = {
+      legs: slices.map((slice) => ({
+        origin: slice.origin,
+        destination: slice.destination,
+        departure_date: slice.departure,
+      })),
+      adults: options.travellers || 1,
+      cabin_class: (options.cabin || "Economy").toLowerCase().replace(/ /g, "_"),
+    };
+    const payload = await this.request("/fares/search", body);
+    return collectItems(payload).map((item) => normalizeFareFromFlexible(item, slices)).filter((value): value is FlightOffer => Boolean(value));
+  }
+
   async bookingLink(ignavId: string) {
     const payload = await this.request("/fares/booking-links", { ignav_id: ignavId });
-    const items = collectItems(payload);
-    const first = items[0] || payload;
-    const url = firstString(first, ["booking_url", "bookingUrl", "url", "link"]);
+    const options = asRecord(payload)?.booking_options;
+    const links = Array.isArray(options) ? options.flatMap((option) => {
+      const optionRecord = asRecord(option);
+      return optionRecord && Array.isArray(optionRecord.links) ? optionRecord.links : [];
+    }) : [];
+    const firstLink = asRecord(links[0]);
+    const url = firstString(firstLink || {}, ["url", "booking_url", "bookingUrl", "link"]);
     if (!url) throw new IgnavError(502, "Ignav returned no external booking URL.");
     return { url, ignavId };
   }

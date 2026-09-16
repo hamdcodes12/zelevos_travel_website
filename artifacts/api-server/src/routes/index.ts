@@ -10,6 +10,7 @@ import adminRouter from "./admin";
 import travelpayoutsRouter from "./travelpayouts";
 import flightDataRouter from "./flight-data";
 import ignavRouter from "./ignav";
+import hotelbedsRouter from "./hotelbeds";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(adminRouter);
 router.use(travelpayoutsRouter);
 router.use(flightDataRouter);
 router.use(ignavRouter);
+router.use(hotelbedsRouter);
 
 export default router;

@@ -13,10 +13,15 @@ const app: Express = express();
 
 requireProductionSupabaseConfig();
 
-const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || process.env.FRONTEND_URL || "http://localhost:3000")
+const configuredOrigins = (process.env.CORS_ALLOWED_ORIGINS || process.env.FRONTEND_URL || "http://localhost:3000")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+const allowedOrigins = process.env.NODE_ENV === "production" ? ["https://zelevos.com"] : configuredOrigins;
+
+if (process.env.NODE_ENV === "production" && configuredOrigins.some((origin) => origin !== "https://zelevos.com")) {
+  throw new Error("Production CORS configuration must contain only https://zelevos.com.");
+}
 
 app.use(
   pinoHttp({
@@ -61,5 +66,11 @@ app.use("/api/payments", sensitiveRateLimit);
 app.use(authMiddleware);
 
 app.use("/api", router);
+
+app.use((error: unknown, req: any, res: any, _next: unknown) => {
+  req.log?.error({ err: error }, "Unhandled request error");
+  if (res.headersSent) return;
+  res.status(500).json({ status: "internal_error", message: "An unexpected server error occurred." });
+});
 
 export default app;

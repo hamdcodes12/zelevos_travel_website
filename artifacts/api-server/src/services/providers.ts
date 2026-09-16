@@ -95,9 +95,12 @@ export interface PaymentProvider {
 }
 
 export function providerStatus() {
+  const hotelbedsConfigured = Boolean(process.env.HOTELBEDS_HOTEL_API_KEY?.trim() && process.env.HOTELBEDS_HOTEL_SECRET?.trim());
   return {
     flights: { provider: modeFor("FLIGHT_PROVIDER_API_KEY") === "LIVE" ? "configured-flight-provider" : "mock-flights", mode: modeFor("FLIGHT_PROVIDER_API_KEY"), status: modeFor("FLIGHT_PROVIDER_API_KEY") === "LIVE" ? "CONFIGURED" : "NOT_CONFIGURED" },
-    hotels: { provider: modeFor("HOTEL_PROVIDER_API_KEY") === "LIVE" ? "configured-hotel-provider" : "mock-hotels", mode: modeFor("HOTEL_PROVIDER_API_KEY"), status: modeFor("HOTEL_PROVIDER_API_KEY") === "LIVE" ? "CONFIGURED" : "NOT_CONFIGURED" },
+    hotels: hotelbedsConfigured
+      ? { provider: "HOTELBEDS", mode: "TEST" as const, status: "CONFIGURED" as const }
+      : { provider: modeFor("HOTEL_PROVIDER_API_KEY") === "LIVE" ? "configured-hotel-provider" : "mock-hotels", mode: modeFor("HOTEL_PROVIDER_API_KEY"), status: modeFor("HOTEL_PROVIDER_API_KEY") === "LIVE" ? "CONFIGURED" : "NOT_CONFIGURED" },
     activities: { provider: modeFor("ACTIVITIES_PROVIDER_API_KEY") === "LIVE" ? "configured-activities-provider" : "mock-experiences", mode: modeFor("ACTIVITIES_PROVIDER_API_KEY"), status: modeFor("ACTIVITIES_PROVIDER_API_KEY") === "LIVE" ? "CONFIGURED" : "NOT_CONFIGURED" },
     transport: { provider: modeFor("TRANSPORT_PROVIDER_API_KEY") === "LIVE" ? "configured-transport-provider" : "mock-transport", mode: modeFor("TRANSPORT_PROVIDER_API_KEY"), status: modeFor("TRANSPORT_PROVIDER_API_KEY") === "LIVE" ? "CONFIGURED" : "NOT_CONFIGURED" },
     payments: { provider: modeFor("RAZORPAY_KEY_ID") === "LIVE" ? "razorpay" : "mock-payments", mode: modeFor("RAZORPAY_KEY_ID"), status: modeFor("RAZORPAY_KEY_ID") === "LIVE" ? "CONFIGURED" : "NOT_CONFIGURED" },

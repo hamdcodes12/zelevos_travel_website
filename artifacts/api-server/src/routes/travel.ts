@@ -26,6 +26,7 @@ import {
   searchTransport,
   MockPaymentProvider,
 } from "../services/providers";
+import { getHotelbedsConfig, hotelbedsEnvironment, HotelbedsProvider } from "../services/hotelbeds";
 
 const router: IRouter = Router();
 
@@ -58,6 +59,15 @@ function calculateAge(dobString: string, referenceDate: Date = new Date()): numb
 function calculateBaggagePrice(extraBaggageKg = 0): number {
   const kg = Math.max(0, Math.min(30, Math.floor(extraBaggageKg / 5) * 5));
   return (kg / 5) * 1200;
+}
+
+function publicBookingRecord<T extends { kind: string; payload?: Record<string, unknown> | null; fareSnapshot?: Record<string, unknown> | null }>(booking: T): T {
+  if (booking.kind !== "HOTEL") return booking;
+  const payload = { ...(booking.payload || {}) };
+  const fareSnapshot = { ...(booking.fareSnapshot || {}) };
+  delete payload.rateKey;
+  delete fareSnapshot.rateKey;
+  return { ...booking, payload, fareSnapshot };
 }
 
 // --------------------------------------------------------------------------
@@ -833,7 +843,8 @@ router.get("/bookings", requireAuth, async (req, res): Promise<void> => {
     const bookings = await db.select().from(bookingsTable)
       .where(eq(bookingsTable.ownerId, req.user!.id))
       .orderBy(desc(bookingsTable.createdAt));
-    res.json({ results: bookings, bookings });
+    const safeBookings = bookings.map(publicBookingRecord);
+    res.json({ results: safeBookings, bookings: safeBookings });
   } catch (error) {
     req.log.error({ err: error }, "Failed to list bookings");
     res.status(500).json({ status: "database_error", message: "Bookings could not be loaded." });
@@ -856,7 +867,7 @@ router.get("/bookings/:id", requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
-    res.json({ booking });
+    res.json({ booking: publicBookingRecord(booking) });
   } catch (error) {
     req.log.error({ err: error }, "Failed to fetch booking");
     res.status(500).json({ status: "database_error", message: "Booking could not be loaded." });
@@ -1276,9 +1287,12 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
       }
 
       if (captured) {
-        await db.update(bookingsTable)
-          .set({ paymentStatus: "CAPTURED", updatedAt: new Date() })
-          .where(eq(bookingsTable.paymentOrderId, providerOrderId));
+        const [linkedBooking] = await db.select().from(bookingsTable).where(eq(bookingsTable.paymentOrderId, providerOrderId)).limit(1);
+        if (linkedBooking?.kind === "HOTEL" && linkedBooking.status === "PENDING") {
+          await db.update(bookingsTable).set({ status: "RECONCILIATION_REQUIRED", paymentStatus: "PAYMENT_CAPTURED", cancellationDetails: { provider: "HOTELBEDS", reason: "Payment captured before supplier orchestration completed.", detectedAt: new Date().toISOString() }, updatedAt: new Date() }).where(eq(bookingsTable.id, linkedBooking.id));
+        } else {
+          await db.update(bookingsTable).set({ paymentStatus: "CAPTURED", updatedAt: new Date() }).where(eq(bookingsTable.paymentOrderId, providerOrderId));
+        }
       } else if (failed) {
         await db.update(bookingsTable)
           .set({ paymentStatus: "FAILED", updatedAt: new Date() })
@@ -1295,17 +1309,70 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
 // --------------------------------------------------------------------------
 // 8. Hotels, Experiences, Transport & Notifications
 // --------------------------------------------------------------------------
-router.get("/hotels/search", (req, res) => {
+router.get("/hotels/search", async (req, res): Promise<void> => {
   const query = z.object({
     destination: z.string().trim().default("Kashmir"),
     checkIn: z.string().trim().default("2026-10-12"),
     checkOut: z.string().trim().default("2026-10-17"),
     guests: z.coerce.number().int().min(1).max(20).default(2),
+    children: z.coerce.number().int().min(0).max(8).default(0),
+    childAges: z.string().trim().optional(),
+    roomOccupancies: z.string().trim().optional(),
     rooms: z.coerce.number().int().min(1).max(8).default(1),
   }).safeParse(req.query);
   if (!query.success) {
     res.status(400).json({ status: "invalid_request", message: "Provide valid hotel search fields." });
     return;
+  }
+  const hotelbedsConfig = getHotelbedsConfig();
+  if (process.env.NODE_ENV !== "test" && hotelbedsConfig.apiKey && hotelbedsConfig.secret) {
+    try {
+      const fallbackAges = query.data.childAges ? query.data.childAges.split(",").map(Number).filter((age) => Number.isInteger(age) && age >= 0 && age <= 17) : [];
+      let rooms = [{ adults: query.data.guests, children: query.data.children, childAges: fallbackAges }];
+      if (query.data.roomOccupancies) {
+        try {
+          const parsedRooms = JSON.parse(query.data.roomOccupancies) as unknown;
+          if (Array.isArray(parsedRooms) && parsedRooms.length >= 1 && parsedRooms.length <= 8) {
+            rooms = parsedRooms.map((room) => ({
+              adults: Math.max(1, Math.min(9, Number((room as Record<string, unknown>).adults))),
+              children: Math.max(0, Math.min(8, Number((room as Record<string, unknown>).children))),
+              childAges: Array.isArray((room as Record<string, unknown>).childAges) ? ((room as Record<string, unknown>).childAges as unknown[]).map(Number).filter((age) => Number.isInteger(age) && age >= 0 && age <= 17) : [],
+            }));
+            if (rooms.some((room) => room.childAges.length !== room.children)) throw new Error("Each child must have an age.");
+          }
+        } catch {
+          res.status(400).json({ status: "invalid_request", message: "Each hotel room must include valid adults, children, and child ages." });
+          return;
+        }
+      }
+      const rates = await new HotelbedsProvider().availability({
+        checkIn: query.data.checkIn,
+        checkOut: query.data.checkOut,
+        destination: /^[A-Za-z]{3}$/.test(query.data.destination) ? query.data.destination.toUpperCase() : undefined,
+        rooms,
+      });
+      res.json({ provider: { provider: "HOTELBEDS", mode: hotelbedsEnvironment(), status: "CONFIGURED" }, environment: hotelbedsEnvironment(), results: rates.map((rate) => ({
+        id: `hotelbeds:${rate.hotelbedsHotelId}:${rate.rateKey}`,
+        providerHotelId: rate.hotelbedsHotelId,
+        name: rate.hotelName,
+        destination: rate.destination || query.data.destination,
+        rating: Number(rate.category || 0) || 0,
+        location: rate.address || rate.destination || query.data.destination,
+        amenities: rate.facilities,
+        room: rate.roomType || "Available room",
+        cancellation: rate.cancellationPolicies.length ? "Cancellation policy returned by Hotelbeds" : "Cancellation policy unavailable",
+        pricePerNight: rate.price / Math.max(1, Math.ceil((Date.parse(query.data.checkOut) - Date.parse(query.data.checkIn)) / 86_400_000)),
+        image: rate.images[0] || "",
+        provider: "HOTELBEDS",
+        mode: "TEST",
+        hotelbedsRate: rate,
+      })) });
+      return;
+    } catch (error) {
+      req.log.warn({ status: error instanceof Error && "statusCode" in error ? (error as { statusCode?: number }).statusCode : 502 }, `Hotelbeds ${hotelbedsEnvironment()} availability failed`);
+      res.status(error instanceof Error && "statusCode" in error ? Number((error as { statusCode?: number }).statusCode) || 502 : 502).json({ provider: { provider: "HOTELBEDS", mode: hotelbedsEnvironment(), status: "CONFIGURED" }, environment: hotelbedsEnvironment(), results: [], message: error instanceof Error ? error.message : `Hotelbeds ${hotelbedsEnvironment()} availability failed.` });
+      return;
+    }
   }
   res.json({ provider: providerStatus().hotels, results: searchHotels(query.data) });
 });

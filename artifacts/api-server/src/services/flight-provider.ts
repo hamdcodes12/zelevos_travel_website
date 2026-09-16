@@ -780,7 +780,7 @@ export function getFlightProvider(): FlightProvider {
   const providerType = (process.env.FLIGHT_PROVIDER || "").toLowerCase().trim();
   const apiKey = (process.env.FLIGHT_PROVIDER_API_KEY || process.env.DUFFEL_ACCESS_TOKEN || "").trim();
 
-  if (providerType === "ignav" || getIgnavConfig().apiKey) {
+  if (process.env.NODE_ENV !== "test" && (providerType === "ignav" || (!providerType && getIgnavConfig().apiKey))) {
     return new IgnavFlightProvider();
   }
 
