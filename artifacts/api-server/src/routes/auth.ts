@@ -61,6 +61,20 @@ function getApiBaseUrl(req: any): string {
   return `${protocol}://${host}`;
 }
 
+function safeAuthErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : "Unknown authentication error.";
+  return message.replace(/[\w.+-]+@[\w.-]+/g, "<redacted-email>").slice(0, 240);
+}
+
+function logAuthFailure(req: any, route: string, operation: string, error: unknown): void {
+  req.log.error({
+    route,
+    operation,
+    errorType: error instanceof Error ? error.name : typeof error,
+    errorMessage: safeAuthErrorMessage(error),
+  }, "Authentication operation failed");
+}
+
 // --------------------------------------------------------------------------
 // 1. Current Authenticated User, Session Refresh & Provider Status
 // --------------------------------------------------------------------------
@@ -139,14 +153,17 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
     return;
   }
 
+  let operation = "normalizing signup email";
   try {
     const cleanEmail = normalizeEmail(email);
+    operation = "checking existing user";
     const existing = await db.select().from(usersTable).where(eq(usersTable.email, cleanEmail)).limit(1);
     if (existing.length > 0) {
       res.status(409).json({ status: "email_taken", message: "An account with that email already exists. Please log in instead." });
       return;
     }
 
+    operation = "inserting user";
     const customerId = generateCustomerId();
     const [user] = await db
       .insert(usersTable)
@@ -163,6 +180,7 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
       })
       .returning();
 
+    operation = "creating session";
     await createSession(user.id, res);
     res.status(201).json({ user: publicUser(user) });
   } catch (error) {
@@ -170,7 +188,7 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
       res.status(409).json({ status: "email_taken", message: "An account with that email already exists. Please log in instead." });
       return;
     }
-    req.log.error({ err: error }, "Failed to create user account");
+    logAuthFailure(req, "/api/auth/signup", operation, error);
     res.status(500).json({ status: "database_error", message: "Account could not be created." });
   }
 });
@@ -186,8 +204,10 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
+  let operation = "normalizing login email";
   try {
     const cleanEmail = normalizeEmail(parsed.data.email);
+    operation = "finding user";
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, cleanEmail)).limit(1);
 
     if (!user) {
@@ -209,16 +229,18 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     }
 
     // Update lastLoginAt
+    operation = "updating last login";
     await db
       .update(usersTable)
       .set({ lastLoginAt: new Date() })
       .where(eq(usersTable.id, user.id));
     user.lastLoginAt = new Date();
 
+    operation = "creating session";
     await createSession(user.id, res);
     res.json({ user: publicUser(user) });
   } catch (error) {
-    req.log.error({ err: error }, "Failed to log in user");
+    logAuthFailure(req, "/api/auth/login", operation, error);
     res.status(500).json({ status: "database_error", message: "Login could not be completed." });
   }
 });

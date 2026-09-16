@@ -20,10 +20,10 @@ const configuredOrigins = (process.env.CORS_ALLOWED_ORIGINS || process.env.FRONT
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
-const allowedOrigins = process.env.NODE_ENV === "production" ? ["https://zelevos.com"] : configuredOrigins;
+const allowedOrigins = configuredOrigins;
 
-if (process.env.NODE_ENV === "production" && configuredOrigins.some((origin) => origin !== "https://zelevos.com")) {
-  throw new Error("Production CORS configuration must contain only https://zelevos.com.");
+if (process.env.NODE_ENV === "production" && configuredOrigins.some((origin) => origin === "*" || !origin.startsWith("https://"))) {
+  throw new Error("Production CORS configuration must contain only explicit HTTPS origins.");
 }
 
 app.use(
@@ -82,7 +82,9 @@ const apiCors = cors({
       callback(null, true);
       return;
     }
-    callback(new Error("Origin is not allowed by CORS policy."));
+    const error = new Error("Origin is not allowed by CORS policy.");
+    (error as Error & { statusCode?: number }).statusCode = 403;
+    callback(error);
   },
 });
 

@@ -8,9 +8,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
-        value: https://zelevos.com
+        value: https://zelevos.onrender.com
       - key: CORS_ALLOWED_ORIGINS
-        value: https://zelevos.com
+        value: https://zelevos.onrender.com,https://zelevos.com
       - key: HOTELBEDS_HOTEL_BASE_URL
         value: https://api.test.hotelbeds.com
       - key: DATABASE_URL
