@@ -15,6 +15,10 @@ const hasExternalPostgres =
   !process.env.DATABASE_URL?.startsWith("memory://") &&
   !process.env.DATABASE_URL?.startsWith("pglite://");
 
+if (process.env.NODE_ENV === "production" && !hasExternalPostgres) {
+  throw new Error("Production database configuration is missing or invalid. Set DATABASE_URL to the approved production PostgreSQL connection string.");
+}
+
 let poolInstance: any = null;
 let dbInstance: any = null;
 
@@ -260,6 +264,9 @@ if (hasExternalPostgres) {
     await seedAdminUser(async (sql, params) => poolInstance.query(sql, params));
   } catch (err) {
     console.error("Failed to run DDL migrations on external postgres:", err);
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Production database connection or schema initialization failed.", { cause: err });
+    }
   }
 } else {
   // Use embedded PGlite for local development and offline test execution
