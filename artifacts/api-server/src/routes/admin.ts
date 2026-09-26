@@ -946,7 +946,7 @@ router.post("/admin/broadcasts/:id/cancel", requireAdmin, async (req, res): Prom
 router.get("/admin/broadcasts/:id/recipients", requireAdmin, async (req, res): Promise<void> => {
   const id = String(req.params.id);
   try {
-    const recipientsRaw = await db
+    const recipientsRaw: Array<{ recipient: typeof broadcastRecipientsTable.$inferSelect; user: typeof usersTable.$inferSelect }> = await db
       .select({
         recipient: broadcastRecipientsTable,
         user: usersTable,
