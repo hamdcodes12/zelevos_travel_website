@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zelevos — Authorised Partner Portal Video Tour</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background: #0b1120; color: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .video-container { width: 100%; max-width: 1100px; background: #0f172a; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.1); }
+    .video-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .video-header .title-badge { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; color: #ffffff; }
+    .video-header .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px #10b981; animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .screen-stage { position: relative; width: 100%; aspect-ratio: 16 / 10; background: #020617; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .slide-img { width: 100%; height: 100%; object-fit: contain; display: none; transition: opacity 0.3s ease; }
+    .slide-img.active { display: block; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
+    .caption-overlay { position: absolute; bottom: 20px; left: 24px; right: 24px; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    .caption-text strong { display: block; font-size: 14px; color: #38bdf8; margin-bottom: 3px; }
+    .caption-text span { font-size: 13px; color: #cbd5e1; }
+    .video-controls { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #1e293b; border-top: 1px solid rgba(255,255,255,0.08); gap: 14px; }
+    .ctrl-btn { background: #3b82f6; border: none; color: #ffffff; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
+    .ctrl-btn:hover { background: #2563eb; }
+    .progress-bar-wrap { flex: 1; height: 6px; background: rgba(255,255,255,0.15); border-radius: 999px; overflow: hidden; cursor: pointer; }
+    .progress-fill { height: 100%; width: 20%; background: #38bdf8; transition: width 0.3s ease; }
+    .timestamp { font-size: 12px; color: #94a3b8; font-weight: 600; min-width: 60px; text-align: right; }
+    .thumbnails { display: flex; gap: 10px; margin-top: 20px; overflow-x: auto; max-width: 1100px; width: 100%; padding-bottom: 10px; }
+    .thumb-item { flex-shrink: 0; width: 140px; aspect-ratio: 16 / 10; border-radius: 8px; overflow: hidden; border: 2px solid transparent; cursor: pointer; opacity: 0.6; transition: all 0.2s; position: relative; background: #1e293b; }
+    .thumb-item.active { border-color: #38bdf8; opacity: 1; box-shadow: 0 0 12px rgba(56, 189, 248, 0.4); }
+    .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+    .thumb-label { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); font-size: 9px; padding: 2px 4px; text-align: center; color: #ffffff; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <div class="video-container">
+    <div class="video-header">
+      <div class="title-badge">
+        <div class="status-dot"></div>
+        <span>Zelevos — Authorised Partner Workspace Video Tour (100% Isolated & Autonomous)</span>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <a href="/partner-portal" style="font-size: 12px; color: #38bdf8; text-decoration: none; font-weight: 700;">Open Live Portal →</a>
+        <span style="font-size: 12px; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 6px;">Live Interactive Tour</span>
+      </div>
+    </div>
+
+    <div class="screen-stage">
+      <img id="slide-0" class="slide-img active" src="/demo_step1_partner_login.png" alt="Partner Login">
+      <img id="slide-1" class="slide-img" src="/demo_step2_active_dashboard.png" alt="Active Partner Dashboard">
+      <img id="slide-2" class="slide-img" src="/demo_step3_client_lead_form.png" alt="Submit Client Lead">
+      <img id="slide-3" class="slide-img" src="/demo_step4_lead_submitted_success.png" alt="Lead Submitted Success">
+      <img id="slide-4" class="slide-img" src="/demo_step5_bank_payouts.png" alt="Bank & Payouts">
+
+      <div class="caption-overlay">
+        <div class="caption-text">
+          <strong id="caption-title">Step 1: Autonomous Partner Sign In</strong>
+          <span id="caption-desc">Partner portal Admin Console se bilkul alag hai. Partner apna registered Email ya Referral Code (e.g. ZELVOYAGE17) daal kar login karta hai.</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="ctrl-btn" onclick="prevSlide()" style="background: rgba(255,255,255,0.1);">← Prev</button>
+          <button class="ctrl-btn" id="next-btn" onclick="nextSlide()">Next Step →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="video-controls">
+      <button class="ctrl-btn" id="play-btn" onclick="togglePlay()">⏸ Pause</button>
+      <div class="progress-bar-wrap" onclick="seek(event)">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <span class="timestamp" id="time-display">0:05 / 0:25</span>
+    </div>
+  </div>
+
+  <div class="thumbnails">
+    <div class="thumb-item active" onclick="goToSlide(0)">
+      <img src="/demo_step1_partner_login.png" alt="Partner Login">
+      <div class="thumb-label">1. Sign In</div>
+    </div>
+    <div class="thumb-item" onclick="goToSlide(1)">
+      <img src="/demo_step2_active_dashboard.png" alt="Dashboard">
+      <div class="thumb-label">2. Attribution Kit</div>
+    </div>
+    <div class="thumb-item" onclick="goToSlide(2)">
+      <img src="/demo_step3_client_lead_form.png" alt="Lead Form">
+      <div class="thumb-label">3. Client Request</div>
+    </div>
+    <div class="thumb-item" onclick="goToSlide(3)">
+      <img src="/demo_step4_lead_submitted_success.png" alt="Success">
+      <div class="thumb-label">4. Submitted</div>
+    </div>
+    <div class="thumb-item" onclick="goToSlide(4)">
+      <img src="/demo_step5_bank_payouts.png" alt="Bank Details">
+      <div class="thumb-label">5. Payout Details</div>
+    </div>
+  </div>
+
+  <script>
+    const slides = [
+      {
+        src: '/demo_step1_partner_login.png',
+        title: 'Step 1: Autonomous Partner Sign In',
+        desc: "Partner portal Admin Console se bilkul alag hai (/partner-portal). Partner apna registered Email ya Referral Code (e.g. ZELVOYAGE17) enter karke securely sign in karta hai."
+      },
+      {
+        src: '/demo_step2_active_dashboard.png',
+        title: 'Step 2: Official Attribution Kit & 4 Financial KPIs',
+        desc: "Login hote hi partner ko apna unique Referral Code (ZELVOYAGE17), 1-click Copy Share Link, 4 Financial Metric Cards aur Private Commission Ledger display hota hai."
+      },
+      {
+        src: '/demo_step3_client_lead_form.png',
+        title: 'Step 3: Submit VIP Client Holiday Request (Concierge)',
+        desc: "Partner apne VIP customer ke custom trip preferences (Destination, Travellers count, Budget, Hotel preferences) yahan fill kar sakta hai."
+      },
+      {
+        src: '/demo_step4_lead_submitted_success.png',
+        title: 'Step 4: Real-time Booking Attribution & Tracking ID',
+        desc: "Submit karte hi unique Tracking ID (e.g. LEAD-PRT-5010) generate hoti hai aur Zelevos operations team itinerary finalize karke partner ka 5% commission reserve kar leti hai."
+      },
+      {
+        src: '/demo_step5_bank_payouts.png',
+        title: 'Step 5: Direct Bank Settlement & Payout Details',
+        desc: "Partner ke registered bank account / UPI ID par earned commission automatically schedule aur transfer hota hai."
+      }
+    ];
+
+    let currentIndex = 0;
+    let isPlaying = true;
+    let intervalTimer = null;
+
+    function renderSlide() {
+      slides.forEach((_, i) => {
+        const img = document.getElementById('slide-' + i);
+        if (img) img.classList.toggle('active', i === currentIndex);
+      });
+      document.querySelectorAll('.thumb-item').forEach((el, i) => {
+        el.classList.toggle('active', i === currentIndex);
+      });
+
+      document.getElementById('caption-title').textContent = slides[currentIndex].title;
+      document.getElementById('caption-desc').textContent = slides[currentIndex].desc;
+      document.getElementById('progress-fill').style.width = ((currentIndex + 1) / slides.length * 100) + '%';
+      document.getElementById('time-display').textContent = `0:0${(currentIndex + 1) * 5} / 0:25`;
+    }
+
+    function nextSlide() {
+      currentIndex = (currentIndex + 1) % slides.length;
+      renderSlide();
+    }
+
+    function prevSlide() {
+      currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+      renderSlide();
+    }
+
+    function goToSlide(index) {
+      currentIndex = index;
+      renderSlide();
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      document.getElementById('play-btn').textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+      if (isPlaying) {
+        startTimer();
+      } else {
+        clearInterval(intervalTimer);
+      }
+    }
+
+    function seek(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const ratio = clickX / rect.width;
+      const newIndex = Math.min(Math.floor(ratio * slides.length), slides.length - 1);
+      goToSlide(newIndex);
+    }
+
+    function startTimer() {
+      clearInterval(intervalTimer);
+      intervalTimer = setInterval(() => {
+        if (isPlaying) {
+          nextSlide();
+        }
+      }, 5000);
+    }
+
+    startTimer();
+  </script>
+</body>
+</html>

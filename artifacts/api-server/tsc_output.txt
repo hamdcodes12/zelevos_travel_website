@@ -1,0 +1,5 @@
+﻿test/static-assets.test.ts(52,62): error TS2322: Type '{ Origin?: undefined; } | { Origin: string; }' is not assignable to type 'HeadersInit | undefined'.
+  Type '{ Origin?: undefined; }' is not assignable to type 'HeadersInit | undefined'.
+    Type '{ Origin?: undefined; }' is not assignable to type 'Record<string, string>'.
+      Property 'Origin' is incompatible with index signature.
+        Type 'undefined' is not assignable to type 'string'.

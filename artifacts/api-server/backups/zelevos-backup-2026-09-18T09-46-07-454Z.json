@@ -1,0 +1,362 @@
+{
+  "version": "1.0",
+  "createdAt": "2026-09-18T09:46:07.467Z",
+  "metadata": {
+    "totalTables": 11,
+    "counts": {
+      "users": 0,
+      "packages": 1,
+      "destinations": 3,
+      "vendors": 4,
+      "bookings": 0,
+      "bookingServices": 0,
+      "payments": 0,
+      "refunds": 0,
+      "partners": 1,
+      "slaSettings": 5,
+      "auditLogs": 0
+    }
+  },
+  "data": {
+    "users": [],
+    "packages": [
+      {
+        "id": "cedc1a73-42db-418c-88ce-f776be060bb3",
+        "packageId": "ZL-KASH-001",
+        "title": "Kashmir Enchantment: Lakes, Pines & Peaks",
+        "slug": "kashmir-enchantment",
+        "destinationId": "0a25f9ea-c203-4fc8-b12d-9e328b24ec9c",
+        "locations": [
+          "Srinagar",
+          "Gulmarg",
+          "Pahalgam"
+        ],
+        "durationDays": 6,
+        "durationNights": 5,
+        "theme": "family",
+        "travellerSuitability": "Suitable for families, couples and small groups",
+        "baseCost": 42000,
+        "sellingPrice": 56000,
+        "markupType": "fixed",
+        "markupValue": "14000",
+        "serviceFee": 0,
+        "inventory": 15,
+        "inclusions": [
+          "5 Nights Luxury Accommodations",
+          "Daily Breakfast & Dinner",
+          "Private Chauffeur Sedan throughout",
+          "1 Hour Sunrise Shikara Ride on Dal Lake",
+          "Gulmarg Phase 1 Gondola Tickets",
+          "All Tolls, Parking & Driver Allowances"
+        ],
+        "exclusions": [
+          "Airfare (available on request)",
+          "Lunch & Personal Expenses",
+          "Phase 2 Gondola Tickets",
+          "Pony rides or camera fees"
+        ],
+        "policies": {},
+        "media": {
+          "gallery": [
+            "/kashmir-dawn.jpg",
+            "/ladakh-road.jpg"
+          ],
+          "heroImage": "/kashmir-dawn.jpg"
+        },
+        "status": "active",
+        "assignedVendorIds": [
+          "VND-HIMALAYAN",
+          "VND-VALLEYCABS",
+          "VND-SHIKARA"
+        ],
+        "featured": true,
+        "createdAt": "2026-09-18T09:46:07.441Z",
+        "updatedAt": "2026-09-18T09:46:07.441Z"
+      }
+    ],
+    "destinations": [
+      {
+        "id": "0a25f9ea-c203-4fc8-b12d-9e328b24ec9c",
+        "slug": "kashmir",
+        "name": "Kashmir",
+        "country": "India",
+        "state": "Jammu & Kashmir",
+        "city": "Srinagar",
+        "overview": "Experience alpine meadows, shikara rides on tranquil Dal Lake, snow-clad peaks of Gulmarg, and pine-scented valleys of Pahalgam.",
+        "bestTravelPeriod": "April to October (Spring/Autumn) & Dec to Feb (Snow)",
+        "heroImage": "/kashmir-dawn.jpg",
+        "gallery": [
+          "/kashmir-dawn.jpg",
+          "/ladakh-road.jpg"
+        ],
+        "highlights": [
+          "Private Shikara ride at sunrise",
+          "Gondola ride to Apharwat peak",
+          "Aru Valley pine trail walk",
+          "Authentic Wazwan dinner"
+        ],
+        "faqs": [
+          {
+            "answer": "Yes, our curated Kashmir routes have 24/7 dedicated local ground support and private chauffeur transfers.",
+            "question": "Is Kashmir safe for families?"
+          },
+          {
+            "answer": "Mid-December through early March offers prime skiing and pristine snow coverage.",
+            "question": "What is the best time for snow in Gulmarg?"
+          }
+        ],
+        "status": "active",
+        "createdAt": "2026-09-18T09:46:07.438Z",
+        "updatedAt": "2026-09-18T09:46:07.438Z"
+      },
+      {
+        "id": "363f7618-5c7d-4c71-b71b-cc70ef949fcf",
+        "slug": "ladakh",
+        "name": "Ladakh",
+        "country": "India",
+        "state": "Ladakh",
+        "city": "Leh",
+        "overview": "Traverse high mountain passes, emerald lakes at 14,000 feet, and ancient monasteries perched on jagged Himalayan cliffs.",
+        "bestTravelPeriod": "May to September",
+        "heroImage": "/ladakh-road.jpg",
+        "gallery": [
+          "/ladakh-road.jpg",
+          "/kashmir-dawn.jpg"
+        ],
+        "highlights": [
+          "Pangong Tso camping",
+          "Khardung La pass at 17,582 ft",
+          "Nubra Valley double-humped camel safari",
+          "Hemis Monastery sunrise chanting"
+        ],
+        "faqs": [
+          {
+            "answer": "All Zelevos Ladakh packages include 48 hours of rest and gradual acclimatization in Leh before ascending higher passes.",
+            "question": "How do we acclimatize?"
+          }
+        ],
+        "status": "active",
+        "createdAt": "2026-09-18T09:46:07.439Z",
+        "updatedAt": "2026-09-18T09:46:07.439Z"
+      },
+      {
+        "id": "b8ab7bcc-ded0-45f0-b101-f2b9e92d4e23",
+        "slug": "kerala",
+        "name": "Kerala",
+        "country": "India",
+        "state": "Kerala",
+        "city": "Kochi",
+        "overview": "Serene backwaters, emerald tea gardens of Munnar, ayurvedic wellness retreats, and coastal spice ports.",
+        "bestTravelPeriod": "September to March",
+        "heroImage": "/kashmir-dawn.jpg",
+        "gallery": [
+          "/kashmir-dawn.jpg"
+        ],
+        "highlights": [
+          "Private houseboat overnight in Alleppey",
+          "Munnar tea plantation trail",
+          "Periyar wildlife bamboo rafting"
+        ],
+        "faqs": [
+          {
+            "answer": "Yes, all Zelevos contracted houseboats provide full-time air conditioning and private onboard chefs.",
+            "question": "Are private houseboats air-conditioned?"
+          }
+        ],
+        "status": "active",
+        "createdAt": "2026-09-18T09:46:07.440Z",
+        "updatedAt": "2026-09-18T09:46:07.440Z"
+      }
+    ],
+    "vendors": [
+      {
+        "id": "e1f16ed4-2cc8-4327-a728-04150c4fd7ac",
+        "vendorId": "VND-HIMALAYAN",
+        "userId": null,
+        "businessName": "Himalayan Stays & Luxury Resorts",
+        "contactName": "Tariq Ahmad",
+        "email": "vendor.himalayan@zelevos.partner",
+        "phone": "+91 98765 43210",
+        "serviceCategories": [
+          "hotel"
+        ],
+        "operatingLocations": [
+          "Kashmir"
+        ],
+        "kycStatus": "verified",
+        "approvalStatus": "approved",
+        "netRateTerms": null,
+        "blackoutDates": [],
+        "acceptanceRate": "98",
+        "avgResponseMinutes": "25",
+        "cancellationRate": "1",
+        "customerIssuesCount": 0,
+        "totalBookingsCompleted": 0,
+        "createdAt": "2026-09-18T09:46:07.432Z",
+        "updatedAt": "2026-09-18T09:46:07.432Z"
+      },
+      {
+        "id": "bfb10836-101c-401e-9079-0ae0e0cb1c1d",
+        "vendorId": "VND-VALLEYCABS",
+        "userId": null,
+        "businessName": "Valley Fleet & Transfers",
+        "contactName": "Farooq Dar",
+        "email": "vendor.valleycabs@zelevos.partner",
+        "phone": "+91 98765 43211",
+        "serviceCategories": [
+          "transfer"
+        ],
+        "operatingLocations": [
+          "Kashmir"
+        ],
+        "kycStatus": "verified",
+        "approvalStatus": "approved",
+        "netRateTerms": null,
+        "blackoutDates": [],
+        "acceptanceRate": "95",
+        "avgResponseMinutes": "35",
+        "cancellationRate": "2",
+        "customerIssuesCount": 0,
+        "totalBookingsCompleted": 0,
+        "createdAt": "2026-09-18T09:46:07.434Z",
+        "updatedAt": "2026-09-18T09:46:07.434Z"
+      },
+      {
+        "id": "e256d37b-7cd2-4e48-b645-e05241b96815",
+        "vendorId": "VND-SHIKARA",
+        "userId": null,
+        "businessName": "Dal Lake Heritage Guild",
+        "contactName": "Bilal Lone",
+        "email": "vendor.shikara@zelevos.partner",
+        "phone": "+91 98765 43212",
+        "serviceCategories": [
+          "activity"
+        ],
+        "operatingLocations": [
+          "Kashmir"
+        ],
+        "kycStatus": "verified",
+        "approvalStatus": "approved",
+        "netRateTerms": null,
+        "blackoutDates": [],
+        "acceptanceRate": "99",
+        "avgResponseMinutes": "15",
+        "cancellationRate": "0",
+        "customerIssuesCount": 0,
+        "totalBookingsCompleted": 0,
+        "createdAt": "2026-09-18T09:46:07.435Z",
+        "updatedAt": "2026-09-18T09:46:07.435Z"
+      },
+      {
+        "id": "be42946c-3a91-43ce-ae3a-ff8c473bf133",
+        "vendorId": "VND-LADAKHEXP",
+        "userId": null,
+        "businessName": "High Passes Expedition Co.",
+        "contactName": "Tenzin Norbu",
+        "email": "vendor.ladakh@zelevos.partner",
+        "phone": "+91 98765 43213",
+        "serviceCategories": [
+          "hotel",
+          "activity",
+          "transfer"
+        ],
+        "operatingLocations": [
+          "Ladakh"
+        ],
+        "kycStatus": "verified",
+        "approvalStatus": "approved",
+        "netRateTerms": null,
+        "blackoutDates": [],
+        "acceptanceRate": "92",
+        "avgResponseMinutes": "45",
+        "cancellationRate": "3",
+        "customerIssuesCount": 0,
+        "totalBookingsCompleted": 0,
+        "createdAt": "2026-09-18T09:46:07.436Z",
+        "updatedAt": "2026-09-18T09:46:07.436Z"
+      }
+    ],
+    "bookings": [],
+    "bookingServices": [],
+    "payments": [],
+    "refunds": [],
+    "partners": [
+      {
+        "id": "9ec1021f-c03e-42c8-ad82-332ac7756980",
+        "partnerId": "PRT-DEMO-001",
+        "userId": null,
+        "agencyName": "Voyage Holidays India",
+        "contactName": "Rohit Mehra",
+        "email": "partner.voyage@zelevos.travel",
+        "phone": "+91 91234 56789",
+        "referralCode": "VOYAGE10",
+        "commissionRatePercent": "6.0",
+        "status": "approved",
+        "bankDetails": {},
+        "totalBookingsCount": 0,
+        "totalCommissionEarned": 0,
+        "totalCommissionPaid": 0,
+        "createdAt": "2026-09-18T09:46:07.453Z",
+        "updatedAt": "2026-09-18T09:46:07.453Z"
+      }
+    ],
+    "slaSettings": [
+      {
+        "id": "da74d705-0ee2-4ac7-8133-af24c62e9005",
+        "settingKey": "booking_acknowledgement",
+        "displayName": "Booking Acknowledgement",
+        "durationMinutes": 0,
+        "operatingHoursOnly": false,
+        "description": "Immediate/automated acknowledgement",
+        "updatedBy": null,
+        "createdAt": "2026-09-18T09:46:07.427Z",
+        "updatedAt": "2026-09-18T09:46:07.427Z"
+      },
+      {
+        "id": "c1e3deb6-94b4-4bde-9777-eaff1ec5ff4d",
+        "settingKey": "initial_supplier_request",
+        "displayName": "Initial Supplier Request",
+        "durationMinutes": 15,
+        "operatingHoursOnly": false,
+        "description": "Sent within 15 minutes during operating hours",
+        "updatedBy": null,
+        "createdAt": "2026-09-18T09:46:07.429Z",
+        "updatedAt": "2026-09-18T09:46:07.429Z"
+      },
+      {
+        "id": "6d9f04af-4e5e-4454-b105-242508494c87",
+        "settingKey": "standard_supplier_response",
+        "displayName": "Standard Supplier Response",
+        "durationMinutes": 120,
+        "operatingHoursOnly": false,
+        "description": "Supplier must respond within 2 hours",
+        "updatedBy": null,
+        "createdAt": "2026-09-18T09:46:07.429Z",
+        "updatedAt": "2026-09-18T09:46:07.429Z"
+      },
+      {
+        "id": "33a6d288-41a0-408c-a097-27dc3f37defb",
+        "settingKey": "final_confirmation",
+        "displayName": "Final Trip Confirmation",
+        "durationMinutes": 1440,
+        "operatingHoursOnly": false,
+        "description": "Issued within 24 hours of payment",
+        "updatedBy": null,
+        "createdAt": "2026-09-18T09:46:07.430Z",
+        "updatedAt": "2026-09-18T09:46:07.430Z"
+      },
+      {
+        "id": "ae22371d-a832-479e-a79e-876ba6306144",
+        "settingKey": "support_first_response",
+        "displayName": "Support First Response",
+        "durationMinutes": 15,
+        "operatingHoursOnly": false,
+        "description": "Customer support response within 15 minutes",
+        "updatedBy": null,
+        "createdAt": "2026-09-18T09:46:07.431Z",
+        "updatedAt": "2026-09-18T09:46:07.431Z"
+      }
+    ],
+    "auditLogs": []
+  }
+}

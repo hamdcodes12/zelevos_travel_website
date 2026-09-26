@@ -1,0 +1,138 @@
+================================================================================
+          ZELEVOS AUTHORISED PARTNER SYSTEM — COMPLETE WORKING GUIDE (HINGLISH)
+================================================================================
+
+Yeh document Zelevos website ke "Authorised Partner" (Travel Agent & Affiliate Network) 
+ke poore working mechanism ko simple Hinglish me step-by-step samjhata hai.
+
+--------------------------------------------------------------------------------
+1. AUTHORISED PARTNER KYA HAI AUR KAISE WORK KARTA HAI?
+--------------------------------------------------------------------------------
+Zelevos par "Authorised Partner" ek B2B & Creator affiliate system hai:
+- Koi bhi local travel agent, tour operator, ya travel influencer Zelevos ka Partner ban sakta hai.
+- Partner banne par unhe ek unique **Referral Code** aur **Referral Link** milta hai.
+- Jab bhi koi customer us partner ke code ya link ke through trip book karta hai, partner ko har booking par **5% Real-time Commission** milta hai.
+- Admin poore system ko Admin Dashboard se live track karta hai (kisko kitna commission gaya, kaunsi booking aayi).
+
+--------------------------------------------------------------------------------
+2. WEBSITE ME KAHAN CLICK KARNE PAR KYA KHULEGA? (STEP-BY-STEP)
+--------------------------------------------------------------------------------
+
+STEP 1: Partner Program Option Kahan Hai?
+-----------------------------------------
+Aapko website par 3 jagah "Partner Program" ka option milta hai:
+
+Option A (Top Navbar):
+- Website ke sabse upar Navigation bar me dekhein.
+- Wahan **"Partner Program"** ka button/link hai.
+- Uspe click karte hi page smooth scroll hokar seedhe "Zelevos Partner Network" section par le jata hai.
+
+Option B (Homepage Banner - Sabse Main Jagah):
+- Homepage par thoda neeche scroll karein (Featured Packages ke thik neeche).
+- Wahan ek bada Dark Blue / Indigo colour ka premium banner dikhega:
+  "ZELEVOS PARTNER NETWORK — Become a Zelevos Authorised Partner"
+- Us banner ke right side me Blue button hai:
+  --> [ Become a Zelevos Authorised Partner -> ]
+
+Option C (Footer Link):
+- Website ke footer me "Explore" section ke andar bhi "Partner Program" link hai.
+
+
+STEP 2: Blue Button Par Click Karne Par Kya Khulega?
+----------------------------------------------------
+Jab aap "Become a Zelevos Authorised Partner ->" button par click karenge:
+- Ek sundar Popup Modal (Window) open hoga:
+  Heading: "Become an Authorised Partner"
+  Subtitle: "Partner Network - Join the Zelevos API-Free partner program"
+
+Is form me 4 fields hoti hain:
+1. Agency / Business Name * (Jaise: "Voyage Travels" ya "Sharma Holidays")
+2. Primary Contact Name *   (Jaise: "Rahul Sharma")
+3. Email Address *          (Jaise: "partner@sharmatravels.com")
+4. Phone Number *           (Jaise: "+91 98765 43210")
+
+
+STEP 3: "Register as Authorised Partner" Submit Karne Par Kya Hoga?
+------------------------------------------------------------------
+- Jaise hi partner form bhar kar [Register as Authorised Partner] button dabata hai:
+- Modal ke andar ek Green Checkmark Circle display hota hai.
+- Screen par aayega:
+  "Partner Account Activated!"
+  "Your partnership with Zelevos is confirmed."
+- Aur wahan 2 cheezein highlight hoti hain:
+  1. YOUR REFERRAL CODE: (Example: ZELVOYAG42)
+  2. PARTNER ID: (Example: PRT-9481203)
+- Ek clickable Referral Link bhi generate hota hai:
+  https://zelevos.com/?ref=ZELVOYAG42
+
+Partner is code ya link ko copy karke apne customers aur clients ko de sakta hai.
+
+--------------------------------------------------------------------------------
+3. CUSTOMER BOOKING ME YEH REFERRAL CODE KAISE KAAM KARTA HAI?
+--------------------------------------------------------------------------------
+Ab dekhiye commission kaise banta hai:
+
+1. Customer website par aata hai aur koi bhi Holiday Package choose karta hai (e.g. Kashmir Tour ₹45,000).
+2. Customer [Book Package / Customise] click karta hai.
+3. Checkout Modal open hota hai jahan customer apna Name, Email, Phone bharta hai.
+4. Usi Checkout form me ek option hota hai:
+   --> "Partner Referral Code (Optional)"
+5. Agar customer partner ke referral link se aaya tha, toh code AUTOMATICALLY bhar jayega.
+   Ya customer manually apna code (e.g. ZELVOYAG42) wahan type kar sakta hai.
+6. Customer payment complete karta hai.
+7. System backend me turant:
+   - Booking ko us Partner ID se link kar deta hai.
+   - Commission calculate karta hai: (₹45,000 ka 5% = ₹2,250).
+   - "commissions" table me entry save kar deta hai (Status: PENDING).
+
+--------------------------------------------------------------------------------
+4. ADMIN ISKO KAISE CONTROL AUR MANAGE KARTA HAI?
+--------------------------------------------------------------------------------
+Admin ke paas poora master access hai. Admin yeh sab kaise dekhta hai:
+
+STEP 1: Admin Panel Me Kaise Jaayein?
+--------------------------------------
+1. Browser me URL open karein:
+   http://localhost:3000/admin
+2. Admin Login screen aayegi:
+   - Login ID: zelevos-travelai00
+   - Password: ZelevosAdmin2026!
+3. Click "Sign in to Dashboard".
+
+STEP 2: "Partners" Tab Kahan Hai?
+----------------------------------
+- Admin Dashboard ke left sidebar me dekhein:
+  Overview, Customers, Bookings, Packages, Operations, Vendors, PARTNERS, Finance, Custom Trips.
+- **"Partners"** tab par click karein.
+
+STEP 3: Admin Ko Partners Tab Me Kya-Kya Dikhta Hai?
+----------------------------------------------------
+Wahan 2 main sections hain:
+
+1. SECTION A: "Register Partner / Travel Agent Account"
+   - Agar kisi travel agent ne phone ya WhatsApp par direct contact kiya ho, toh Admin khud yahan se uska Agency Name, Contact Name, Email, Phone daal kar [Register Partner] button daba sakta hai.
+   - Admin panel se turant live Referral Code aur Referral Link generate ho kar screen par aa jata hai.
+
+2. SECTION B: "Partner Commission Ledger" (Real-Time Table)
+   - Yeh ek live table hai jisme har ek referral booking ka hisaab-kitaab hota hai:
+     * Partner / Agency Name (e.g. Voyage Travels - Rahul Sharma)
+     * Booking ID (e.g. BK-2026-9812)
+     * Booking Amount (e.g. ₹45,000)
+     * Commission Rate (e.g. 5%)
+     * Earned Commission (e.g. ₹2,250 - Green color me)
+     * Payout Status (PENDING ya PAID)
+
+3. SECTION C: Partner Approval & Security
+   - Admin kisi bhi partner ko ek click me "Approve" kar sakta hai.
+   - System me audit log maintain hota hai ki kaunsa partner kab approve hua.
+
+--------------------------------------------------------------------------------
+5. QUICK SUMMARY (POORA CHAKKAR 4 POINTS ME):
+--------------------------------------------------------------------------------
+1. Partner homepage par "Become an Authorised Partner" click karke register karta hai.
+2. Partner ko uska unique "Referral Code" (e.g. ZELVOYAG42) mil jata hai.
+3. Customer trip book karte waqt yeh code checkout me enter karta hai.
+4. Admin panel ke "Partners" tab me live booking aur partner ka 5% commission automatic dikhne lagta hai.
+
+Is tarah Zelevos ka Authorised Partner system completely automated, transparent aur connected hai!
+================================================================================
