@@ -1,0 +1,1094 @@
+﻿[seed] ADMIN_PASSWORD is not set: the admin account received a random unknown password.
+▶ Round 2 audit C1: public catalog serves explicit DTOs, not raw database rows
+  ✔ C1-1: anonymous GET /api/packages exposes only the public allowlist (no cost, markup, vendor or inventory data, recursively) (12.1045ms)
+  ✔ C1-2: the public list still carries every field the customer UI reads (curated grid and global search) (7.7712ms)
+  ✔ C1-3: anonymous GET /api/packages/:idOrSlug returns only the public detail allowlist (no cost, markup, vendor or inventory data, recursively) (25.1763ms)
+  ✔ C1-4: the public detail still carries every field the customer UI reads (detail modal and checkout) (5.9972ms)
+  ✔ C1-5: draft, archived, paused and offer-expired packages are unlisted and 404 by slug, UUID and package code (anonymous and customer) (69.8614ms)
+  ✔ C1-6: an admin session can still open non-public packages in full (admin edit and preview UI keep working) (35.4567ms)
+  ✔ C1-7: members-only deal is a locked teaser for anonymous callers and fully available to a signed-in customer (38.6968ms)
+  ✔ C1-8: anonymous price filters and price sorting cannot be used to probe locked members-only prices (17.7056ms)
+  ✔ C1-9: public destinations expose only the destination allowlist and only publicly listed packages (5.3665ms)
+  ✔ C1-10: public destination detail returns package DTOs (no internals, no unlisted packages, locked members-only teasers) and 404s a draft destination (11.5768ms)
+  ✔ C1-11: unpublished destination content does not leak through a published package (9.7962ms)
+  ✔ C1-12: admin package and destination endpoints keep returning full rows (29.6876ms)
+✔ Round 2 audit C1: public catalog serves explicit DTOs, not raw database rows (494.9022ms)
+▶ Round 2 audit C2: support tickets cannot be attached to somebody else's booking
+  ✔ C2-1: anonymous ticket citing someone else's booking reference or UUID is stored unlinked and leaks nothing (13.4253ms)
+  ✔ C2-2: an authenticated owner's ticket is linked to their own booking (reference or UUID, ownerId or customerId) (10.3368ms)
+  ✔ C2-3: an authenticated non-owner's ticket is stored unlinked with a response indistinguishable from the no-booking case (8.3388ms)
+  ✔ C2-4: staff list and resolve keep working and staff still see the link on legitimately linked tickets (9.8091ms)
+✔ Round 2 audit C2: support tickets cannot be attached to somebody else's booking (42.265ms)
+[12:44:00.942] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:00.988] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 1,
+      "method": "POST",
+      "url": "/api/admin/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 47
+[12:44:00.994] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.026] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 2,
+      "method": "POST",
+      "url": "/api/auth/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 32
+[12:44:01.028] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.058] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 3,
+      "method": "POST",
+      "url": "/api/auth/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 30
+[12:44:01.099] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.107] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 4,
+      "method": "GET",
+      "url": "/api/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 8
+[12:44:01.111] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.117] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 5,
+      "method": "GET",
+      "url": "/api/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 6
+[12:44:01.118] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-public-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.124] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 6,
+      "method": "GET",
+      "url": "/api/packages/r2-public-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 6
+[12:44:01.131] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/623a2322-2815-4a32-9ab4-274d330e6850"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.137] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 7,
+      "method": "GET",
+      "url": "/api/packages/623a2322-2815-4a32-9ab4-274d330e6850"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 6
+[12:44:01.138] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/R2-PUBLIC-230DCAAF"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.142] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 8,
+      "method": "GET",
+      "url": "/api/packages/R2-PUBLIC-230DCAAF"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 4
+[12:44:01.144] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-public-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.148] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 9,
+      "method": "GET",
+      "url": "/api/packages/r2-public-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 4
+[12:44:01.150] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.155] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 10,
+      "method": "GET",
+      "url": "/api/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:44:01.156] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-draft-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.158] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 11,
+      "method": "GET",
+      "url": "/api/packages/r2-draft-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.159] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/2ff93977-80ac-4071-9a23-04337b3387b0"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.160] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 12,
+      "method": "GET",
+      "url": "/api/packages/2ff93977-80ac-4071-9a23-04337b3387b0"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.161] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/R2-DRAFT-230DCAAF"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.163] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 13,
+      "method": "GET",
+      "url": "/api/packages/R2-DRAFT-230DCAAF"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.164] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-draft-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.167] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 14,
+      "method": "GET",
+      "url": "/api/packages/r2-draft-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 3
+[12:44:01.168] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-draft-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.169] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 15,
+      "method": "GET",
+      "url": "/api/packages/r2-draft-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.170] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-draft-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.172] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 16,
+      "method": "GET",
+      "url": "/api/packages/r2-draft-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.173] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-archived-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.174] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 17,
+      "method": "GET",
+      "url": "/api/packages/r2-archived-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.175] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/17e16b50-7b85-4814-9ffa-2f697f9e1aa2"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.177] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 18,
+      "method": "GET",
+      "url": "/api/packages/17e16b50-7b85-4814-9ffa-2f697f9e1aa2"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.178] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/R2-ARCHIVED-230DCAAF"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.179] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 19,
+      "method": "GET",
+      "url": "/api/packages/R2-ARCHIVED-230DCAAF"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.179] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-archived-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.182] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 20,
+      "method": "GET",
+      "url": "/api/packages/r2-archived-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 3
+[12:44:01.183] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-archived-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.185] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 21,
+      "method": "GET",
+      "url": "/api/packages/r2-archived-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.185] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-archived-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.188] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 22,
+      "method": "GET",
+      "url": "/api/packages/r2-archived-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 3
+[12:44:01.189] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-paused-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.191] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 23,
+      "method": "GET",
+      "url": "/api/packages/r2-paused-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.191] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/0aa652fb-9706-4706-852f-78a87a90c1b3"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.193] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 24,
+      "method": "GET",
+      "url": "/api/packages/0aa652fb-9706-4706-852f-78a87a90c1b3"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.194] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/R2-PAUSED-230DCAAF"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.196] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 25,
+      "method": "GET",
+      "url": "/api/packages/R2-PAUSED-230DCAAF"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.196] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-paused-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.199] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 26,
+      "method": "GET",
+      "url": "/api/packages/r2-paused-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 3
+[12:44:01.200] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-paused-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.201] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 27,
+      "method": "GET",
+      "url": "/api/packages/r2-paused-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.202] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-paused-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.204] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 28,
+      "method": "GET",
+      "url": "/api/packages/r2-paused-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.205] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-expiredoffer-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.207] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 29,
+      "method": "GET",
+      "url": "/api/packages/r2-expiredoffer-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.207] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/6854b0e2-5739-4ed9-9809-590f22fcd0bc"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.209] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 30,
+      "method": "GET",
+      "url": "/api/packages/6854b0e2-5739-4ed9-9809-590f22fcd0bc"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.209] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/R2-EXPIREDOFFER-230DCAAF"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.210] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 31,
+      "method": "GET",
+      "url": "/api/packages/R2-EXPIREDOFFER-230DCAAF"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.211] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-expiredoffer-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.213] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 32,
+      "method": "GET",
+      "url": "/api/packages/r2-expiredoffer-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.214] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-expiredoffer-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.215] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 33,
+      "method": "GET",
+      "url": "/api/packages/r2-expiredoffer-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.216] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-expiredoffer-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.218] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 34,
+      "method": "GET",
+      "url": "/api/packages/r2-expiredoffer-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.220] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/2ff93977-80ac-4071-9a23-04337b3387b0"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.225] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 35,
+      "method": "GET",
+      "url": "/api/packages/2ff93977-80ac-4071-9a23-04337b3387b0"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:44:01.226] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/17e16b50-7b85-4814-9ffa-2f697f9e1aa2"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.231] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 36,
+      "method": "GET",
+      "url": "/api/packages/17e16b50-7b85-4814-9ffa-2f697f9e1aa2"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:44:01.232] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/0aa652fb-9706-4706-852f-78a87a90c1b3"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.237] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 37,
+      "method": "GET",
+      "url": "/api/packages/0aa652fb-9706-4706-852f-78a87a90c1b3"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:44:01.238] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-draft-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.246] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 38,
+      "method": "GET",
+      "url": "/api/packages/r2-draft-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 8
+[12:44:01.247] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.254] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 39,
+      "method": "GET",
+      "url": "/api/admin/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 7
+[12:44:01.262] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.267] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 40,
+      "method": "GET",
+      "url": "/api/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:44:01.269] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-member-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.271] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 41,
+      "method": "GET",
+      "url": "/api/packages/r2-member-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.272] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.276] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 42,
+      "method": "GET",
+      "url": "/api/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 4
+[12:44:01.277] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-member-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.282] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 43,
+      "method": "GET",
+      "url": "/api/packages/r2-member-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:44:01.283] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/751db12e-a266-4199-a372-24b2d4f52832"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.288] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 44,
+      "method": "GET",
+      "url": "/api/packages/751db12e-a266-4199-a372-24b2d4f52832"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:44:01.288] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-public-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.293] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 45,
+      "method": "GET",
+      "url": "/api/packages/r2-public-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:44:01.294] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.295] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 46,
+      "method": "GET",
+      "url": "/api/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.296] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.298] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 47,
+      "method": "GET",
+      "url": "/api/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.298] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.301] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 48,
+      "method": "GET",
+      "url": "/api/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:44:01.301] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.305] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 49,
+      "method": "GET",
+      "url": "/api/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 4
+[12:44:01.306] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.310] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 50,
+      "method": "GET",
+      "url": "/api/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 4
+[12:44:01.311] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/destinations"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.316] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 51,
+      "method": "GET",
+      "url": "/api/destinations"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:44:01.317] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/destinations/r2-kashmir-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.321] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 52,
+      "method": "GET",
+      "url": "/api/destinations/r2-kashmir-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 4
+[12:44:01.322] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/destinations/r2-kashmir-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.325] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 53,
+      "method": "GET",
+      "url": "/api/destinations/r2-kashmir-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:44:01.326] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/destinations/r2-draft-dest-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.327] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 54,
+      "method": "GET",
+      "url": "/api/destinations/r2-draft-dest-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.329] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.333] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 55,
+      "method": "GET",
+      "url": "/api/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 4
+[12:44:01.334] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/packages/r2-underdraftdest-230dcaaf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.337] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 56,
+      "method": "GET",
+      "url": "/api/packages/r2-underdraftdest-230dcaaf"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:44:01.339] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.339] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 57,
+      "method": "GET",
+      "url": "/api/admin/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 0
+[12:44:01.340] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/packages"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.362] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 58,
+      "method": "GET",
+      "url": "/api/admin/packages"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 22
+[12:44:01.363] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/destinations"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.367] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 59,
+      "method": "GET",
+      "url": "/api/admin/destinations"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 4
+[12:44:01.370] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.372] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 60,
+      "method": "POST",
+      "url": "/api/support/tickets"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.374] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.375] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 61,
+      "method": "POST",
+      "url": "/api/support/tickets"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.377] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.378] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 62,
+      "method": "POST",
+      "url": "/api/support/tickets"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.379] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.380] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 63,
+      "method": "POST",
+      "url": "/api/support/tickets"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.382] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.385] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 64,
+      "method": "POST",
+      "url": "/api/support/tickets"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 3
+[12:44:01.387] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.390] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 65,
+      "method": "POST",
+      "url": "/api/support/tickets"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 3
+[12:44:01.393] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.396] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 66,
+      "method": "POST",
+      "url": "/api/support/tickets"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 3
+[12:44:01.397] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.399] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 67,
+      "method": "POST",
+      "url": "/api/support/tickets"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.401] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.402] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 68,
+      "method": "GET",
+      "url": "/api/support/tickets"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.402] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.403] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 69,
+      "method": "GET",
+      "url": "/api/support/tickets"
+    }
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 1
+[12:44:01.404] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.406] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 70,
+      "method": "GET",
+      "url": "/api/support/tickets"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 2
+[12:44:01.407] [32mINFO[39m (16248): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/support/tickets/ab3edb82-607e-4210-8bef-c69c5e444989/resolve"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:44:01.410] [32mINFO[39m (16248): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 71,
+      "method": "POST",
+      "url": "/api/support/tickets/ab3edb82-607e-4210-8bef-c69c5e444989/resolve"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+ℹ tests 16
+ℹ suites 2
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12595.7197

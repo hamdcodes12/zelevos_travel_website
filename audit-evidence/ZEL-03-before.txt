@@ -1,0 +1,5 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✖ ZEL-03: attacker enters public referral code to log in without password and accesses partner portal (32.899ms)
+AssertionError [ERR_ASSERTION]: Expected 400/401 for passwordless login, got 200: {"status":"success","partner":{"id":"...","partnerId":"PRT-1774846","referralCode":"ZELTESTPRT1","agencyName":"Test Travel Agency","contactName":"Test Agent","email":"agent_1774846@example.com","phone":"+91 98888 22222","commissionRatePercent":"5.0","status":"approved","bankDetails":{}},"commissions":[{"id":"...","partnerId":"...","bookingId":"...","bookingAmount":45000,"commissionPercent":"8.5","commissionAmount":3825,"status":"pending"}],"message":"Welcome back, Test Travel Agency!"}
+Attacker bypassed password auth completely using only public referral code.
+Attacker also accessed /api/partners/dashboard anonymously via header x-partner-id: ZELTESTPRT1 returning 200 OK.

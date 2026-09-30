@@ -1,0 +1,985 @@
+﻿▶ Round 2 exploit replay (each test FAILS on Round-1 code and PASSES after the fix)
+  ✔ R2-01: attacker signs in as a verified victim through /auth/verify-otp with a wrong code (7.1441ms)
+  ✔ R2-02a: supplier cannot reach the vendor portal without admin approval (resubmit trick) (97.9667ms)
+  ✔ R2-02b: another vendor's password is never returned and the account cannot be taken over (63.1368ms)
+  ✔ R2-02c: supplier password is stored hashed, never as plaintext (32.8862ms)
+  ✔ R2-02d: duplicate registration does not reveal the existing supplier id (33.3007ms)
+  ✔ R2-02e: legitimate flow still works (status with password, resubmit after changes requested, login only when APPROVED) (238.3288ms)
+  ✔ R2-02f: /suppliers/application-status (GET) no longer exposes applicant details anonymously (31.8786ms)
+[12:46:16.963] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.009] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 1,
+      "method": "POST",
+      "url": "/api/admin/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 46
+[12:46:17.015] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.047] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 2,
+      "method": "POST",
+      "url": "/api/auth/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 32
+[12:46:17.048] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.078] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 3,
+      "method": "POST",
+      "url": "/api/auth/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 30
+[12:46:17.081] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/verify-otp"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.084] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 4,
+      "method": "POST",
+      "url": "/api/auth/verify-otp"
+    }
+    [35mres[39m: {
+      "statusCode": 400
+    }
+    [35mresponseTime[39m: 2
+[12:46:17.085] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/user"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.085] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 5,
+      "method": "GET",
+      "url": "/api/auth/user"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 0
+[12:46:17.088] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.120] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 6,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 32
+[12:46:17.122] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.150] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 7,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 28
+[12:46:17.151] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application/SUP-2026-2763/resubmit"
+    [35mmethod[39m: "PUT"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.154] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 8,
+      "method": "PUT",
+      "url": "/api/suppliers/application/SUP-2026-2763/resubmit"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 3
+[12:46:17.155] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.183] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 9,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 28
+[12:46:17.186] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.217] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 10,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 31
+[12:46:17.218] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application/SUP-2026-2223/resubmit"
+    [35mmethod[39m: "PUT"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.219] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 11,
+      "method": "PUT",
+      "url": "/api/suppliers/application/SUP-2026-2223/resubmit"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 1
+[12:46:17.220] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.247] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 12,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 27
+[12:46:17.249] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.279] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 13,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 30
+[12:46:17.282] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.311] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 14,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 29
+[12:46:17.312] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.314] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 15,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 409
+    }
+    [35mresponseTime[39m: 2
+[12:46:17.315] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.344] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 16,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 29
+[12:46:17.345] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/suppliers/cd1bb810-d950-4be4-973a-514f23365fd9/status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.352] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 17,
+      "method": "POST",
+      "url": "/api/admin/suppliers/cd1bb810-d950-4be4-973a-514f23365fd9/status"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 7
+[12:46:17.353] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application-status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.379] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 18,
+      "method": "POST",
+      "url": "/api/suppliers/application-status"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 26
+[12:46:17.381] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application-status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.409] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 19,
+      "method": "POST",
+      "url": "/api/suppliers/application-status"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 29
+[12:46:17.410] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application/cd1bb810-d950-4be4-973a-514f23365fd9/resubmit"
+    [35mmethod[39m: "PUT"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.437] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 20,
+      "method": "PUT",
+      "url": "/api/suppliers/application/cd1bb810-d950-4be4-973a-514f23365fd9/resubmit"
+    }
+    [35mres[39m: {
+      "statusCode": 409
+    }
+    [35mresponseTime[39m: 27
+[12:46:17.438] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/suppliers/cd1bb810-d950-4be4-973a-514f23365fd9/status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.443] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 21,
+      "method": "POST",
+      "url": "/api/admin/suppliers/cd1bb810-d950-4be4-973a-514f23365fd9/status"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:46:17.448] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application/cd1bb810-d950-4be4-973a-514f23365fd9/resubmit"
+    [35mmethod[39m: "PUT"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.448] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 22,
+      "method": "PUT",
+      "url": "/api/suppliers/application/cd1bb810-d950-4be4-973a-514f23365fd9/resubmit"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 1
+[12:46:17.449] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application/cd1bb810-d950-4be4-973a-514f23365fd9/resubmit"
+    [35mmethod[39m: "PUT"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.478] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 23,
+      "method": "PUT",
+      "url": "/api/suppliers/application/cd1bb810-d950-4be4-973a-514f23365fd9/resubmit"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 29
+[12:46:17.479] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.506] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 24,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 27
+[12:46:17.508] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/suppliers/cd1bb810-d950-4be4-973a-514f23365fd9/status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.515] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 25,
+      "method": "POST",
+      "url": "/api/admin/suppliers/cd1bb810-d950-4be4-973a-514f23365fd9/status"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 7
+[12:46:17.515] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.545] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 26,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 30
+[12:46:17.546] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/portal/dashboard"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.552] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 27,
+      "method": "GET",
+      "url": "/api/vendor/portal/dashboard"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 6
+[12:46:17.554] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.583] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 28,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 29
+[12:46:17.584] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application-status"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.584] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 29,
+      "method": "GET",
+      "url": "/api/suppliers/application-status"
+    }
+    [35mres[39m: {
+      "statusCode": 405
+    }
+    [35mresponseTime[39m: 0
+[12:46:17.585] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.612] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 30,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 27
+[12:46:17.613] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.640] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 31,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 27
+[12:46:17.641] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.669] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 32,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 28
+[12:46:17.670] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.697] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 33,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 27
+[12:46:17.698] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.725] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 34,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 27
+[12:46:17.726] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.753] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 35,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 27
+[12:46:17.754] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.780] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 36,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 26
+[12:46:17.781] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.808] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 37,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 27
+[12:46:17.809] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.836] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 38,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 27
+  ✔ R2-02g: /vendor/login is rate limited per IP and per account (280.1145ms)
+[12:46:17.837] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.863] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 39,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 26
+[12:46:17.864] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.864] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 40,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 429
+    }
+    [35mresponseTime[39m: 0
+[12:46:17.866] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/bookings/ZL93376856/itinerary"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.883] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 41,
+      "method": "GET",
+      "url": "/api/bookings/ZL93376856/itinerary"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 17
+[12:46:17.884] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/bookings/ZL93376856/itinerary"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.884] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 42,
+      "method": "GET",
+      "url": "/api/bookings/ZL93376856/itinerary"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 0
+[12:46:17.885] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/bookings/ZL93376856/itinerary"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.888] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 43,
+      "method": "GET",
+      "url": "/api/bookings/ZL93376856/itinerary"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 3
+  ✔ R2-04a: admin-portal session can open bookings' itineraries (was 401 because requireAuth ignored req.admin) (28.2643ms)
+[12:46:17.888] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/bookings/ZL93376856/itinerary"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.893] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 44,
+      "method": "GET",
+      "url": "/api/bookings/ZL93376856/itinerary"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:46:17.896] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/documents/file/r2-kyc-1790493376856.pdf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.901] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 45,
+      "method": "GET",
+      "url": "/api/suppliers/documents/file/r2-kyc-1790493376856.pdf"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:46:17.902] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/documents/file/r2-kyc-1790493376856.pdf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.903] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 46,
+      "method": "GET",
+      "url": "/api/suppliers/documents/file/r2-kyc-1790493376856.pdf"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 1
+  ✔ R2-04b: admin-portal session can download supplier KYC documents; others cannot (12.4343ms)
+  ✔ R2-04c: admin-portal session is not rejected by the customer-ticket document route (6.0742ms)
+[12:46:17.903] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/documents/file/r2-kyc-1790493376856.pdf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.905] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 47,
+      "method": "GET",
+      "url": "/api/suppliers/documents/file/r2-kyc-1790493376856.pdf"
+    }
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 2
+[12:46:17.906] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/documents/tickets/ZL93376856"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.910] [32mINFO[39m (21048): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 48,
+      "method": "GET",
+      "url": "/api/documents/tickets/ZL93376856"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 4
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:46:17.911] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/documents/tickets/ZL93376856"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.911] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 49,
+      "method": "GET",
+      "url": "/api/documents/tickets/ZL93376856"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 0
+[12:46:17.912] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/bookings/d3f1fb7f-f792-4e0f-b993-f9e2feacc3d6/itinerary"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.917] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 50,
+      "method": "GET",
+      "url": "/api/bookings/d3f1fb7f-f792-4e0f-b993-f9e2feacc3d6/itinerary"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:46:17.917] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/bookings/d3f1fb7f-f792-4e0f-b993-f9e2feacc3d6/itinerary"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.920] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 51,
+      "method": "GET",
+      "url": "/api/bookings/d3f1fb7f-f792-4e0f-b993-f9e2feacc3d6/itinerary"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 3
+  ✔ R2-05: booking itinerary can be opened by its UUID (regex typo made every UUID 404) (8.5783ms)
+  ✔ R2-06: password reset never returns the reset token in the response (6.7018ms)
+[12:46:17.921] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/password/forgot"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.924] [32mINFO[39m (21048): [36mPassword reset token created[39m
+    [35mreq[39m: {
+      "id": 52,
+      "method": "POST",
+      "url": "/api/auth/password/forgot"
+    }
+    [35muserId[39m: "89c25113-1b0d-424b-a2d9-943b5c5c2571"
+    [35mtokenIssued[39m: true
+[12:46:17.924] [33mWARN[39m (21048): [36m[Email Service] RESEND_API_KEY is not set; password reset e-mail not sent.[39m
+    [35memail[39m: "r2***6@example.com"
+[12:46:17.924] [31mERROR[39m (21048): [36mPassword reset e-mail could not be delivered[39m
+    [35mreq[39m: {
+      "id": 52,
+      "method": "POST",
+      "url": "/api/auth/password/forgot"
+    }
+    [35muserId[39m: "89c25113-1b0d-424b-a2d9-943b5c5c2571"
+[12:46:17.924] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 52,
+      "method": "POST",
+      "url": "/api/auth/password/forgot"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:46:17.925] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/password/forgot"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.926] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 53,
+      "method": "POST",
+      "url": "/api/auth/password/forgot"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 1
+[12:46:17.928] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/password/forgot"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.930] [32mINFO[39m (21048): [36mPassword reset token created[39m
+    [35mreq[39m: {
+      "id": 54,
+      "method": "POST",
+      "url": "/api/auth/password/forgot"
+    }
+    [35muserId[39m: "89c25113-1b0d-424b-a2d9-943b5c5c2571"
+    [35mtokenIssued[39m: true
+[12:46:17.931] [32mINFO[39m (21048): [36m[Resend Email Sent Successfully] password reset[39m
+    [35memail[39m: "r2***6@example.com"
+    [35mmessageId[39m: "msg_round2"
+[12:46:17.931] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 54,
+      "method": "POST",
+      "url": "/api/auth/password/forgot"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:46:17.932] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/password/reset"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.961] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 55,
+      "method": "POST",
+      "url": "/api/auth/password/reset"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 29
+  ✔ R2-07: password reset e-mail is really sent through the mail provider and the flow can be completed (66.5965ms)
+[12:46:17.962] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.991] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 56,
+      "method": "POST",
+      "url": "/api/auth/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 29
+[12:46:17.992] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/user"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:17.993] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 57,
+      "method": "GET",
+      "url": "/api/auth/user"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 1
+[12:46:17.995] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/signup"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+  ✔ R2-16: signup can never auto-verify in production even if SKIP_EMAIL_OTP is set (32.7608ms)
+[12:46:18.026] [33mWARN[39m (21048): [36m[Email Service] RESEND_API_KEY is not set.[39m
+    [35memail[39m: "r2***6@example.com"
+[12:46:18.026] [32mINFO[39m (21048): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 58,
+      "method": "POST",
+      "url": "/api/auth/signup"
+    }
+    [35mres[39m: {
+      "statusCode": 502
+    }
+    [35mresponseTime[39m: 31
+    err: {
+      "type": "Error",
+      "message": "failed with status code 502",
+      "stack":
+          Error: failed with status code 502
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:46:18.029] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/upload-document"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:18.032] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 59,
+      "method": "POST",
+      "url": "/api/suppliers/upload-document"
+    }
+    [35mres[39m: {
+      "statusCode": 400
+    }
+    [35mresponseTime[39m: 3
+[12:46:18.033] [32mINFO[39m (21048): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/upload-document"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:46:18.035] [32mINFO[39m (21048): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 60,
+      "method": "POST",
+      "url": "/api/suppliers/upload-document"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 2
+  ✔ R2-15: anonymous document upload rejects files whose content is not really a PDF/PNG/JPEG/WEBP (9.02ms)
+  ✔ R2-03: no live-looking credentials remain in tracked source, scripts, tests or docs (40.112ms)
+✔ Round 2 exploit replay (each test FAILS on Round-1 code and PASSES after the fix) (1158.3979ms)
+ℹ tests 17
+ℹ suites 1
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14079.7452

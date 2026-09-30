@@ -1,0 +1,17 @@
+[BASELINE TEST OUTPUT - ZEL-11 EXPLOIT REPLAY]
+Test: ZEL-11: attacker bypasses rate limiting by spoofing X-Forwarded-For header
+Command: node --test-isolation=process --test artifacts/api-server/test/audit-exploit-replay.test.ts
+
+✖ ZEL-11: attacker bypasses rate limiting by spoofing X-Forwarded-For header (578.0671ms)
+    AssertionError [ERR_ASSERTION]: Rotating X-Forwarded-For should not bypass rate limiting when client IP is evaluated securely
+        at TestContext.<anonymous> (artifacts/api-server/test/audit-exploit-replay.test.ts:415:14)
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+      generatedMessage: false,
+      code: 'ERR_ASSERTION',
+      actual: false,
+      expected: true,
+      operator: '==',
+      diff: 'simple'
+    }

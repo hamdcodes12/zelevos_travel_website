@@ -1,0 +1,4 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✖ ZEL-04: anonymous caller sends x-vendor-id header to access vendor dashboard and invoices (28.411ms)
+AssertionError [ERR_ASSERTION]: Expected 401 on vendor dashboard for anonymous request, got 200: {"vendor":{"id":"...","vendorId":"SUP-2026-TEST","businessName":"Secret Luxury Transfers & Tours","contactName":"John Vendor","email":"vendor_1774846@example.com","phone":"+91 98888 22222","serviceCategories":["cab","transfers"],"approvalStatus":"approved","status":"APPROVED"},"metrics":{"pendingRequests":0,"acceptedRequests":0,"completedServices":0,"totalInvoiced":0,"pendingPayout":0},"recentRequests":[]}
+Anonymous attacker bypassed authentication on all /vendor/portal/* routes by supplying x-vendor-id header or ?vendorId= query parameter.

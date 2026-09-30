@@ -1,0 +1,12 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✔ ZEL-01: attacker registers victim email and steals OTP from response or logs (63.6724ms)
+  ✔ ZEL-01-edge: dev mode with ALLOW_DEBUG_OTP=true supplies debugOtp, and wrong OTP invalidates after 5 attempts (57.7999ms)
+✔ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes) (158.3819ms)
+[Email Service] RESEND_API_KEY is not set. email: "vi***9@victim-domain-no-access.com"
+POST /api/auth/signup -> 502 Bad Gateway { status: "email_delivery_failed", message: "We could not send the verification email. Please try again shortly." } (no debugOtp, no otp)
+POST /api/auth/signup (ALLOW_DEBUG_OTP=true, non-production) -> 200 OK with debugOtp
+POST /api/auth/verify-otp (5 failed attempts) -> 429 { status: "too_many_attempts" }, active verification tokens invalidated.
+ℹ tests 2
+ℹ suites 1
+ℹ pass 2
+ℹ fail 0

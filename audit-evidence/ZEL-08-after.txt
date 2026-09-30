@@ -1,0 +1,12 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✔ ZEL-08: unauthenticated attacker reads customer support tickets and resolves them (17.5489ms)
+
+GET /api/support/tickets (anonymous) -> 401 Unauthorized { status: "unauthorized", message: "Authentication required to access this resource." }
+POST /api/support/tickets/:id/resolve (anonymous) -> 401 Unauthorized
+GET /api/support/tickets (customer role) -> 403 Forbidden { status: "forbidden", message: "Forbidden: role 'customer' lacks permission to access this endpoint." }
+GET /api/support/tickets (admin session) -> 200 OK with tickets list
+POST /api/support/tickets/:id/resolve (admin session) -> 200 OK, marks ticket as RESOLVED and records resolver in audit log
+ℹ tests 1
+ℹ suites 1
+ℹ pass 1
+ℹ fail 0

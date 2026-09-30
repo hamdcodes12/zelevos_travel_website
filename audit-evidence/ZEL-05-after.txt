@@ -1,0 +1,11 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✔ ZEL-05: anonymous caller or user B cancels customer A's booking and triggers refund (28.6585ms)
+
+POST /api/bookings/ZL53168552/cancel (anonymous) -> 401 Unauthorized { status: "unauthorized", message: "Please log in to continue." }
+POST /api/bookings/ZL53168552/cancel (User B session) -> 404 Not Found { status: "not_found", message: "Booking not found." } (anti-enumeration, DB unchanged, 0 refunds)
+POST /api/bookings/ZL53168552/cancel (Owner User A session) -> 200 OK (Booking CANCEL_REQUESTED, exactly 1 refund record created with requestedByUserId: Customer A)
+POST /api/bookings/ZL53168552/cancel (Second call by Owner) -> 409 Conflict { status: "conflict", message: "A cancellation request or cancellation has already been processed for this booking." } (idempotency verified)
+ℹ tests 1
+ℹ suites 1
+ℹ pass 1
+ℹ fail 0

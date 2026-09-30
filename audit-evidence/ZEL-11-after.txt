@@ -1,0 +1,14 @@
+[AFTER FIX TEST OUTPUT - ZEL-11 EXPLOIT REPLAY]
+Test: ZEL-11: attacker bypasses rate limiting by spoofing X-Forwarded-For header
+Command: pnpm --filter @workspace/api-server exec tsx --test --test-isolation=process --test-name-pattern="ZEL-11" test/audit-exploit-replay.test.ts
+
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✔ ZEL-11: attacker bypasses rate limiting by spoofing X-Forwarded-For header (1.5348ms)
+✔ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+ℹ tests 1
+ℹ suites 1
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0

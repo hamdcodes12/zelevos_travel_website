@@ -1,0 +1,17 @@
+[BASELINE TEST OUTPUT - ZEL-10 EXPLOIT REPLAY]
+Test: ZEL-10: attacker brute-forces admin login without rate limiting
+Command: node --test-isolation=process --test artifacts/api-server/test/audit-exploit-replay.test.ts
+
+✖ ZEL-10: attacker brute-forces admin login without rate limiting (464.0437ms)
+    AssertionError [ERR_ASSERTION]: Admin login must enforce rate limiting (expected 429 Too Many Requests within 15 attempts)
+        at TestContext.<anonymous> (artifacts/api-server/test/audit-exploit-replay.test.ts:378:14)
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+      generatedMessage: false,
+      code: 'ERR_ASSERTION',
+      actual: false,
+      expected: true,
+      operator: '==',
+      diff: 'simple'
+    }

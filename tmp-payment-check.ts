@@ -1,0 +1,22 @@
+import app from './src/app.ts';
+import { db, usersTable, adminUsersTable, paymentTransactionsTable } from '@workspace/db';
+import { hashPassword } from './src/lib/auth.ts';
+process.env.DATABASE_URL = 'postgres://test:test@127.0.0.1:5432/test';
+process.env.SESSION_SECRET = 'x';
+process.env.PAYMENT_PROVIDER = 'test';
+const server = app.listen(0, async () => {
+  const port = server.address().port;
+  const base = `http://127.0.0.1:${port}`;
+  const email = `cust_${Date.now()}@example.com`;
+  const signupRes = await fetch(base + '/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName: 'A', email, password: 'SecurePass1234!' }) });
+  const signupBody = await signupRes.json();
+  const cookie = signupRes.headers.get('set-cookie')?.split(';')[0] ?? '';
+  console.log('signup', signupRes.status, JSON.stringify(signupBody));
+  const orderRes = await fetch(base + '/api/payments/order', { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie }, body: JSON.stringify({ amount: 1000, currency: 'INR', receipt: 'rcpt_1', idempotencyKey: 'idem_1' }) });
+  const orderBody = await orderRes.json();
+  console.log('order', orderRes.status, JSON.stringify(orderBody));
+  const verifyRes = await fetch(base + '/api/payments/verify', { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie }, body: JSON.stringify({ orderId: orderBody.orderId, paymentId: 'pay_test_123', signature: 'sig_test_valid' })});
+  const verifyText = await verifyRes.text();
+  console.log('verify', verifyRes.status, verifyText);
+  server.close();
+});

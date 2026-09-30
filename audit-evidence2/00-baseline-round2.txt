@@ -1,0 +1,899 @@
+﻿▶ Round 2 exploit replay (each test FAILS on Round-1 code and PASSES after the fix)
+  ✖ R2-01: attacker signs in as a verified victim through /auth/verify-otp with a wrong code (12.6984ms)
+  ✖ R2-02a: supplier cannot reach the vendor portal without admin approval (resubmit trick) (34.428ms)
+  ✖ R2-02b: another vendor's password is never returned and the account cannot be taken over (10.2426ms)
+  ✖ R2-02c: supplier password is stored hashed, never as plaintext (13.1349ms)
+  ✖ R2-02d: duplicate registration does not reveal the existing supplier id (16.214ms)
+  ✖ R2-02e: legitimate flow still works (status with password, resubmit after changes requested, login only when APPROVED) (12.5192ms)
+  ✖ R2-02f: /suppliers/application-status (GET) no longer exposes applicant details anonymously (16.0498ms)
+  ✖ R2-02g: /vendor/login is rate limited per IP and per account (53.1514ms)
+  ✖ R2-04a: admin-portal session can open bookings' itineraries (was 401 because requireAuth ignored req.admin) (6.4383ms)
+  ✖ R2-04b: admin-portal session can download supplier KYC documents; others cannot (51.4059ms)
+  ✖ R2-04c: admin-portal session is not rejected by the customer-ticket document route (5.0643ms)
+[09:29:32.146] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+  ✖ R2-05: booking itinerary can be opened by its UUID (regex typo made every UUID 404) (7.8497ms)
+[09:29:32.251] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 1,
+      "method": "POST",
+      "url": "/api/admin/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 106
+[09:29:32.262] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.319] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 2,
+      "method": "POST",
+      "url": "/api/auth/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 57
+[09:29:32.322] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.376] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 3,
+      "method": "POST",
+      "url": "/api/auth/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 54
+[09:29:32.382] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/verify-otp"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.387] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 4,
+      "method": "POST",
+      "url": "/api/auth/verify-otp"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[09:29:32.395] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.408] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 5,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 13
+[09:29:32.410] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.415] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 6,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 5
+[09:29:32.417] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application/SUP-2026-4277/resubmit"
+    [35mmethod[39m: "PUT"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.425] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 7,
+      "method": "PUT",
+      "url": "/api/suppliers/application/SUP-2026-4277/resubmit"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 8
+[09:29:32.428] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.435] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 8,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 7
+[09:29:32.440] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.447] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 9,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 7
+[09:29:32.453] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.460] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 10,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 7
+[09:29:32.462] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.465] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 11,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 409
+    }
+    [35mresponseTime[39m: 3
+[09:29:32.468] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.474] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 12,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 6
+[09:29:32.476] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application-status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.478] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 13,
+      "method": "POST",
+      "url": "/api/suppliers/application-status"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.481] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.488] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 14,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 7
+[09:29:32.490] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application-status"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.494] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 15,
+      "method": "GET",
+      "url": "/api/suppliers/application-status"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[09:29:32.497] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.499] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 16,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.500] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.502] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 17,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.503] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.505] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 18,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.506] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.508] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 19,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.509] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.511] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 20,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.512] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.514] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 21,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.515] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.518] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 22,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 3
+[09:29:32.519] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.521] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 23,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.523] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.525] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 24,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.526] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.528] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 25,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.529] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.531] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 26,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.539] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.541] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 27,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.542] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.544] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 28,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.545] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.547] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 29,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 2
+[09:29:32.550] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/bookings/ZL81571942/itinerary"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.554] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 30,
+      "method": "GET",
+      "url": "/api/bookings/ZL81571942/itinerary"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 4
+[09:29:32.602] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/documents/file/r2-kyc-1790481571942.pdf"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.605] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 31,
+      "method": "GET",
+      "url": "/api/suppliers/documents/file/r2-kyc-1790481571942.pdf"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 3
+[09:29:32.608] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/documents/tickets/ZL81571942"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.611] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 32,
+      "method": "GET",
+      "url": "/api/documents/tickets/ZL81571942"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 3
+[09:29:32.613] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/bookings/a5cb81f7-72b7-4756-b43e-9b44e0ee9d60/itinerary"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.619] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 33,
+      "method": "GET",
+      "url": "/api/bookings/a5cb81f7-72b7-4756-b43e-9b44e0ee9d60/itinerary"
+    }
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 6
+  ✖ R2-06: password reset never returns the reset token in the response (6.8252ms)
+  ✖ R2-07: password reset e-mail is really sent through the mail provider and the flow can be completed (5.7081ms)
+[09:29:32.621] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/password/forgot"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.625] [32mINFO[39m (19424): [36mPassword reset token created[39m
+    [35mreq[39m: {
+      "id": 34,
+      "method": "POST",
+      "url": "/api/auth/password/forgot"
+    }
+    [35muserId[39m: "1c35fac3-52f5-4998-8923-6e3d83293518"
+    [35mresetUrl[39m: "http://localhost:3000/reset-password?token=mpzqgD8fBFugJrDY1nWPk2VJmNm44SGUp5uLe4LQNmc"
+[09:29:32.626] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 34,
+      "method": "POST",
+      "url": "/api/auth/password/forgot"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[09:29:32.628] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/password/forgot"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.631] [32mINFO[39m (19424): [36mPassword reset token created[39m
+    [35mreq[39m: {
+      "id": 35,
+      "method": "POST",
+      "url": "/api/auth/password/forgot"
+    }
+    [35muserId[39m: "1c35fac3-52f5-4998-8923-6e3d83293518"
+    [35mresetUrl[39m: "http://localhost:3000/reset-password?token=vjFuO63e6lWqTO2RPTAmU6WAClZkx8mMDPI1iCKJz8U"
+[09:29:32.631] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 35,
+      "method": "POST",
+      "url": "/api/auth/password/forgot"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+  ✔ R2-16: signup can never auto-verify in production even if SKIP_EMAIL_OTP is set (62.5092ms)
+[09:29:32.634] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/signup"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.693] [33mWARN[39m (19424): [36m[Email Service] RESEND_API_KEY is not set.[39m
+    [35memail[39m: "r2***2@example.com"
+[09:29:32.693] [32mINFO[39m (19424): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 36,
+      "method": "POST",
+      "url": "/api/auth/signup"
+    }
+    [35mres[39m: {
+      "statusCode": 502
+    }
+    [35mresponseTime[39m: 59
+    err: {
+      "type": "Error",
+      "message": "failed with status code 502",
+      "stack":
+          Error: failed with status code 502
+              at onResFinished (C:\ztest\r1\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\r1\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[09:29:32.698] [32mINFO[39m (19424): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/upload-document"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[09:29:32.705] [32mINFO[39m (19424): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 37,
+      "method": "POST",
+      "url": "/api/suppliers/upload-document"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 7
+  ✖ R2-15: anonymous document upload rejects files whose content is not really a PDF/PNG/JPEG/WEBP (11.265ms)
+  ✖ R2-03: no live-looking credentials remain in tracked source, scripts, tests or docs (233.6993ms)
+✖ Round 2 exploit replay (each test FAILS on Round-1 code and PASSES after the fix) (879.8205ms)
+ℹ tests 17
+ℹ suites 1
+ℹ pass 1
+ℹ fail 16
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13152.5158
+
+✖ failing tests:
+
+test at test\audit-round2-replay.test.ts:112:3
+✖ R2-01: attacker signs in as a verified victim through /auth/verify-otp with a wrong code (12.6984ms)
+  AssertionError [ERR_ASSERTION]: verify-otp must not accept an arbitrary code for a verified account, got 200: {"status":"verified","message":"Email is already verified. Signed in successfully!","user":{"id":"1c35fac3-52f5-4998-8923-6e3d83293518","customerId":null,"email
+  
+  200 !== 400
+  
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:114:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1905:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:123:3
+✖ R2-02a: supplier cannot reach the vendor portal without admin approval (resubmit trick) (34.428ms)
+  AssertionError [ERR_ASSERTION]: anonymous resubmit must be refused, got 200
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:134:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:142:3
+✖ R2-02b: another vendor's password is never returned and the account cannot be taken over (10.2426ms)
+  AssertionError [ERR_ASSERTION]: registration response must not contain any password material
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:146:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:158:3
+✖ R2-02c: supplier password is stored hashed, never as plaintext (13.1349ms)
+  AssertionError [ERR_ASSERTION]: plaintext password must not be stored
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:164:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'MyChosen#Password9',
+    expected: 'MyChosen#Password9',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:168:3
+✖ R2-02d: duplicate registration does not reveal the existing supplier id (16.214ms)
+  AssertionError [ERR_ASSERTION]: existingVendorId must not be disclosed
+  + actual - expected
+  
+  + 'SUP-2026-8935'
+  - undefined
+  
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:173:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'SUP-2026-8935',
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:176:3
+✖ R2-02e: legitimate flow still works (status with password, resubmit after changes requested, login only when APPROVED) (12.5192ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  404 !== 401
+  
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:186:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 401,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:216:3
+✖ R2-02f: /suppliers/application-status (GET) no longer exposes applicant details anonymously (16.0498ms)
+  AssertionError [ERR_ASSERTION]: email must not be echoed to an anonymous caller
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:222:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:226:3
+✖ R2-02g: /vendor/login is rate limited per IP and per account (53.1514ms)
+  AssertionError [ERR_ASSERTION]: vendor login must return 429 after repeated failures
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:239:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:248:3
+✖ R2-04a: admin-portal session can open bookings' itineraries (was 401 because requireAuth ignored req.admin) (6.4383ms)
+  AssertionError [ERR_ASSERTION]: admin must be able to view itineraries, got 401
+  
+  401 !== 200
+  
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:250:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:259:3
+✖ R2-04b: admin-portal session can download supplier KYC documents; others cannot (51.4059ms)
+  AssertionError [ERR_ASSERTION]: admin-portal session must be able to open KYC documents, got 401
+  
+  401 !== 200
+  
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:266:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:277:3
+✖ R2-04c: admin-portal session is not rejected by the customer-ticket document route (5.0643ms)
+  AssertionError [ERR_ASSERTION]: admin session must reach the handler (503 = storage not configured is fine)
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:279:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 401,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:285:3
+✖ R2-05: booking itinerary can be opened by its UUID (regex typo made every UUID 404) (7.8497ms)
+  AssertionError [ERR_ASSERTION]: owner must open the itinerary by UUID, got 404
+  
+  404 !== 200
+  
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:287:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:293:3
+✖ R2-06: password reset never returns the reset token in the response (6.8252ms)
+  AssertionError [ERR_ASSERTION]: no token or reset link may be returned: {"status":"accepted","message":"Password reset link generated. Copy the resetUrl below (email delivery is not configured — dev mode only).","resetUrl":"http://localhost:3000/reset-password?token=mpzqgD8fBFugJrDY1nWPk2VJmNm44SGUp5uLe4LQNmc","devMode":true}
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:297:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:303:3
+✖ R2-07: password reset e-mail is really sent through the mail provider and the flow can be completed (5.7081ms)
+  AssertionError [ERR_ASSERTION]: exactly one reset e-mail must be sent to the provider
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:319:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:355:3
+✖ R2-15: anonymous document upload rejects files whose content is not really a PDF/PNG/JPEG/WEBP (11.265ms)
+  AssertionError [ERR_ASSERTION]: content that is not a PDF must be rejected even when the client claims application/pdf, got 201
+  
+  201 !== 400
+  
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:359:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 201,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\audit-round2-replay.test.ts:369:3
+✖ R2-03: no live-looking credentials remain in tracked source, scripts, tests or docs (233.6993ms)
+  AssertionError [ERR_ASSERTION]: credential-looking values found in: artifacts\api-server\test\razorpay-live-and-secrets.test.ts (live razorpay key), FIX_REPORT.md (db url with password), scripts\capture-razorpay-direct.mjs (live razorpay key), scripts\capture-razorpay-qr.mjs (live razorpay key), scripts\direct-reset-admin.mjs (db url with password)
+  + actual - expected
+  
+  + [
+  +   'artifacts\\api-server\\test\\razorpay-live-and-secrets.test.ts (live razorpay key)',
+  +   'FIX_REPORT.md (db url with password)',
+  +   'scripts\\capture-razorpay-direct.mjs (live razorpay key)',
+  +   'scripts\\capture-razorpay-qr.mjs (live razorpay key)',
+  +   'scripts\\direct-reset-admin.mjs (db url with password)'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (C:\ztest\r1\artifacts\api-server\test\audit-round2-replay.test.ts:396:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'artifacts\\api-server\\test\\razorpay-live-and-secrets.test.ts (live razorpay key)', 'FIX_REPORT.md (db url with password)', 'scripts\\capture-razorpay-direct.mjs (live razorpay key)', 'scripts\\capture-razorpay-qr.mjs (live razorpay key)', 'scripts\\direct-reset-admin.mjs (db url with password)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,10 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✔ ZEL-06: unauthenticated attacker accesses customer A's full itinerary and PNR (25.1227ms)
+
+GET /api/bookings/ZL53168552/itinerary (anonymous) -> 401 Unauthorized { status: "unauthorized", message: "Please log in to continue." }
+GET /api/bookings/ZL53168552/itinerary (User B session) -> 404 Not Found (anti-enumeration)
+GET /api/bookings/ZL53168552/itinerary (Owner Customer A session) -> 200 OK with digital itinerary HTML
+ℹ tests 1
+ℹ suites 1
+ℹ pass 1
+ℹ fail 0

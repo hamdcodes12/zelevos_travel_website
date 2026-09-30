@@ -1,0 +1,420 @@
+﻿Scope: all 9 workspace projects
+✓ Lockfile passes supply-chain policies (verified 1d ago)
+
+Done in 687ms using pnpm v11.10.0
+▶ Supplier Self-Onboarding & Real Vendor Management Production Flow
+  ✔ 1. Rejects invalid registration payload (missing businessName / invalid email) (8.4982ms)
+  ✔ 2. Real document upload via multipart/form-data stores file and returns fileUrl (10.0494ms)
+  ✔ 3. Supplier successfully self-registers with real business details and attached document (37.9488ms)
+  ✔ 4. Prevents duplicate registration with the same email (HTTP 409 Conflict) (3.2403ms)
+  ✔ 5. Supplier checks live application status using email or vendorId, proven with their password (121.0934ms)
+  ✔ 6. Admin requests changes from applicant with review feedback notes (9.471ms)
+  ✔ 7. Supplier resubmits application with requested changes, setting status to UNDER_REVIEW (36.0688ms)
+  ✔ 8. Admin approves supplier, activating their vendor account and provisioning user login (9.616ms)
+  ✔ 9. Approved vendor logs into the real Vendor Portal with their password (87.7712ms)
+  ✔ 10. Authenticated vendor views their dashboard and isolated business records (8.2609ms)
+  ✔ 11. Vendor creates and manages a real service catalog entry (13.923ms)
+  ✔ 12. Operations assigns booking service -> Vendor accepts task -> uploads voucher (20.9109ms)
+  ✔ 13. Vendor submits real fulfillment invoice for finance settlement (9.4708ms)
+  ✔ 14. Security & RBAC: Unauthenticated access is rejected with 401/403 (3.0928ms)
+✔ Supplier Self-Onboarding & Real Vendor Management Production Flow (487.5109ms)
+[12:52:08.234] [32mINFO[39m (10280): [36mFrontend production assets configured[39m
+    [35mfrontendRoot[39m: "C:\ztest\zl\artifacts\zelevos\dist\public"
+[12:52:08.301] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.351] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 1,
+      "method": "POST",
+      "url": "/api/admin/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 50
+[12:52:08.357] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.360] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 2,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 400
+    }
+    [35mresponseTime[39m: 3
+[12:52:08.366] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/upload-document"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.372] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 3,
+      "method": "POST",
+      "url": "/api/suppliers/upload-document"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 6
+[12:52:08.375] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.408] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 4,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 33
+[12:52:08.412] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/register"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.414] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 5,
+      "method": "POST",
+      "url": "/api/suppliers/register"
+    }
+    [35mres[39m: {
+      "statusCode": 409
+    }
+    [35mresponseTime[39m: 2
+[12:52:08.415] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application-status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.445] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 6,
+      "method": "POST",
+      "url": "/api/suppliers/application-status"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 30
+[12:52:08.446] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application-status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.475] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 7,
+      "method": "POST",
+      "url": "/api/suppliers/application-status"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 29
+[12:52:08.477] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application-status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.504] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 8,
+      "method": "POST",
+      "url": "/api/suppliers/application-status"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 27
+[12:52:08.505] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application-status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.532] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 9,
+      "method": "POST",
+      "url": "/api/suppliers/application-status"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 27
+[12:52:08.534] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application-status"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.535] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 10,
+      "method": "GET",
+      "url": "/api/suppliers/application-status"
+    }
+    [35mres[39m: {
+      "statusCode": 405
+    }
+    [35mresponseTime[39m: 2
+[12:52:08.536] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/suppliers/e77df3f8-b484-4dc4-8bfe-058ce17698b7/status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.543] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 11,
+      "method": "POST",
+      "url": "/api/admin/suppliers/e77df3f8-b484-4dc4-8bfe-058ce17698b7/status"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 7
+[12:52:08.546] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application/e77df3f8-b484-4dc4-8bfe-058ce17698b7/resubmit"
+    [35mmethod[39m: "PUT"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.547] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 12,
+      "method": "PUT",
+      "url": "/api/suppliers/application/e77df3f8-b484-4dc4-8bfe-058ce17698b7/resubmit"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 1
+[12:52:08.548] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/suppliers/application/e77df3f8-b484-4dc4-8bfe-058ce17698b7/resubmit"
+    [35mmethod[39m: "PUT"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.579] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 13,
+      "method": "PUT",
+      "url": "/api/suppliers/application/e77df3f8-b484-4dc4-8bfe-058ce17698b7/resubmit"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 31
+[12:52:08.582] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/suppliers/e77df3f8-b484-4dc4-8bfe-058ce17698b7/status"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.590] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 14,
+      "method": "POST",
+      "url": "/api/admin/suppliers/e77df3f8-b484-4dc4-8bfe-058ce17698b7/status"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 8
+[12:52:08.592] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.646] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 15,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 54
+[12:52:08.647] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.678] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 16,
+      "method": "POST",
+      "url": "/api/vendor/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 31
+[12:52:08.680] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/portal/dashboard"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.686] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 17,
+      "method": "GET",
+      "url": "/api/vendor/portal/dashboard"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 7
+[12:52:08.688] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/portal/services"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.692] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 18,
+      "method": "POST",
+      "url": "/api/vendor/portal/services"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 4
+[12:52:08.693] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/portal/services"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.697] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 19,
+      "method": "GET",
+      "url": "/api/vendor/portal/services"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 4
+[12:52:08.706] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/portal/requests"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.710] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 20,
+      "method": "GET",
+      "url": "/api/vendor/portal/requests"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:52:08.711] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/portal/requests/bf9a992e-c833-49fd-9394-c58fbe197ba3/accept"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.716] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 21,
+      "method": "POST",
+      "url": "/api/vendor/portal/requests/bf9a992e-c833-49fd-9394-c58fbe197ba3/accept"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:52:08.716] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/portal/requests/bf9a992e-c833-49fd-9394-c58fbe197ba3/voucher"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.721] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 22,
+      "method": "POST",
+      "url": "/api/vendor/portal/requests/bf9a992e-c833-49fd-9394-c58fbe197ba3/voucher"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 5
+[12:52:08.723] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/portal/invoices"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.727] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 23,
+      "method": "POST",
+      "url": "/api/vendor/portal/invoices"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 4
+[12:52:08.728] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/portal/invoices"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.731] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 24,
+      "method": "GET",
+      "url": "/api/vendor/portal/invoices"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:52:08.732] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/vendor/portal/dashboard"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.732] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 25,
+      "method": "GET",
+      "url": "/api/vendor/portal/dashboard"
+    }
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 0
+[12:52:08.733] [32mINFO[39m (10280): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/admin/suppliers"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:52:08.734] [32mINFO[39m (10280): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 26,
+      "method": "GET",
+      "url": "/api/admin/suppliers"
+    }
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 1
+ℹ tests 14
+ℹ suites 1
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12617.7783

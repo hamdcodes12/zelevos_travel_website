@@ -1,0 +1,14 @@
+[AFTER FIX TEST OUTPUT - ZEL-09 EXPLOIT REPLAY]
+Test: ZEL-09: attacker forges document access token using hardcoded fallback secret
+Command: node --test-isolation=process --test artifacts/api-server/test/audit-exploit-replay.test.ts
+
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✔ ZEL-09: attacker forges document access token using hardcoded fallback secret (2.4855ms)
+✔ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes) (186.6142ms)
+ℹ tests 1
+ℹ suites 1
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0

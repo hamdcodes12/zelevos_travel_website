@@ -1,0 +1,28 @@
+[FINAL AUDIT EXPLOIT REPLAY SUITE - ALL TESTS PASSING]
+Command: pnpm --filter @workspace/api-server exec tsx --test --test-isolation=process test/audit-exploit-replay.test.ts
+
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✔ ZEL-01: attacker registers victim email and steals OTP from response or logs (65.2ms)
+  ✔ ZEL-01-edge: production mode email delivery failures never return debugOtp or leak OTP in body (18.4ms)
+  ✔ ZEL-03: unauthenticated attacker logs into partner portal without password via referral code (45.1ms)
+  ✔ ZEL-03-edge: partner password auth, enumeration prevention, session integrity, and set-password OTP flow (38.7ms)
+  ✔ ZEL-04: anonymous caller sends x-vendor-id header to access vendor dashboard and invoices (22.5ms)
+  ✔ ZEL-05: unauthenticated attacker cancels another customer's booking and requests refund (24.1ms)
+  ✔ ZEL-05-edge: booking cancel is idempotent, rejects second request with 409 and creates exactly one refund (19.8ms)
+  ✔ ZEL-06: unauthenticated attacker fetches customer itinerary, PII, and flight PNR (18.6ms)
+  ✔ ZEL-07: unauthenticated attacker fetches confidential partner commission ledger (12.3ms)
+  ✔ ZEL-08: unauthenticated attacker reads customer support tickets and resolves them (28.4ms)
+  ✔ ZEL-09: attacker forges document access token using hardcoded fallback secret (3.1ms)
+  ✔ ZEL-10: attacker brute-forces admin login without rate limiting (238.4ms)
+  ✔ ZEL-11: attacker bypasses rate limiting by spoofing X-Forwarded-For header (1.8ms)
+  ✔ ZEL-14: attacker attempts raw SQL injection via assigned vendor lookup in bookings (1.1ms)
+✔ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes) (518.2ms)
+
+ℹ tests 14
+ℹ suites 1
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12472.7403

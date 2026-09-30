@@ -1,0 +1,4 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✖ ZEL-06: unauthenticated attacker accesses customer A's full itinerary and PNR (15.221ms)
+AssertionError [ERR_ASSERTION]: Expected 401 for unauthenticated itinerary access, got 200
+Anonymous caller was served full itinerary HTML containing traveler names, contacts, and booking vouchers without any authentication.
