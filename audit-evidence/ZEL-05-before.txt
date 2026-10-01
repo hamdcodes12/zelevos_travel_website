@@ -1,0 +1,4 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✖ ZEL-05: anonymous caller or user B cancels customer A's booking and triggers refund (29.112ms)
+AssertionError [ERR_ASSERTION]: Expected 401 for anonymous cancellation, got 200: {"status":"success","booking":{"id":"...","bookingId":"ZL1774846","status":"CANCEL_REQUESTED"},"message":"Cancellation request received and forwarded to operations."}
+Attacker (anonymous caller) successfully initiated cancellation on Customer A's booking and auto-created refund record without any authentication or ownership validation.

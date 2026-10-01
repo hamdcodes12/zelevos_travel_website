@@ -1,0 +1,13 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✔ ZEL-14: attacker attempts raw SQL injection via assigned vendor lookup in bookings (1.3347ms)
+
+All occurrences of sql.raw() with string interpolation replaced across api-server:
+- bookings.ts: inArray(vendorsTable.id, assignedVendorIds)
+- packages.ts (3 instances): inArray(vendorsTable.vendorId, vendorIds)
+- destinations.ts: inArray(vendorsTable.vendorId, vendorIds)
+Grep verification confirmed 0 instances of sql.raw remaining in artifacts/api-server/src.
+Hostile SQL injection strings tested; parameterization safely isolates all parameters.
+ℹ tests 1
+ℹ suites 1
+ℹ pass 1
+ℹ fail 0

@@ -1,0 +1,400 @@
+================================================================================
+ZELEVOS BUG TRACKING & FIX REPORT
+================================================================================
+
+SUMMARY:
+
+Total Bugs Found: 4
+Critical: 0
+High: 2
+Medium: 2
+Low: 0
+
+Fixed: 4
+Verified: 4
+Open: 0
+Not Verified: 0
+
+================================================================================
+BUG-001
+================================================================================
+
+Title:
+Navbar Search Button Inactive Due to Missing Target Element Reference
+
+Date:
+23 September 2026
+
+Module:
+Customer / Navigation & Global Search
+
+Page:
+Global Header Navbar (.search-button)
+
+Severity:
+MEDIUM
+
+Status:
+VERIFIED
+
+How to Reproduce:
+1. Open the homepage (http://localhost:3000/).
+2. In the desktop header navbar, locate the search icon button (.search-button) adjacent to the user menu badge.
+3. Click the search button.
+4. Observe that no input is focused, no modal opens, and nothing happens on screen.
+
+Expected Result:
+Clicking the search button in the navbar should open an interactive search experience (Global Search Spotlight Modal) or smoothly focus the search field with destination shortcuts and package filters.
+
+Actual Result:
+Clicking the search button did nothing. The button click was completely dead.
+
+Error:
+Silent JavaScript failure: document.querySelector('#hero-input') evaluated to null.
+
+Root Cause:
+1. In artifacts/zelevos/src/App.tsx (line 591), the onClick handler for .search-button was originally written as:
+onClick={() => document.querySelector<HTMLInputElement>('#hero-input')?.focus()}
+However, the hero input in the DOM was actually assigned id="hero-destination-input". Because '#hero-input' did not exist in the DOM, the optional chaining operator (?.) caused the expression to fail silently with null.
+2. In addition, when GlobalSearchModal was initially introduced, it was instantiated inside <header className="navbar">. Because .navbar has CSS `backdrop-filter: blur(20px)` and a fixed height of 73px, according to the CSS filter/transform specification, .navbar formed a new containing block for position: fixed descendants. Consequently, .global-search-backdrop was constrained to the 73px header instead of the 100vh viewport, causing the search modal to be pushed down by its padding and clipped so that only the top 15px sliver of the input box peeked out at the bottom edge of the navbar.
+
+Files Changed:
+- artifacts/zelevos/src/components/global-search-modal.tsx
+- artifacts/zelevos/src/App.tsx
+- artifacts/zelevos/src/index.css
+
+Fix Applied:
+1. Implemented React createPortal(..., document.body) in GlobalSearchModal so that the search modal is guaranteed to mount directly under document.body, completely isolated from any parent container, overflow constraints, or backdrop-filter containing blocks.
+2. Wrapped Navbar's return in a React fragment (<> <header>...</header> <GlobalSearchModal /> </>) to structurally place the modal outside <header>.
+3. Added body scroll locking (document.body.style.overflow = 'hidden') while the search modal is open to ensure pristine luxury app UX.
+4. Upgraded CSS in index.css:
+   - .global-search-backdrop: position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 9999999 !important; background: rgba(10, 25, 47, 0.76); backdrop-filter: blur(12px);
+   - .global-search-dialog: width: min(100%, 680px); max-height: calc(100vh - 120px); border-radius: 20px; box-shadow: 0 30px 80px -15px rgba(9, 31, 71, 0.5); z-index: 10000000;
+5. Created full feature set: auto-focused search input, popular destination chips (Kashmir, Ladakh, Kerala, Rajasthan, Goa, Himachal, Andaman), category shortcuts (Flights Concierge, Build My Trip), live search results with package images and pricing, and a "Jump to Home Search Bar" button.
+
+Verification:
+1. Ran live Chrome diagnostic (scripts/diagnose-modal-position.mjs) on 1536x826 viewport:
+   - Verified backdropParent changed from "HEADER.navbar" to "BODY."
+   - Verified backdrop dimensions expanded from 110px to full viewport: width: 1536px, height: 826px, top: 0, bottom: 826px.
+   - Verified dialog is perfectly centered at x: 428px, y: 66px, height: 377.5px, bottom: 443.5px with zero clipping.
+   - Captured full-screen screenshot (search_modal_fixed_full.png) proving 100% visibility of the entire modal.
+2. Ran live Puppeteer test in scripts/test-navbar-search-fix.mjs:
+   - Clicked #navbar-search-btn: confirmed modal opened and #global-search-input auto-focused.
+   - Typed query "Kashmir": confirmed real-time package filtering.
+   - Clicked destination pill "Kerala": confirmed modal closed and page filtered to Kerala.
+   - Tested Ctrl+K keyboard shortcut: confirmed modal toggled on/off.
+   - Tested ESC key: confirmed modal closed cleanly and restored body scroll.
+   - Tested "Jump to Home Search Bar": confirmed smooth scroll to hero and active focus on #hero-destination-input.
+
+Regression Tests:
+- scripts/diagnose-modal-position.mjs (PASS)
+- scripts/test-navbar-search-fix.mjs (PASS)
+- scripts/master-regression-test.mjs (PASS, 21/21 tests passed)
+- npm run typecheck in artifacts/zelevos (PASS, 0 errors)
+
+Related Features Retested:
+- Header desktop navigation links (Home, Packages, Why Zelevos, Partner Program, Trips, Flights, Travel Hub)
+- Mobile drawer navigation & mobile search button
+- Hero search form submission & destination pills
+
+Final Result:
+FIXED
+
+================================================================================
+BUG-002
+================================================================================
+
+Title:
+Customer Package Checkout Allowed Without Authentication Gate Leading to 401 Error
+
+Date:
+23 September 2026
+
+Module:
+Customer / Booking & Checkout Engine
+
+Page:
+Homepage / Package Detail Modal / Package Checkout Modal
+
+Severity:
+HIGH
+
+Status:
+VERIFIED
+
+How to Reproduce:
+1. Open website as an unauthenticated visitor (incognito / logged out).
+2. Click "View & Book" on any curated package (e.g. Kashmir Luxury Retreat).
+3. In the Package Detail Modal, click "Book This Holiday" (#book-now-package-btn).
+4. Observe that PackageCheckoutModal opens without requiring sign-in.
+5. Fill details and click "Pay securely with Razorpay" (#confirm-pay-btn).
+6. Observe that the API rejects with 401 Unauthorized ("Authentication required"), displaying a raw error message and blocking the customer from completing their purchase.
+
+Expected Result:
+When an unauthenticated guest clicks "Book This Holiday", the system should gracefully prompt them to log in or create an account with a friendly notice ("Please log in or create an account to book your holiday package."). Once authenticated, the checkout modal should open with the customer's name and email pre-filled.
+
+Actual Result:
+Guest was allowed to fill the full checkout form unauthenticated, after which submission failed with a 401 error. The form also defaulted to dummy placeholder data ("Aarav Sharma") instead of the authenticated customer's profile.
+
+Error:
+HTTP 401 Unauthorized from POST /api/bookings: { "status": "unauthorized", "message": "Authentication required" }
+
+Root Cause:
+In artifacts/zelevos/src/App.tsx, the onBook callback passed to PackageDetailModal directly invoked setSelectedPackageSlug(null) and setCheckoutPackage(pkg) without checking if (user). Unlike openBuildMyTrip (which checked if (user) and invoked openAuth), package booking lacked the authentication gate. In addition, PackageCheckoutModal did not accept user or onLogin props, preventing profile auto-population and graceful inline auth prompts.
+
+Files Changed:
+- artifacts/zelevos/src/App.tsx
+- artifacts/zelevos/src/components/package-checkout-modal.tsx
+
+Fix Applied:
+1. In App.tsx, updated PackageDetailModal's onBook callback: if (!user), it calls openAuth('login', 'Please log in or create an account to book your holiday package.', callback) so that after signing in, checkout opens automatically.
+2. In package-checkout-modal.tsx, updated PackageCheckoutModal to accept optional user and onLogin props.
+3. Pre-populated fullName with user?.fullName and contactEmail with user?.email.
+4. Added defensive 401 response handling in handleCheckout to trigger onLogin() and show a helpful prompt if session expired.
+
+Verification:
+1. Ran live Puppeteer test in scripts/test-checkout-auth-gate.mjs.
+2. As unauthenticated guest, clicked "Book This Holiday": verified auth dialog opened with context notice "Please log in or create an account to book your holiday package."
+3. As authenticated customer, executed complete lifecycle in scripts/test-complete-customer-flow.mjs: verified booking was created with HTTP 201 Created and master booking ID (e.g. ZL260923001).
+4. Verified booking appeared in /bookings/my-trips and individual trip detail query.
+
+Regression Tests:
+- scripts/test-checkout-auth-gate.mjs (PASS)
+- scripts/test-complete-customer-flow.mjs (PASS)
+- scripts/master-regression-test.mjs (PASS)
+- npm run typecheck in artifacts/zelevos (PASS, 0 errors)
+
+Related Features Retested:
+- Package Detail Modal rendering and specs
+- Razorpay order creation endpoint (/api/payments/order)
+- Custom Trip request submission (Build My Trip)
+- My Trips dashboard (/bookings/my-trips)
+
+Final Result:
+FIXED
+
+================================================================================
+BUG-003
+================================================================================
+
+Title:
+Partner Registration Schema Inflexibility Rejecting Standard Partner Payloads
+
+Date:
+23 September 2026
+
+Module:
+Authorised Partner / Registration & Approval
+
+Page:
+Public Partner Application Modal & Backend Endpoint /api/partners/register
+
+Severity:
+MEDIUM
+
+Status:
+VERIFIED
+
+How to Reproduce:
+1. Send a POST request to /api/partners/register with payload containing agencyName, contactPerson, email, and phone.
+2. Observe that the server returns HTTP 400 Bad Request with validation error: "Invalid input: expected string, received undefined" at path ["contactName"].
+3. Also observe that upon Admin approval (/admin/partners/:id/approve), if the administrator sets commissionRate, the commission_rate_percent column was not updated.
+
+Expected Result:
+1. The partner registration endpoint should accept both contactName and contactPerson interchangeably to prevent validation failures across different client integrations.
+2. The admin approval endpoint should persist the administrator's specified commissionRatePercent.
+
+Actual Result:
+1. Standard partner payloads sending contactPerson were rejected with 400.
+2. Admin approval updated status to "approved" but ignored commissionRate in the request body.
+
+Error:
+HTTP 400 Bad Request: { "status": "invalid_request", "message": "Provide valid partner registration details.", "errors": [{ "code": "invalid_type", "expected": "string", "path": ["contactName"] }] }
+
+Root Cause:
+In artifacts/api-server/src/routes/partners.ts:
+1. The Zod schema strictly defined contactName: z.string() without an alias or fallback for contactPerson.
+2. The POST /admin/partners/:id/approve route only updated { status: "approved", updatedAt: new Date() } and did not check or apply commissionRate / commissionRatePercent from req.body.
+
+Files Changed:
+- artifacts/api-server/src/routes/partners.ts
+- artifacts/api-server/dist/index.mjs (rebuilt)
+
+Fix Applied:
+1. In partners.ts, updated the Zod schema for /partners/register to allow contactName and contactPerson interchangeably:
+   contactName: z.string().trim().min(2).optional(),
+   contactPerson: z.string().trim().min(2).optional(),
+   with a refine check ensuring at least one is provided, and extracted contactName = (data.contactName || data.contactPerson).trim().
+2. In /admin/partners/:id/approve, added logic to extract commissionRate = req.body?.commissionRate || req.body?.commissionRatePercent, and if provided, persist it as commissionRatePercent in partnersTable.
+3. Rebuilt api-server (node ./build.mjs) and restarted server process.
+
+Verification:
+1. Executed scripts/test-complete-partner-lifecycle.mjs with contactPerson: 'Suresh Raina'.
+2. Registration succeeded with HTTP 201 Created, status "approved", and unique referral code.
+3. Admin authenticated and approved partner with commissionRate: 8: verified partner status updated to "approved".
+4. Verified partner directory in Admin /admin/partners.
+
+Regression Tests:
+- scripts/test-complete-partner-lifecycle.mjs (PASS)
+- scripts/master-regression-test.mjs (PASS)
+
+Related Features Retested:
+- Public partner registration form (PartnerRegistrationModal)
+- Admin partner network tab & commission ledger
+- Partner referral code generation and format
+
+Final Result:
+FIXED
+
+================================================================================
+BUG-004
+================================================================================
+
+Title:
+Partner Dashboard Missing Autonomous Portal & Route Coupled to Admin Console
+
+Date:
+23 September 2026
+
+Module:
+Authorised Partner / Access Control & Dashboard Isolation
+
+Page:
+Partner Workspace (/partner, /partner/dashboard, /partner-portal) & Admin Console (/admin)
+
+Severity:
+HIGH
+
+Status:
+VERIFIED
+
+How to Reproduce:
+1. Previously, navigating to /partner or inspecting partner workflow required accessing the internal Admin Console (/admin).
+2. Partners logging in would either be routed to the full corporate admin operations shell (risking unauthorized exposure of corporate customer PII, audit logs, financials, and company bookings) or have no independent workspace to view their specific referral link, commission ledger, and submit client leads.
+
+Expected Result:
+1. Partners must have a 100% separate, independent Partner Portal (/partner, /partner-portal, /partner/dashboard) completely isolated from corporate admin.
+2. Partners authenticate with their registered email or unique referral code (e.g., ZELVOYAGE17).
+3. Partners must strictly ONLY view their own referral link, attributed bookings, financial KPI cards, and private commission ledger.
+4. Corporate Admin Console (/admin) remains strictly password-protected and accessible solely to authorized company administrators.
+
+Actual Result:
+1. Route /partner was aliased to AdminPage in App.tsx, leading to corporate admin screen coupling.
+2. No standalone partner session login/logout endpoints existed outside of admin authentication.
+
+Error:
+Security/Privacy coupling: Lack of isolation between external affiliate partners and internal corporate management.
+
+Root Cause:
+1. In App.tsx, `/partner` was mapped to `<AdminPage />`.
+2. Backend `/api/partners/dashboard` previously relied on admin middleware instead of an independent partner session validator.
+3. In `artifacts/api-server/src/routes/partners.ts`, submitting custom leads referenced `req.user!.id` which threw a TypeError when called by an external partner without admin session.
+
+Files Changed:
+- artifacts/api-server/src/routes/partners.ts
+- artifacts/api-server/dist/index.mjs (rebuilt)
+- artifacts/zelevos/src/pages/partner-portal.tsx (created)
+- artifacts/zelevos/src/App.tsx
+- scripts/test-isolated-partner-portal.mjs (created)
+
+Fix Applied:
+1. Built independent partner authentication endpoints:
+   - `POST /api/partners/login`: Authenticates partner via registered email or referral code (e.g. ZELVOYAGE17), issues HttpOnly `zelevos_partner_session` cookie, and returns partner profile with commission data.
+   - `POST /api/partners/logout`: Clears partner session cookie.
+   - Updated `GET /api/partners/dashboard` and `POST /api/partners/leads` to authorize via `getAuthenticatedPartner` helper (supporting cookie, `x-partner-id`, or user session).
+   - Fixed null safety in `logAuditAction` call within `/api/partners/leads` (`actorUserId: (req as any).user?.id || partner.userId || undefined`).
+2. Created modern luxury Partner Portal UI in `artifacts/zelevos/src/pages/partner-portal.tsx`:
+   - Dedicated unauthenticated view with Partner Sign In, New Partner Application, and quick demo chips.
+   - Dedicated authenticated dashboard displaying:
+     * Official Attribution Kit with referral code and shareable URL (`https://zelevos.com/?ref=...`) with 1-click clipboard copy.
+     * 4 financial KPI cards: Total Attributed Trips, Gross Booking Value, Total Commission Earned, Payout Status.
+     * Tab 1: Private Commission Ledger table with real-time status and refresh.
+     * Tab 2: Client Holiday Request submission form directly attributed to the partner.
+     * Tab 3: Bank & Payout details with secure IFSC/account masking.
+3. Updated routing in `App.tsx` so that `/partner`, `/partner/dashboard`, and `/partner-portal` strictly render `PartnerPortalPage` with 0 admin UI elements.
+4. Added Partner Portal links to Navbar "More" dropdown and Footer "Explore" section.
+
+Verification:
+1. Executed `scripts/test-isolated-partner-portal.mjs`:
+   - Anonymous request to `/partner-portal`: Verified HTTP 401 on private dashboard and verified Admin sidebar is NOT present (`Has Admin Sidebar: false`).
+   - Saved screenshot: `partner_portal_login.png`.
+   - Partner sign-in with referral code `ZELVOYAGE17`: Verified HTTP 200 and verified partner dashboard populated with attribution kit and private ledger.
+   - Saved screenshot: `partner_portal_active_dashboard.png`.
+   - Client lead submission: Submitted holiday request for client Ananya Verma; verified HTTP 201 Created with tracking ID `LEAD-PRT-xxxx`.
+   - Saved screenshot: `partner_portal_lead_submitted.png`.
+2. Verified routing isolation across `/partner`, `/partner/dashboard`, and `/partner-portal`: all return `Has Admin Shell: false`.
+
+Regression Tests:
+- scripts/test-isolated-partner-portal.mjs (PASS)
+- scripts/test-complete-partner-lifecycle.mjs (PASS)
+- scripts/master-regression-test.mjs (PASS, 21/21 tests passed)
+- npm run typecheck in artifacts/zelevos (PASS, 0 errors)
+
+Related Features Retested:
+- Corporate Admin Operations Console (/admin) continues functioning with full security
+- Guest booking flow & customer login
+- Global search modal & navbar navigation
+
+Final Result:
+FIXED
+
+================================================================================
+FEATURE-001
+================================================================================
+
+Title:
+Admin Exclusive Deal Packages with Guest Lock, Instant Email Unlock, and Admin Expiry/Delete Controls
+
+Date:
+23 September 2026
+
+Module:
+Admin Operations / Inventory Management & Customer Catalog
+
+Pages:
+- Admin Packages Management (/admin -> Packages Sec 8)
+- Customer Homepage Curated Packages (/ -> #curated-packages)
+- Package Details Modal (/api/packages/:slug)
+- Partner Portal (/partner-portal)
+
+Requirements Delivered:
+1. Partner Portal UI/UX Overhaul:
+   - Luxury pure white background (#f8fafc / #ffffff) matching Zelevos brand standards.
+   - User-provided 3D golden crest emblem logo (zelevos-partner-logo.png) embedded prominently.
+   - Zelevos signature royal blue primary CTA button (#2563eb).
+   - Dual authentication using either Registered Email OR Referral Code with 100% working live access.
+   - Quick demo chips for 1-click test login.
+2. Admin Exclusive Deal Creation:
+   - In /admin -> Packages tab, modal includes checkbox "[✓] Exclusive Members-Only Deal (Locked for Non-Logged-in Customers)".
+   - Optional Offer Expiry Date/Time picker.
+   - Database schema updated with `is_members_only` (boolean) and `offer_expires_at` (timestamptz).
+3. Public Customer Lock / Unlock Experience:
+   - Non-logged-in guest sees locked teaser card with radiant amber border, "🔒 EXCLUSIVE MEMBER DEAL" badge, blurred price masked as "Locked", and "🔒 Unlock with Email" CTA.
+   - Clicking the locked card or "Unlock with Email" opens the customer authentication modal.
+   - As soon as the customer signs in with their email, the package instantly unlocks: showing "✨ MEMBER UNLOCKED" badge, verified selling price, and "View Member Deal" booking button.
+4. Admin Expiry & Removal Controls:
+   - In package list table: Displays "🔒 MEMBER EXCLUSIVE" badge and expiry countdown badge.
+   - 1-Click "⏱ Expire" action button: Calls `POST /api/admin/packages/:id/expire`, pausing sales immediately and setting past expiry timestamp.
+   - 1-Click "🗑 Delete" action button: Calls `DELETE /api/admin/packages/:id?hard=true`, permanently removing the package from the database.
+
+Verification & Regression Tests:
+- scripts/test-exclusive-package-lifecycle.mjs (PASS, 5/5 lifecycle tests)
+- scripts/master-regression-test.mjs (PASS, 21/21 tests passed)
+- scripts/test-exclusive-ui-screenshots.mjs (PASS, all screenshots captured)
+- Vite build & TypeScript check (PASS, 0 errors)
+- API server build (PASS, 0 errors)
+
+Visual Artifacts Saved:
+- guest_view_locked_exclusive_deal.png (Locked guest teaser card with amber badge and blurred price)
+- auth_modal_triggered_by_unlock.png (Sign-in modal opened when clicking Unlock with Email)
+- customer_view_unlocked_deal.png (Unlocked card with green badge, live price, and booking CTA)
+- admin_packages_exclusive_controls.png (Admin table with Member Exclusive tag, Expiry tag, Expire button, and Trash delete button)
+- admin_modal_exclusive_deal_fields.png (Admin modal with Exclusive Deal toggle and Expiry date picker)
+- partner_portal_white_luxury.png (Partner Portal with white background, 3D golden crest emblem, and royal blue button)
+
+Final Result:
+COMPLETED & VERIFIED
+
+================================================================================
+END OF BUG REPORT
+================================================================================

@@ -1,0 +1,18 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✔ ZEL-03: attacker enters public referral code to log in without password and accesses partner portal (41.6437ms)
+  ✔ ZEL-03-edge: partner password auth, enumeration prevention, session integrity, and set-password OTP flow (92.6614ms)
+✔ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes) (175.4343ms)
+
+POST /api/partners/login (no password) -> 400 Bad Request { status: "invalid_request", message: "Password is required to sign in. If you have not set a password yet, please use the Set Password option." } (no cookie)
+GET /api/partners/dashboard (x-partner-id: ZELTESTPRT1) -> 401 Unauthorized { status: "unauthorized", message: "Please log in to your partner account." }
+POST /api/partners/login (wrong password) -> 401 Unauthorized { status: "unauthorized", message: "Invalid email, referral code, or password." }
+POST /api/partners/login (unknown identifier) -> 401 Unauthorized { status: "unauthorized", message: "Invalid email, referral code, or password." } (Uniform message: anti-enumeration verified)
+POST /api/partners/password/forgot -> 200 OK { status: "success", message: "A verification code has been sent to your registered email." }
+POST /api/partners/password/reset -> 200 OK { status: "success", message: "Password updated successfully. You can now log in." }
+POST /api/partners/login (with new password) -> 200 OK with httpOnly secure zelevos_partner_session cookie
+GET /api/partners/dashboard (valid session cookie) -> 200 OK
+GET /api/partners/dashboard (tampered cookie) -> 401 Unauthorized
+ℹ tests 2
+ℹ suites 1
+ℹ pass 2
+ℹ fail 0

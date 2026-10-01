@@ -1,0 +1,4 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✖ ZEL-08: unauthenticated attacker reads customer support tickets and resolves them (23.419ms)
+AssertionError [ERR_ASSERTION]: Expected 401 for GET /support/tickets, got 200: {"tickets":[{"id":"...","ticketNumber":"TCK-...","name":"Distressed Traveler","email":"distressed@example.com","subject":"Lost luggage at hotel","description":"My luggage was lost and has confidential passports inside.","priority":"HIGH","status":"OPEN"}]}
+Unauthenticated callers could list all private customer tickets and resolve tickets with arbitrary notes.

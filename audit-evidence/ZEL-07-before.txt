@@ -1,0 +1,4 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✖ ZEL-07: unauthenticated attacker fetches confidential partner commission ledger (14.225ms)
+AssertionError [ERR_ASSERTION]: Expected 401 for /partners/ledger, got 200: {"status":"success","count":1,"commissions":[{"id":"...","partnerId":"...","bookingId":"...","bookingAmount":45000,"commissionPercent":"8.5","commissionAmount":3825,"status":"pending","agencyName":"Confidential Travel Agency","contactName":"Agent Smith","referralCode":"REFTEST99","bookingRef":"ZL..."}]}
+Both /partners/ledger and /admin/partners/ledger were completely unprotected and leaked all partner earnings, client bookings, and agency details to unauthenticated callers.

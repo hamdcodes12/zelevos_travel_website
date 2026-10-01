@@ -1,0 +1,26 @@
+[BASELINE TEST OUTPUT - ZEL-09 EXPLOIT REPLAY]
+Test: ZEL-09: attacker forges document access token using hardcoded fallback secret
+Command: node --test-isolation=process --test artifacts/api-server/test/audit-exploit-replay.test.ts
+
+✖ ZEL-09: attacker forges document access token using hardcoded fallback secret (2.3399ms)
+    AssertionError [ERR_ASSERTION]: Forged token signed with hardcoded fallback secret MUST be rejected
+    + actual - expected
+    
+    + {
+    +   bookingId: 'ZL26090001',
+    +   documentId: 'doc-forged-999',
+    +   documentType: 'voucher',
+    +   expiresAt: 1790450195577
+    + }
+    - null
+    
+        at TestContext.<anonymous> (artifacts/api-server/test/audit-exploit-replay.test.ts:347:14)
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+      generatedMessage: false,
+      code: 'ERR_ASSERTION',
+      actual: { documentId: 'doc-forged-999', documentType: 'voucher', bookingId: 'ZL26090001', expiresAt: 1790450195577 },
+      expected: null,
+      operator: 'strictEqual'
+    }

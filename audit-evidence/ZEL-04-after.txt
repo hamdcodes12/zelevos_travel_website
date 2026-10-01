@@ -1,0 +1,16 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✔ ZEL-04: anonymous caller sends x-vendor-id header to access vendor dashboard and invoices (6.9445ms)
+  ✔ ZEL-04-edge: customer role forbidden (403), IDOR cross-tenant denied (404), and admin inspection allowed (17.964ms)
+✔ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes) (214.0048ms)
+
+GET /api/vendor/portal/dashboard (x-vendor-id: SUP-2026-TEST, anonymous) -> 401 Unauthorized { status: "unauthorized", message: "Authentication required to access this resource." }
+GET /api/vendor/portal/tasks?vendorId=SUP-2026-TEST (anonymous) -> 401 Unauthorized
+GET /api/vendor/portal/dashboard (customer role session) -> 403 Forbidden { status: "forbidden", message: "Forbidden: role 'customer' lacks permission to access this endpoint." }
+GET /api/vendor/portal/services (anonymous) -> 401 Unauthorized
+GET /api/vendor/portal/documents (anonymous) -> 401 Unauthorized
+GET /api/vendor/portal/invoices (anonymous) -> 401 Unauthorized
+GET /api/vendor/portal/dashboard?vendorId=SUP-2026-TEST (admin session) -> 200 OK
+ℹ tests 2
+ℹ suites 1
+ℹ pass 2
+ℹ fail 0

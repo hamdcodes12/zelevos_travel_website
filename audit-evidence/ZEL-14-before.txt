@@ -1,0 +1,6 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✖ ZEL-14: attacker attempts raw SQL injection via assigned vendor lookup in bookings (1.102ms)
+AssertionError [ERR_ASSERTION]: bookings.ts must NOT use sql.raw() for vendor IDs
+bookings.ts line 270 contained: sql`${vendorsTable.id} IN (${sql.raw(assignedVendorIds.map((id) => `'${id}'`).join(","))})`
+Interpolating raw strings into SQL expressions bypasses Drizzle's parameterized query safety.
+Similar vulnerable sql.raw interpolations existed in packages.ts and destinations.ts.

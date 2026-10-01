@@ -1,0 +1,182 @@
+[
+  {
+    "name": "Home Page & Public Discovery",
+    "result": "PASS",
+    "screenshot": "01_home.png",
+    "notes": "Home page loaded with 0 critical errors, navigation and search functional."
+  },
+  {
+    "name": "Supplier Discovery & Landing",
+    "result": "PASS",
+    "screenshot": "02_become_supplier.png",
+    "notes": "Public /become-a-supplier page renders with onboarding information."
+  },
+  {
+    "name": "Supplier Registration Form Display",
+    "result": "PASS",
+    "screenshot": "03_supplier_registration.png",
+    "notes": "Comprehensive business information form loaded."
+  },
+  {
+    "name": "Supplier Service Categories",
+    "result": "PASS",
+    "screenshot": "04_supplier_form.png",
+    "notes": "Service categories accurately chosen."
+  },
+  {
+    "name": "Real Document Upload",
+    "result": "PASS",
+    "screenshot": "05_document_upload.png",
+    "notes": "Document file uploaded and validated."
+  },
+  {
+    "name": "Supplier Application Submission",
+    "result": "PASS",
+    "screenshot": "06_application_submitted.png",
+    "notes": "Application submitted to PostgreSQL database."
+  },
+  {
+    "name": "Application Status Tracker",
+    "result": "PASS",
+    "screenshot": "07_application_status.png",
+    "notes": "Real live status loaded by applicant email."
+  },
+  {
+    "name": "Admin Dashboard Access",
+    "result": "PASS",
+    "screenshot": "22_admin_dashboard.png",
+    "notes": "Admin authenticated session and dashboard rendered."
+  },
+  {
+    "name": "Admin Supplier Directory",
+    "result": "PASS",
+    "screenshot": "08_admin_supplier_list.png",
+    "notes": "Supplier applications rendered with filter pills and search."
+  },
+  {
+    "name": "Admin Supplier Dossier Inspection",
+    "result": "PASS",
+    "screenshot": "09_admin_supplier_details.png",
+    "notes": "Supplier details and documents verified in admin review modal."
+  },
+  {
+    "name": "Admin Request Changes Action",
+    "result": "PASS",
+    "screenshot": "10_request_changes.png",
+    "notes": "Review feedback recorded and status updated."
+  },
+  {
+    "name": "Supplier Resubmission Flow",
+    "result": "PASS",
+    "screenshot": "11_resubmit.png",
+    "notes": "Applicant updated notes and set status to UNDER_REVIEW."
+  },
+  {
+    "name": "Admin Supplier Approval",
+    "result": "PASS",
+    "screenshot": "12_supplier_approved.png",
+    "notes": "Supplier approved and vendor account provisioned."
+  },
+  {
+    "name": "Vendor Portal Login Interface",
+    "result": "PASS",
+    "screenshot": "13_vendor_login.png",
+    "notes": "Standalone vendor login portal rendered."
+  },
+  {
+    "name": "Vendor Dashboard Metrics",
+    "result": "PASS",
+    "screenshot": "14_vendor_dashboard.png",
+    "notes": "Vendor logged in and view isolated business dashboard."
+  },
+  {
+    "name": "Vendor Service Catalog",
+    "result": "PASS",
+    "screenshot": "15_vendor_service.png",
+    "notes": "Contracted service successfully created and stored in PostgreSQL."
+  },
+  {
+    "name": "Vendor Task Assignment Inbox",
+    "result": "PASS",
+    "screenshot": "16_booking_task.png",
+    "notes": "Assigned service request visible in vendor portal."
+  },
+  {
+    "name": "Vendor Accepts Booking Task",
+    "result": "PASS",
+    "screenshot": "17_vendor_accept.png",
+    "notes": "Task status set to ACCEPTED with confirmation reference."
+  },
+  {
+    "name": "Vendor Voucher Upload",
+    "result": "PASS",
+    "screenshot": "18_voucher_upload.png",
+    "notes": "Voucher document attached to booking service task."
+  },
+  {
+    "name": "Operations Voucher Verification",
+    "result": "PASS",
+    "screenshot": "19_operations_verify.png",
+    "notes": "Operations verified supplier fulfillment."
+  },
+  {
+    "name": "Customer My Trips Overview",
+    "result": "PASS",
+    "screenshot": "20_customer_my_trips.png",
+    "notes": "Customer trip dashboard rendered."
+  },
+  {
+    "name": "Customer Safe Trip Detail",
+    "result": "PASS",
+    "screenshot": "21_customer_trip_detail.png",
+    "notes": "Customer sees verified vouchers without leaking confidential supplier costs."
+  },
+  {
+    "name": "Admin Bookings Desk",
+    "result": "PASS",
+    "screenshot": "23_booking_detail.png",
+    "notes": "Bookings table and detail records rendered."
+  },
+  {
+    "name": "Partner Management Module",
+    "result": "PASS",
+    "screenshot": "24_partner.png",
+    "notes": "Partner hub and commission tracking rendered."
+  },
+  {
+    "name": "Custom Trips Desk",
+    "result": "PASS",
+    "screenshot": "25_custom_trip.png",
+    "notes": "Custom itinerary proposals desk rendered."
+  },
+  {
+    "name": "Finance & Ledger Desk",
+    "result": "PASS",
+    "screenshot": "27_finance.png",
+    "notes": "Finance payables and ledger records rendered."
+  },
+  {
+    "name": "Security & Audit Logs",
+    "result": "PASS",
+    "screenshot": "29_security.png",
+    "notes": "Security audit trail rendered."
+  },
+  {
+    "name": "Flights Management Module",
+    "result": "PASS",
+    "screenshot": "26_flight.png",
+    "notes": "Flight desk and ticket issuance rendered."
+  },
+  {
+    "name": "System Notifications Hub",
+    "result": "PASS",
+    "screenshot": "28_notifications.png",
+    "notes": "Notifications hub rendered with persistent alert logs."
+  },
+  {
+    "name": "Mobile Responsive Viewport (375x812)",
+    "result": "PASS",
+    "screenshot": "30_mobile.png",
+    "notes": "Mobile layout verified with zero horizontal overflow or clipping."
+  }
+]

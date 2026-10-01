@@ -1,0 +1,11 @@
+▶ Security Audit Exploit Replay Suite (Baseline Fails, Fixed Passes)
+  ✔ ZEL-07: unauthenticated attacker fetches confidential partner commission ledger (12.4583ms)
+
+GET /api/partners/ledger (anonymous) -> 401 Unauthorized { status: "unauthorized", message: "Please log in to access the partner commission ledger." }
+GET /api/admin/partners/ledger (anonymous) -> 401 Unauthorized { status: "unauthorized", message: "Authentication required to access this resource." }
+GET /api/admin/partners/ledger (admin session) -> 200 OK with full commissions array
+GET /api/partners/ledger (partner session) -> 200 OK strictly filtered by WHERE partner_id = partner.id (SQL level)
+ℹ tests 1
+ℹ suites 1
+ℹ pass 1
+ℹ fail 0

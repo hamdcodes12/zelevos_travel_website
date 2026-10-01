@@ -1,0 +1,561 @@
+{
+  "timestamp": "2026-09-23T08:58:36.015Z",
+  "suites": [
+    {
+      "suiteName": "PHASE_1_BASELINE",
+      "featureName": "API Health Check (/api/destinations)",
+      "status": "PASS",
+      "details": {
+        "status": 200
+      },
+      "time": "2026-09-23T08:58:39.102Z"
+    },
+    {
+      "suiteName": "PHASE_1_BASELINE",
+      "featureName": "Frontend Server Check (http://localhost:3000)",
+      "status": "PASS",
+      "details": {
+        "status": 200
+      },
+      "time": "2026-09-23T08:58:39.106Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Homepage Load & Title",
+      "status": "PASS",
+      "details": {
+        "title": "Zelevos — Curated Holiday Packages & Travel Marketplace"
+      },
+      "time": "2026-09-23T08:58:42.863Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Header Nav Link: Home",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:43.268Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Header Nav Link: Packages",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:43.676Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Header Nav Link: Why Zelevos",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:44.093Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Header Nav Link: Partner Program",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:44.508Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Header Nav Link: Trips",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:44.921Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Header Nav Link: Flights",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:45.333Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "More Dropdown -> Travel Hub Smooth Scroll",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:46.510Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Hero Search Pill Click (Kashmir)",
+      "status": "PASS",
+      "details": {
+        "heroInputVal": "Kashmir"
+      },
+      "time": "2026-09-23T08:58:48.226Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Navbar Search Button -> Global Search Modal Opens",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:49.278Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Theme Filter Pill: Honeymoon",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:50.089Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Theme Filter Pill: Family",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:50.496Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Theme Filter Pill: Adventure",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:50.902Z"
+    },
+    {
+      "suiteName": "CUSTOMER_HOME",
+      "featureName": "Theme Filter Pill: Luxury",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:51.311Z"
+    },
+    {
+      "suiteName": "CUSTOMER_AUTH",
+      "featureName": "Signup Validation: Empty Fields Rejected",
+      "status": "PASS",
+      "details": {
+        "status": 400
+      },
+      "time": "2026-09-23T08:58:51.732Z"
+    },
+    {
+      "suiteName": "CUSTOMER_AUTH",
+      "featureName": "Signup Validation: Invalid Email Format Rejected",
+      "status": "PASS",
+      "details": {
+        "status": 400
+      },
+      "time": "2026-09-23T08:58:51.735Z"
+    },
+    {
+      "suiteName": "CUSTOMER_AUTH",
+      "featureName": "Customer Signup API Execution",
+      "status": "PASS",
+      "details": {
+        "status": 200,
+        "otpSent": "otp_sent"
+      },
+      "time": "2026-09-23T08:58:54.710Z"
+    },
+    {
+      "suiteName": "CUSTOMER_AUTH",
+      "featureName": "Customer OTP Verification & Account Activation",
+      "status": "PASS",
+      "details": {
+        "status": 200
+      },
+      "time": "2026-09-23T08:58:55.748Z"
+    },
+    {
+      "suiteName": "CUSTOMER_AUTH",
+      "featureName": "Signup Validation: Duplicate Email Rejected",
+      "status": "PASS",
+      "details": {
+        "status": 409
+      },
+      "time": "2026-09-23T08:58:56.023Z"
+    },
+    {
+      "suiteName": "CUSTOMER_AUTH",
+      "featureName": "Login Validation: Wrong Password Rejected (401)",
+      "status": "PASS",
+      "details": {
+        "status": 401
+      },
+      "time": "2026-09-23T08:58:56.327Z"
+    },
+    {
+      "suiteName": "CUSTOMER_AUTH",
+      "featureName": "Customer Login API Execution (200)",
+      "status": "PASS",
+      "details": {
+        "status": 200
+      },
+      "time": "2026-09-23T08:58:57.043Z"
+    },
+    {
+      "suiteName": "EXCLUSIVE_DEAL",
+      "featureName": "Admin Authentication for Inventory Management",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:58:57.879Z"
+    },
+    {
+      "suiteName": "EXCLUSIVE_DEAL",
+      "featureName": "Admin Create Exclusive Deal with [✓] isMembersOnly & Expiry",
+      "status": "PASS",
+      "details": {
+        "pkgId": "ZL-EXCL-9275"
+      },
+      "time": "2026-09-23T08:59:00.568Z"
+    },
+    {
+      "suiteName": "EXCLUSIVE_DEAL",
+      "featureName": "Guest View: Package Locked with Secret Price & Unlock CTA",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:02.011Z"
+    },
+    {
+      "suiteName": "EXCLUSIVE_DEAL",
+      "featureName": "Click Unlock with Email -> Auth Modal Opens",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:02.665Z"
+    },
+    {
+      "suiteName": "EXCLUSIVE_DEAL",
+      "featureName": "Authenticated Customer: Package Instantly Unlocks with Member Price",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:05.965Z"
+    },
+    {
+      "suiteName": "EXCLUSIVE_DEAL",
+      "featureName": "Admin 1-Click Expire Offer (Status Paused & Expired Tag)",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:06.807Z"
+    },
+    {
+      "suiteName": "EXCLUSIVE_DEAL",
+      "featureName": "Admin 1-Click Delete Package (Permanent Removal)",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:07.624Z"
+    },
+    {
+      "suiteName": "BOOKING_ENGINE",
+      "featureName": "Complete Real Package Booking Creation",
+      "status": "PASS",
+      "details": {
+        "bookingRef": "ZL260923007",
+        "totalPrice": 58000
+      },
+      "time": "2026-09-23T08:59:13.549Z"
+    },
+    {
+      "suiteName": "BOOKING_ENGINE",
+      "featureName": "Booking Reflection in Customer My Trips API",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:13.983Z"
+    },
+    {
+      "suiteName": "PAYMENT_ENGINE",
+      "featureName": "Payment Order Generation with Server-Enforced Amount",
+      "status": "PASS",
+      "details": {
+        "orderId": "order_TfQ9VXBXMrSgXw",
+        "amount": 58000
+      },
+      "time": "2026-09-23T08:59:15.834Z"
+    },
+    {
+      "suiteName": "PAYMENT_ENGINE",
+      "featureName": "Payment Security: Client-Side Amount Tampering Blocked",
+      "status": "PASS",
+      "details": {
+        "serverEnforcedAmount": 58000
+      },
+      "time": "2026-09-23T08:59:18.495Z"
+    },
+    {
+      "suiteName": "PAYMENT_ENGINE",
+      "featureName": "Payment Security: Fake/Tampered Signature Rejected",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:18.718Z"
+    },
+    {
+      "suiteName": "CUSTOM_TRIP",
+      "featureName": "Customer Custom Trip Request Submission",
+      "status": "PASS",
+      "details": {
+        "leadNumber": "LEAD-260923-650"
+      },
+      "time": "2026-09-23T08:59:20.618Z"
+    },
+    {
+      "suiteName": "FLIGHT_PORTAL",
+      "featureName": "Dedicated Flights Page Navigation (/flights)",
+      "status": "PASS",
+      "details": {
+        "heading": "Request a flight."
+      },
+      "time": "2026-09-23T08:59:21.725Z"
+    },
+    {
+      "suiteName": "SUPPORT_SYSTEM",
+      "featureName": "Customer Support Ticket Submission",
+      "status": "PASS",
+      "details": {
+        "ticketNumber": "TCK-1937-2256"
+      },
+      "time": "2026-09-23T08:59:22.154Z"
+    },
+    {
+      "suiteName": "PARTNER_PORTAL",
+      "featureName": "Partner Portal Landing Page (/partner-portal)",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:22.907Z"
+    },
+    {
+      "suiteName": "PARTNER_PORTAL",
+      "featureName": "Dual Login Test 1: Referral Code Authentication (ZELVOYAGE17)",
+      "status": "PASS",
+      "details": {
+        "agency": "Voyage Luxury Holidays"
+      },
+      "time": "2026-09-23T08:59:24.221Z"
+    },
+    {
+      "suiteName": "PARTNER_PORTAL",
+      "featureName": "Dual Login Test 2: Registered Email Authentication",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:24.694Z"
+    },
+    {
+      "suiteName": "PARTNER_PORTAL",
+      "featureName": "Partner Login: Invalid Identifier Rejected (404)",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:24.922Z"
+    },
+    {
+      "suiteName": "PARTNER_PORTAL",
+      "featureName": "Partner Dashboard: Client Holiday Lead Submission",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:25.589Z"
+    },
+    {
+      "suiteName": "PARTNER_COMMISSION",
+      "featureName": "Partner Referral Attribution on Customer Booking",
+      "status": "PASS",
+      "details": {
+        "referralCode": "ZELVOYAGE17"
+      },
+      "time": "2026-09-23T08:59:29.741Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Operations Console Authentication",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:32.511Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Overview",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:33.122Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Customers",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:33.740Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Bookings",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:34.359Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Payments",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:34.979Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Audit Logs",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:35.589Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Packages (Sec 8)",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:36.206Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Operations Desk",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:36.817Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Custom Trips",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:37.424Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Vendor Portal",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:38.042Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Partner Network",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:38.659Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Finance & Ledger",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:39.274Z"
+    },
+    {
+      "suiteName": "ADMIN_PANEL",
+      "featureName": "Admin Sidebar Tab: Settings & Security",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:39.884Z"
+    },
+    {
+      "suiteName": "VENDOR_PORTAL",
+      "featureName": "Vendor Dashboard Authentication (VND-HIMALAYAN)",
+      "status": "PASS",
+      "details": {
+        "businessName": "Himalayan Stays & Luxury Resorts"
+      },
+      "time": "2026-09-23T08:59:40.965Z"
+    },
+    {
+      "suiteName": "VENDOR_PORTAL",
+      "featureName": "Cross-Vendor Task Protection (Isolation Enforced)",
+      "status": "PASS",
+      "details": {
+        "status": 404
+      },
+      "time": "2026-09-23T08:59:41.521Z"
+    },
+    {
+      "suiteName": "FINANCE_ENGINE",
+      "featureName": "Finance Overview Metrics API (/api/finance/overview)",
+      "status": "PASS",
+      "details": {
+        "totalCollections": 130000
+      },
+      "time": "2026-09-23T08:59:42.132Z"
+    },
+    {
+      "suiteName": "FINANCE_ENGINE",
+      "featureName": "Booking Cost & Margin Ledger API (/api/finance/bookings)",
+      "status": "PASS",
+      "details": {
+        "bookingCount": 13
+      },
+      "time": "2026-09-23T08:59:42.622Z"
+    },
+    {
+      "suiteName": "FINANCE_ENGINE",
+      "featureName": "Anonymous Finance Access Blocked (401)",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:42.623Z"
+    },
+    {
+      "suiteName": "RESPONSIVE",
+      "featureName": "Desktop Viewport (1440x900): No Horizontal Scroll",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:49.298Z"
+    },
+    {
+      "suiteName": "RESPONSIVE",
+      "featureName": "Mobile Viewport (390x844): No Horizontal Overflow",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:51.317Z"
+    },
+    {
+      "suiteName": "RESPONSIVE",
+      "featureName": "Mobile Navigation Hamburger Menu Accessible",
+      "status": "PASS",
+      "details": {},
+      "time": "2026-09-23T08:59:51.332Z"
+    }
+  ],
+  "securityAudit": [
+    {
+      "category": "RBAC",
+      "check": "Anonymous User Access to /api/admin/customers",
+      "status": "PASS",
+      "findings": "Returned HTTP 401 Unauthorized"
+    },
+    {
+      "category": "RBAC",
+      "check": "Anonymous User Access to /api/admin/bookings",
+      "status": "PASS",
+      "findings": "Returned HTTP 401 Unauthorized"
+    },
+    {
+      "category": "RBAC",
+      "check": "Customer Account Access to Admin Endpoints",
+      "status": "PASS",
+      "findings": "Returned HTTP 401 Forbidden"
+    },
+    {
+      "category": "IDOR",
+      "check": "Cross-User Booking Privacy (Customer B -> Booking of Customer A)",
+      "status": "PASS",
+      "findings": "Access Denied with HTTP 404"
+    },
+    {
+      "category": "RBAC",
+      "check": "Anonymous Access to Partner Private Dashboard",
+      "status": "PASS",
+      "findings": "Returned HTTP 401 Unauthorized"
+    },
+    {
+      "category": "SECRET_AUDIT",
+      "check": "Frontend Production Bundle Inspection",
+      "status": "PASS",
+      "findings": "No secrets found in client bundle"
+    },
+    {
+      "category": "INPUT_SANITIZATION",
+      "check": "SQLi/XSS Safe Handling on Public Search Query",
+      "status": "PASS",
+      "findings": "Query handled cleanly with parameterized search"
+    }
+  ],
+  "summary": {
+    "total": 72,
+    "pass": 72,
+    "fail": 0,
+    "notVerified": 0
+  }
+}

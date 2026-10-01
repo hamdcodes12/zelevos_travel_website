@@ -1,0 +1,920 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: ai
+    description: Server-side Gemini AI operations
+  - name: trips
+    description: Generated trip persistence
+  - name: auth
+    description: Account and session operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /ai/health:
+    get:
+      operationId: aiHealth
+      tags: [ai]
+      summary: Check Gemini connectivity
+      responses:
+        "200":
+          description: Gemini is connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiHealth"
+        "503":
+          description: Gemini is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiError"
+  /ai/chat:
+    post:
+      operationId: aiChat
+      tags: [ai]
+      summary: Proxy a copilot request through Gemini
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiChatRequest"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiChatPayload"
+  /ai/planner:
+    post:
+      operationId: aiPlanner
+      tags: [ai]
+      summary: Generate a structured itinerary through Gemini
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlannerRequest"
+      responses:
+        "200":
+          description: Structured itinerary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannerResponse"
+  /auth/user:
+    get:
+      operationId: getCurrentAuthUser
+      tags: [auth]
+      summary: Get the current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUserResponse"
+        "401":
+          description: No active session
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Create an account and session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthCredentials"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUserResponse"
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in and create a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthCredentials"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUserResponse"
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out and invalidate the current session
+      responses:
+        "204":
+          description: Logged out
+  /trips:
+    post:
+      operationId: createTrip
+      tags: [trips]
+      summary: Save a generated trip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripInput"
+      responses:
+        "201":
+          description: Saved trip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+    get:
+      operationId: listTrips
+      tags: [trips]
+      summary: List saved trips
+      responses:
+        "200":
+          description: Saved trips
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Trip"
+  /profile:
+    get:
+      operationId: getTravellerProfile
+      tags: [auth]
+      summary: Load the authenticated traveller memory
+      responses:
+        "200":
+          description: Traveller profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+    put:
+      operationId: updateTravellerProfile
+      tags: [auth]
+      summary: Update traveller memory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Updated traveller profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+  /preferences:
+    get:
+      operationId: getTravellerPreferences
+      tags: [auth]
+      summary: Load traveller preferences
+      responses:
+        "200":
+          description: Traveller preferences
+    put:
+      operationId: updateTravellerPreferences
+      tags: [auth]
+      summary: Update traveller preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreferencesUpdate"
+      responses:
+        "200":
+          description: Updated traveller preferences
+  /concierge:
+    post:
+      operationId: concierge
+      tags: [ai]
+      summary: Ask the authenticated trip-aware concierge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiChatRequest"
+      responses:
+        "200":
+          description: Concierge response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiChatPayload"
+  /trips/{id}/monitor:
+    post:
+      operationId: monitorTrip
+      tags: [trips]
+      summary: Simulate a monitoring event and return an approval-gated proposal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Monitoring proposal
+  /trips/{id}/replan:
+    post:
+      operationId: approveTripReplan
+      tags: [trips]
+      summary: Approve or reject a proposed trip re-plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveTripReplanRequest"
+      responses:
+        "200":
+          description: Re-plan result
+  /trips/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getTrip
+      tags: [trips]
+      summary: Load one saved trip
+      responses:
+        "200":
+          description: Saved trip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+    put:
+      operationId: updateTrip
+      tags: [trips]
+      summary: Update a saved trip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripUpdate"
+      responses:
+        "200":
+          description: Updated saved trip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+    delete:
+      operationId: deleteTrip
+      tags: [trips]
+      summary: Delete a saved trip
+      responses:
+        "204":
+          description: Trip deleted
+  /flights/search:
+    get:
+      operationId: searchFlights
+      tags: [flights]
+      summary: Search real flight availability
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string }
+        - name: departure
+          in: query
+          required: true
+          schema: { type: string }
+        - name: returnDate
+          in: query
+          required: false
+          schema: { type: string }
+        - name: travellers
+          in: query
+          required: false
+          schema: { type: integer, default: 1 }
+        - name: cabin
+          in: query
+          required: false
+          schema: { type: string, default: Economy }
+      responses:
+        "200":
+          description: Flight search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlightSearchResultData"
+  /flights/revalidate:
+    post:
+      operationId: revalidateFlight
+      tags: [flights]
+      summary: Revalidate flight price and seat availability before payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlightRevalidateRequest"
+      responses:
+        "200":
+          description: Revalidation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlightRevalidateResult"
+  /payments/order:
+    post:
+      operationId: createPaymentOrder
+      tags: [payments]
+      summary: Create a payment order for flight booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentOrderRequest"
+      responses:
+        "201":
+          description: Created payment order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentOrderResult"
+  /payments/verify:
+    post:
+      operationId: verifyPayment
+      tags: [payments]
+      summary: Verify payment signature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentVerifyRequest"
+      responses:
+        "200":
+          description: Payment verification status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentVerifyResult"
+  /flights/book:
+    post:
+      operationId: bookFlight
+      tags: [flights]
+      summary: Create real supplier flight booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlightBookingRequest"
+      responses:
+        "201":
+          description: Confirmed flight booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlightBookingResult"
+  /bookings:
+    get:
+      operationId: listBookings
+      tags: [bookings]
+      summary: List authenticated user bookings
+      responses:
+        "200":
+          description: User bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingsListData"
+  /bookings/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getBooking
+      tags: [bookings]
+      summary: Get details of a single booking
+      responses:
+        "200":
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingRecord"
+  /bookings/{id}/cancel:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: cancelBooking
+      tags: [bookings]
+      summary: Cancel a flight booking and calculate refund
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelBookingRequest"
+      responses:
+        "200":
+          description: Cancellation confirmation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CancelBookingResult"
+components:
+  schemas:
+    AuthCredentials:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+      required: [email, password]
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, email, createdAt, updatedAt]
+    AuthUserResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/AuthUser"
+      required: [user]
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    AiHealth:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        provider:
+          type: string
+        status:
+          type: string
+        model:
+          type: string
+      required: [configured, provider, status]
+    AiError:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        provider:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+      required: [configured, provider, status]
+    AiChatRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum: [user, assistant]
+              content:
+                type: string
+            required: [role, content]
+      required: [message]
+    AiChatPayload:
+      type: object
+      properties:
+        response:
+          type: string
+        model:
+          type: string
+      required: [response, model]
+    PlannerRequest:
+      type: object
+      properties:
+        destination:
+          type: string
+        dates:
+          type: string
+        durationDays:
+          type: integer
+          minimum: 1
+          maximum: 365
+        travellers:
+          type: integer
+          minimum: 1
+          maximum: 100
+        budget:
+          type: string
+        preferences:
+          type: array
+          items:
+            type: string
+      required: [destination, dates, durationDays, travellers, budget, preferences]
+    ItineraryDay:
+      type: object
+      properties:
+        day:
+          type: integer
+        title:
+          type: string
+        activities:
+          type: array
+          items:
+            type: string
+      required: [day, title, activities]
+    PlannerResponse:
+      type: object
+      properties:
+        summary:
+          type: string
+        itinerary:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItineraryDay"
+        estimatedCosts:
+          type: object
+          additionalProperties: true
+        transportInfo:
+          type: object
+          nullable: true
+          additionalProperties: true
+        hotelInfo:
+          type: object
+          nullable: true
+          additionalProperties: true
+        reasoning:
+          type: string
+        model:
+          type: string
+      required: [summary, itinerary, estimatedCosts, transportInfo, hotelInfo, reasoning, model]
+    TripInput:
+      allOf:
+        - $ref: "#/components/schemas/PlannerRequest"
+        - type: object
+          properties:
+            itinerary:
+              type: array
+              items:
+                $ref: "#/components/schemas/ItineraryDay"
+            estimatedCosts:
+              type: object
+              additionalProperties: true
+            transportInfo:
+              type: object
+              nullable: true
+              additionalProperties: true
+            hotelInfo:
+              type: object
+              nullable: true
+              additionalProperties: true
+            reasoning:
+              type: string
+          required: [itinerary, estimatedCosts, transportInfo, hotelInfo, reasoning]
+    TripUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        destination:
+          type: string
+        dates:
+          type: string
+        durationDays:
+          type: integer
+        travellers:
+          type: integer
+        budget:
+          type: string
+        preferences:
+          type: array
+          items:
+            type: string
+        itinerary:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItineraryDay"
+        estimatedCosts:
+          type: object
+          additionalProperties: true
+        transportInfo:
+          type: object
+          nullable: true
+          additionalProperties: true
+        hotelInfo:
+          type: object
+          nullable: true
+          additionalProperties: true
+        reasoning:
+          type: string
+    Trip:
+      allOf:
+        - $ref: "#/components/schemas/TripInput"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+          required: [id, createdAt, updatedAt]
+    ProfileResponse:
+      type: object
+      properties:
+        profile:
+          type: object
+          additionalProperties: true
+      required: [profile]
+    ProfileUpdate:
+      type: object
+      additionalProperties: true
+    PreferencesUpdate:
+      type: object
+      additionalProperties: true
+    ApproveTripReplanRequest:
+      type: object
+      properties:
+        approved:
+          type: boolean
+      required: [approved]
+    FlightSegment:
+      type: object
+      properties:
+        carrier: { type: string }
+        flightNumber: { type: string }
+        origin: { type: string }
+        destination: { type: string }
+        departureTime: { type: string }
+        arrivalTime: { type: string }
+        duration: { type: string }
+        cabin: { type: string }
+        aircraft: { type: string }
+      required: [carrier, flightNumber, origin, destination, departureTime, arrivalTime, duration]
+    FlightItem:
+      type: object
+      properties:
+        id: { type: string }
+        airline: { type: string }
+        flightNumber: { type: string }
+        from: { type: string }
+        to: { type: string }
+        departure: { type: string }
+        arrival: { type: string }
+        duration: { type: string }
+        stops: { type: integer }
+        baggage: { type: string }
+        price: { type: integer }
+        currency: { type: string, default: "INR" }
+        provider: { type: string }
+        mode: { type: string, enum: [DEMO, LIVE] }
+        refundable: { type: boolean }
+        cabinClass: { type: string }
+        seatsAvailable: { type: integer }
+        segments:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlightSegment"
+      required: [id, airline, flightNumber, from, to, departure, arrival, duration, stops, price, currency, provider, mode]
+    FlightSearchResultData:
+      type: object
+      properties:
+        provider:
+          type: object
+          properties:
+            provider: { type: string }
+            mode: { type: string }
+            status: { type: string }
+          required: [provider, mode, status]
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlightItem"
+      required: [provider, results]
+    FlightRevalidateRequest:
+      type: object
+      properties:
+        offerId: { type: string }
+        expectedPrice: { type: integer }
+      required: [offerId]
+    FlightRevalidateResult:
+      type: object
+      properties:
+        valid: { type: boolean }
+        priceChanged: { type: boolean }
+        oldPrice: { type: integer }
+        newPrice: { type: integer }
+        soldOut: { type: boolean }
+        currency: { type: string }
+        offerId: { type: string }
+        flight:
+          $ref: "#/components/schemas/FlightItem"
+        message: { type: string }
+      required: [valid, priceChanged, soldOut, currency, offerId]
+    PaymentOrderRequest:
+      type: object
+      properties:
+        amount: { type: integer }
+        currency: { type: string, default: "INR" }
+        offerId: { type: string }
+      required: [amount]
+    PaymentOrderResult:
+      type: object
+      properties:
+        orderId: { type: string }
+        amount: { type: integer }
+        currency: { type: string }
+        keyId: { type: string }
+        provider: { type: string }
+        mode: { type: string }
+      required: [orderId, amount, currency, provider, mode]
+    PaymentVerifyRequest:
+      type: object
+      properties:
+        orderId: { type: string }
+        paymentId: { type: string }
+        signature: { type: string }
+      required: [orderId, paymentId, signature]
+    PaymentVerifyResult:
+      type: object
+      properties:
+        verified: { type: boolean }
+        paymentId: { type: string }
+        orderId: { type: string }
+        message: { type: string }
+      required: [verified, paymentId, orderId]
+    FlightPassenger:
+      type: object
+      properties:
+        type: { type: string, enum: [ADULT, CHILD, INFANT] }
+        title: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        dateOfBirth: { type: string }
+        gender: { type: string, enum: [MALE, FEMALE, OTHER] }
+        nationality: { type: string }
+        passportNumber: { type: string }
+        passportExpiry: { type: string }
+        passportCountry: { type: string }
+      required: [type, title, firstName, lastName, dateOfBirth, gender]
+    FlightContact:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        phone: { type: string }
+        countryCode: { type: string, default: "+91" }
+      required: [email, phone]
+    FlightBookingRequest:
+      type: object
+      properties:
+        offerId: { type: string }
+        paymentId: { type: string }
+        paymentOrderId: { type: string }
+        paymentSignature: { type: string }
+        passengers:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlightPassenger"
+        contact:
+          $ref: "#/components/schemas/FlightContact"
+        addons:
+          type: object
+          additionalProperties: true
+        idempotencyKey: { type: string }
+      required: [offerId, paymentId, paymentOrderId, paymentSignature, passengers, contact, idempotencyKey]
+    FlightBookingResult:
+      type: object
+      properties:
+        success: { type: boolean }
+        bookingId: { type: string, format: uuid }
+        pnr: { type: string }
+        bookingReference: { type: string }
+        ticketNumber: { type: string }
+        status: { type: string }
+        amount: { type: integer }
+        currency: { type: string }
+        message: { type: string }
+      required: [success, bookingId, pnr, bookingReference, status, amount, currency]
+    BookingRecord:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        ownerId: { type: string, format: uuid }
+        kind: { type: string }
+        status: { type: string }
+        providerMode: { type: string }
+        providerReference: { type: string }
+        bookingReference: { type: string }
+        pnr: { type: string, nullable: true }
+        ticketNumber: { type: string, nullable: true }
+        amount: { type: integer }
+        payload: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, ownerId, kind, status, providerMode, providerReference, bookingReference, amount, createdAt, updatedAt]
+    BookingsListData:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingRecord"
+      required: [results]
+    CancelBookingRequest:
+      type: object
+      properties:
+        reason: { type: string }
+    CancelBookingResult:
+      type: object
+      properties:
+        success: { type: boolean }
+        bookingId: { type: string, format: uuid }
+        status: { type: string }
+        refundAmount: { type: integer }
+        message: { type: string }
+      required: [success, bookingId, status, refundAmount, message]
+
+

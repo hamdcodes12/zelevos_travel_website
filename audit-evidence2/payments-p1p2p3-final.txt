@@ -1,0 +1,2332 @@
+﻿[seed] ADMIN_PASSWORD is not set: the admin account received a random unknown password.
+▶ P1: a captured payment always finalises its booking exactly once
+  ✔ P1 control: /payments/verify alone finalises (baseline happy path) (63.643ms)
+  ✔ P1a: webhook arrives first, then /payments/verify -> booking finalised once (partner commission x1) (34.0878ms)
+  ✔ P1b: /payments/verify first, then webhook -> no duplicate rows and paymentStatus is not clobbered (no partner => no commission) (37.5329ms)
+  ✔ P1c: the same webhook delivered twice is idempotent and finalises the booking (30.2179ms)
+  ✔ P1d: payment.captured then order.paid (different event ids) then verify -> still exactly one finalisation (38.4658ms)
+  ✔ P1e: concurrent webhook + verify + retries finalise exactly once (partner + flight desk task) (50.1285ms)
+  ✔ P1f: a late payment.failed webhook does not downgrade an already paid booking (29.6905ms)
+  ✔ P1g: a captured webhook never resurrects a cancelled booking (18.0928ms)
+  ✔ P1h: a webhook whose amount differs from the order cannot confirm the booking (13.717ms)
+  ✔ P1i (live Razorpay provider, stubbed HTTP): webhook first, then /payments/verify -> finalised once (30.235ms)
+  ✔ P1j (live): POST /bookings/:id/payment alone finalises exactly once, with the partner commission (32.8752ms)
+  ✔ P1k (live): webhook first, then POST /bookings/:id/payment -> reported as success (duplicate), no second finalisation (33.2874ms)
+✔ P1: a captured payment always finalises its booking exactly once (504.1158ms)
+▶ P2: production payment configuration fails closed
+  ✔ P2: assertProductionPaymentConfig rejects PAYMENT_PROVIDER=test in production (0.6328ms)
+  ✔ P2: assertProductionPaymentConfig rejects a missing or blank RAZORPAY_WEBHOOK_SECRET in production (0.1486ms)
+  ✔ P2: assertProductionPaymentConfig rejects missing or blank Razorpay key id / key secret in production (0.1024ms)
+  ✔ P2: assertProductionPaymentConfig reports every problem at once (0.1715ms)
+  ✔ P2: assertProductionPaymentConfig accepts a complete production config (rzp_test_ staging keys are not rejected) (0.1401ms)
+  ✔ P2: assertProductionPaymentConfig does not restrict non-production environments (0.0749ms)
+  ✔ P2: assertProductionPaymentConfig defaults to process.env (0.2768ms)
+  ✔ P2: getPaymentProvider() never returns the test provider in production (0.585ms)
+  ✔ P2: the test provider cannot even be constructed in production (0.1916ms)
+  ✔ P2: outside production the factory still serves the test provider (existing suites rely on it) (0.1152ms)
+  ✔ P2: webhook without RAZORPAY_WEBHOOK_SECRET is refused (503) in every environment and changes nothing (15.6045ms)
+  ✔ P2: webhook without RAZORPAY_WEBHOOK_SECRET is refused (503) when NODE_ENV=production (12.2313ms)
+  ✔ P2: webhook with a missing, wrong, or body-mismatched signature is rejected (400) and changes nothing (16.19ms)
+  ✔ P2: in production the test provider's magic webhook signature is not accepted (webhook refuses to run with the test provider) (12.4662ms)
+  ✔ P2: in production the checkout verify endpoint cannot be satisfied with test-provider magic signatures (15.5055ms)
+✔ P2: production payment configuration fails closed (75.0878ms)
+▶ P3: Google Maps proxy endpoints are throttled and cached
+  ✔ P3: anonymous visitors still reach the endpoints (public by design) but fail closed without an API key and never touch the network (6.113ms)
+  ✔ P3: over-long queries are rejected before any paid lookup (4.696ms)
+  ✔ P3: repeated lookups are served from a normalised, bounded TTL cache instead of paying Google again (8.6816ms)
+  ✔ P3: upstream failures are not cached (2.8695ms)
+  ✔ P3: anonymous callers are rate limited per IP (429 after 30 requests/minute) with a dedicated limiter (31.6932ms)
+✔ P3: Google Maps proxy endpoints are throttled and cached (54.3604ms)
+[12:41:20.314] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/auth/login"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.359] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 1,
+      "method": "POST",
+      "url": "/api/auth/login"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 46
+[12:41:20.370] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.381] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 2,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 11
+[12:41:20.384] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/verify"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.421] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 3,
+      "method": "POST",
+      "url": "/api/payments/verify"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 37
+[12:41:20.430] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.437] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 4,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 7
+[12:41:20.439] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.453] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 5,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 14
+[12:41:20.454] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/verify"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.457] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 6,
+      "method": "POST",
+      "url": "/api/payments/verify"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:41:20.467] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.473] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 7,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 6
+[12:41:20.475] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/verify"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.488] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 8,
+      "method": "POST",
+      "url": "/api/payments/verify"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 13
+[12:41:20.489] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.495] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 9,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 6
+[12:41:20.501] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.507] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 10,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 6
+[12:41:20.509] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.522] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 11,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 13
+[12:41:20.523] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.525] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 12,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 2
+[12:41:20.532] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.538] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 13,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 7
+[12:41:20.539] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.554] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 14,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 15
+[12:41:20.555] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.561] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 15,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 6
+[12:41:20.561] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/verify"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.564] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 16,
+      "method": "POST",
+      "url": "/api/payments/verify"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:41:20.570] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.575] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 17,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 5
+[12:41:20.579] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.592] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 18,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 13
+[12:41:20.592] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/verify"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.594] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 19,
+      "method": "POST",
+      "url": "/api/payments/verify"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 2
+[12:41:20.594] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.600] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 20,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 6
+[12:41:20.600] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/verify"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.603] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 21,
+      "method": "POST",
+      "url": "/api/payments/verify"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:41:20.603] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.605] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 22,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 2
+[12:41:20.605] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/verify"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.607] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 23,
+      "method": "POST",
+      "url": "/api/payments/verify"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 2
+[12:41:20.622] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.627] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 24,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 6
+[12:41:20.627] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/verify"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.639] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 25,
+      "method": "POST",
+      "url": "/api/payments/verify"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 12
+[12:41:20.640] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.644] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 26,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 4
+[12:41:20.650] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.655] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 27,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 5
+[12:41:20.657] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.663] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 28,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 6
+[12:41:20.668] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.673] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 29,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 5
+[12:41:20.674] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.676] [33mWARN[39m (2120): [36mIgnoring webhook with mismatched payment amount[39m
+    [35mreq[39m: {
+      "id": 30,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mproviderOrderId[39m: "order_test_973ade02dc7a4f"
+[12:41:20.676] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 30,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 400
+    }
+    [35mresponseTime[39m: 2
+[12:41:20.682] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.689] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 31,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 7
+[12:41:20.690] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.702] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 32,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 12
+[12:41:20.703] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/verify"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.706] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 33,
+      "method": "POST",
+      "url": "/api/payments/verify"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:41:20.712] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.718] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 34,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 6
+[12:41:20.719] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/bookings/0e43e896-0477-4bbf-9d7a-aa7aa32be5df/payment"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.732] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 35,
+      "method": "POST",
+      "url": "/api/bookings/0e43e896-0477-4bbf-9d7a-aa7aa32be5df/payment"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 13
+[12:41:20.736] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/bookings/0e43e896-0477-4bbf-9d7a-aa7aa32be5df/payment"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.739] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 36,
+      "method": "POST",
+      "url": "/api/bookings/0e43e896-0477-4bbf-9d7a-aa7aa32be5df/payment"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:41:20.745] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.750] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 37,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 5
+[12:41:20.751] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.763] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 38,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 12
+[12:41:20.770] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/bookings/30fee7d8-56f0-495a-8678-b3e58b9bb520/payment"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.773] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 39,
+      "method": "POST",
+      "url": "/api/bookings/30fee7d8-56f0-495a-8678-b3e58b9bb520/payment"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 3
+[12:41:20.782] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.788] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 40,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 6
+[12:41:20.789] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.789] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 41,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.791] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.791] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 42,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.797] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.802] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 43,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 5
+[12:41:20.803] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.804] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 44,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 1
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.810] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.815] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 45,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 5
+[12:41:20.816] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.816] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 46,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 400
+    }
+    [35mresponseTime[39m: 0
+[12:41:20.817] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.817] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 47,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 400
+    }
+    [35mresponseTime[39m: 0
+[12:41:20.818] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.818] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 48,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 400
+    }
+    [35mresponseTime[39m: 0
+[12:41:20.819] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.820] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 49,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 400
+    }
+    [35mresponseTime[39m: 1
+[12:41:20.825] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.830] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 50,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 5
+[12:41:20.832] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/webhook"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.832] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 51,
+      "method": "POST",
+      "url": "/api/payments/webhook"
+    }
+    [35mres[39m: {
+      "statusCode": 400
+    }
+    [35mresponseTime[39m: 0
+[12:41:20.838] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/order"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.843] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 52,
+      "method": "POST",
+      "url": "/api/payments/order"
+    }
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 5
+[12:41:20.844] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/payments/verify"
+    [35mmethod[39m: "POST"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.845] [31mERROR[39m (2120): [36mPayment verification error[39m
+    [35mreq[39m: {
+      "id": 53,
+      "method": "POST",
+      "url": "/api/payments/verify"
+    }
+    err: {
+      "type": "Error",
+      "message": "Invalid production payment configuration:\n- PAYMENT_PROVIDER must not be 'test' in production.",
+      "stack":
+          Error: Invalid production payment configuration:
+          - PAYMENT_PROVIDER must not be 'test' in production.
+              at assertProductionPaymentConfig (C:\ztest\zl\artifacts\api-server\src\services\payment-service.ts:405:11)
+              at getPaymentProvider (C:\ztest\zl\artifacts\api-server\src\services\payment-service.ts:420:5)
+              at <anonymous> (C:\ztest\zl\artifacts\api-server\src\routes\travel.ts:455:29)
+              at Layer.handleRequest (C:\ztest\zl\node_modules\.pnpm\router@2.2.0\node_modules\router\lib\layer.js:152:17)
+              at next (C:\ztest\zl\node_modules\.pnpm\router@2.2.0\node_modules\router\lib\route.js:157:13)
+              at requireAuth (C:\ztest\zl\artifacts\api-server\src\middlewares\authMiddleware.ts:42:3)
+              at Layer.handleRequest (C:\ztest\zl\node_modules\.pnpm\router@2.2.0\node_modules\router\lib\layer.js:152:17)
+              at next (C:\ztest\zl\node_modules\.pnpm\router@2.2.0\node_modules\router\lib\route.js:157:13)
+              at Route.dispatch (C:\ztest\zl\node_modules\.pnpm\router@2.2.0\node_modules\router\lib\route.js:117:3)
+              at handle (C:\ztest\zl\node_modules\.pnpm\router@2.2.0\node_modules\router\index.js:435:11)
+    }
+[12:41:20.848] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 53,
+      "method": "POST",
+      "url": "/api/payments/verify"
+    }
+    [35mres[39m: {
+      "statusCode": 500
+    }
+    [35mresponseTime[39m: 4
+    err: {
+      "type": "Error",
+      "message": "failed with status code 500",
+      "stack":
+          Error: failed with status code 500
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.853] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.854] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 54,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.854] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 54,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 1
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.855] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/route"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.855] [33mWARN[39m (2120): [36mGoogle Maps route unavailable[39m
+    [35mreq[39m: {
+      "id": 55,
+      "method": "GET",
+      "url": "/api/maps/route"
+    }
+    [35mstatus[39m: 503
+[12:41:20.856] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 55,
+      "method": "GET",
+      "url": "/api/maps/route"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 1
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.856] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/static"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.857] [33mWARN[39m (2120): [36mGoogle Maps static map unavailable[39m
+    [35mreq[39m: {
+      "id": 56,
+      "method": "GET",
+      "url": "/api/maps/static"
+    }
+    [35mstatus[39m: 503
+[12:41:20.857] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 56,
+      "method": "GET",
+      "url": "/api/maps/static"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 1
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.859] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.860] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 57,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 400
+    }
+    [35mresponseTime[39m: 1
+[12:41:20.861] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/route"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.862] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 58,
+      "method": "GET",
+      "url": "/api/maps/route"
+    }
+    [35mres[39m: {
+      "statusCode": 400
+    }
+    [35mresponseTime[39m: 1
+[12:41:20.863] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.864] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 59,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 1
+[12:41:20.865] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.865] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 60,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 0
+[12:41:20.866] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.866] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 61,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 0
+[12:41:20.867] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/route"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.867] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 62,
+      "method": "GET",
+      "url": "/api/maps/route"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 0
+[12:41:20.868] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/static"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.869] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 63,
+      "method": "GET",
+      "url": "/api/maps/static"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 1
+[12:41:20.869] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/static"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.870] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 64,
+      "method": "GET",
+      "url": "/api/maps/static"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 1
+[12:41:20.870] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/route"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.871] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 65,
+      "method": "GET",
+      "url": "/api/maps/route"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 1
+[12:41:20.871] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.872] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 66,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.872] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 66,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 1
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.873] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.873] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 67,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 0
+[12:41:20.875] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.875] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 68,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.875] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 68,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.876] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.876] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 69,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.876] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 69,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.877] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.877] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 70,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.877] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 70,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.878] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.878] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 71,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.878] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 71,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.879] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.879] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 72,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.879] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 72,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.880] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.880] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 73,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.880] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 73,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.881] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.881] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 74,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.881] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 74,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.882] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.882] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 75,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.882] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 75,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.883] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.883] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 76,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.883] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 76,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.884] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.884] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 77,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.884] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 77,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.885] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.885] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 78,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.885] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 78,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.886] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.886] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 79,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.887] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 79,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.887] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.887] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 80,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.887] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 80,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.888] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.888] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 81,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.888] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 81,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.889] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.889] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 82,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.889] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 82,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.890] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.890] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 83,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.890] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 83,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.891] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.891] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 84,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.891] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 84,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.891] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.892] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 85,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.892] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 85,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 1
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.893] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.893] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 86,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.893] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 86,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.894] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.894] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 87,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.894] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 87,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.895] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.895] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 88,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.895] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 88,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.896] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.896] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 89,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.896] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 89,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.897] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.897] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 90,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.897] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 90,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.897] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.898] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 91,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.898] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 91,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 1
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.899] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.899] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 92,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.899] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 92,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.900] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.900] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 93,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.900] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 93,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 0
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.900] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.901] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 94,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.901] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 94,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 1
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.901] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.902] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 95,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.902] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 95,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 1
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.902] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.903] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 96,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.903] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 96,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 1
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.903] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.903] [33mWARN[39m (2120): [36mGoogle Maps autocomplete unavailable[39m
+    [35mreq[39m: {
+      "id": 97,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mstatus[39m: 503
+[12:41:20.904] [32mINFO[39m (2120): [36mrequest errored[39m
+    [35mreq[39m: {
+      "id": 97,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 503
+    }
+    [35mresponseTime[39m: 1
+    err: {
+      "type": "Error",
+      "message": "failed with status code 503",
+      "stack":
+          Error: failed with status code 503
+              at onResFinished (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:115:39)
+              at ServerResponse.onResponseComplete (C:\ztest\zl\node_modules\.pnpm\pino-http@10.5.0\node_modules\pino-http\logger.js:178:14)
+              at ServerResponse.emit (node:events:526:24)
+              at onFinish (node:_http_outgoing:1140:10)
+              at callback (node:internal/streams/writable:768:21)
+              at afterWrite (node:internal/streams/writable:712:5)
+              at afterWriteTick (node:internal/streams/writable:698:10)
+              at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    }
+[12:41:20.904] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/autocomplete"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.905] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 98,
+      "method": "GET",
+      "url": "/api/maps/autocomplete"
+    }
+    [35mres[39m: {
+      "statusCode": 429
+    }
+    [35mresponseTime[39m: 1
+[12:41:20.905] [32mINFO[39m (2120): [36mAPI CORS origin check[39m
+    [35mpath[39m: "/maps/route"
+    [35mmethod[39m: "GET"
+    [35morigin[39m: null
+    [35mallowed[39m: true
+[12:41:20.905] [32mINFO[39m (2120): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 99,
+      "method": "GET",
+      "url": "/api/maps/route"
+    }
+    [35mres[39m: {
+      "statusCode": 429
+    }
+    [35mresponseTime[39m: 0
+ℹ tests 32
+ℹ suites 3
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12581.2856
