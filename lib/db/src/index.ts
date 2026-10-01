@@ -895,6 +895,27 @@ const DDL_MIGRATIONS = `
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
 
+  CREATE TABLE IF NOT EXISTS email_otps (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL,
+    otp_hash TEXT NOT NULL,
+    purpose TEXT NOT NULL DEFAULT 'signup',
+    expires_at TIMESTAMPTZ NOT NULL,
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    consumed_at TIMESTAMPTZ,
+    ip_address TEXT,
+    metadata JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE INDEX IF NOT EXISTS email_otps_email_purpose_idx ON email_otps(email, purpose);
+  CREATE INDEX IF NOT EXISTS email_otps_created_at_idx ON email_otps(created_at);
+
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by_partner_id UUID;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code_used TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_at TIMESTAMPTZ;
+
   -- Backfill existing users missing or non-standard customer_id to ZLV-CUS-XXXXXX
   DO $$
   DECLARE

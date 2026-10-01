@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import crypto from "node:crypto";
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { z } from "zod/v4";
-import { db, usersTable, authTokensTable, notificationsTable, auditLogsTable, sessionsTable } from "@workspace/db";
+import { db, usersTable, authTokensTable, notificationsTable, auditLogsTable, sessionsTable, emailOtpsTable } from "@workspace/db";
 import {
   OAUTH_STATE_COOKIE,
   createSession,
@@ -27,6 +27,7 @@ import {
   sendPasswordResetOtpEmail,
   sendPasswordResetConfirmationEmail,
 } from "../services/email-service";
+import { requestSignupOtp, verifySignupOtp } from "../services/otp-service";
 
 const router: IRouter = Router();
 
@@ -68,6 +69,7 @@ const signupSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters long.").max(128),
   confirmPassword: z.string().min(8).max(128).optional(),
   phone: z.string().trim().max(30).optional(),
+  referralCode: z.string().trim().max(50).optional(),
 });
 
 const loginSchema = z.object({
@@ -181,7 +183,7 @@ router.post(["/auth/signup", "/auth/register"], async (req, res): Promise<void> 
     return;
   }
 
-  const { email, password, confirmPassword, fullName, phone } = parsed.data;
+  const { email, password, confirmPassword, fullName, phone, referralCode } = parsed.data;
 
   // Validate confirmPassword if supplied
   if (confirmPassword !== undefined && password !== confirmPassword) {
@@ -189,205 +191,33 @@ router.post(["/auth/signup", "/auth/register"], async (req, res): Promise<void> 
     return;
   }
 
-  let operation = "normalizing signup email";
   try {
-    const cleanEmail = normalizeEmail(email);
-    operation = "checking existing user";
-    const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, cleanEmail)).limit(1);
-
-    const isTestMode =
-      process.env.NODE_ENV !== "production" &&
-      process.env.ALLOW_DEBUG_OTP !== "true" &&
-      (process.env.NODE_ENV === "test" ||
-        process.env.SKIP_EMAIL_OTP === "true" ||
-        process.argv.some((arg) => arg.includes("--test") || arg.endsWith(".test.ts")));
-
-    if (existing) {
-      if (existing.emailVerified) {
-        res.status(409).json({
-          status: "email_taken",
-          message: "An account with this email already exists and is registered. Please log in.",
-        });
-        return;
-      }
-
-      if (isTestMode) {
-        await db
-          .update(usersTable)
-          .set({
-            fullName: fullName || existing.fullName || cleanEmail.split("@")[0],
-            phone: phone || existing.phone || null,
-            passwordHash: hashPassword(password),
-            emailVerified: true,
-            updatedAt: new Date(),
-          })
-          .where(eq(usersTable.id, existing.id));
-        await createSession(existing.id, res);
-        const refreshToken = createRefreshToken(existing.id);
-        res.status(201).json({
-          user: publicUser({ ...existing, emailVerified: true }),
-          refreshToken,
-        });
-        return;
-      }
-
-      // Existing unverified user: update details and issue fresh OTP
-      operation = "updating unverified user";
-      await db
-        .update(usersTable)
-        .set({
-          fullName: fullName || existing.fullName || cleanEmail.split("@")[0],
-          phone: phone || existing.phone || null,
-          passwordHash: hashPassword(password),
-          updatedAt: new Date(),
-        })
-        .where(eq(usersTable.id, existing.id));
-
-      const otp = generateOtp();
-      const otpHash = hashAuthToken(otp);
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-      // Invalidate previous unconsumed verification tokens
-      await db
-        .update(authTokensTable)
-        .set({ consumedAt: new Date() })
-        .where(
-          and(
-            eq(authTokensTable.userId, existing.id),
-            eq(authTokensTable.purpose, "EMAIL_VERIFICATION")
-          )
-        );
-
-      await db.insert(authTokensTable).values({
-        userId: existing.id,
-        tokenHash: otpHash,
-        purpose: "EMAIL_VERIFICATION",
-        expiresAt,
-      });
-
-      const emailResult = await sendVerificationOtpEmail(cleanEmail, otp, fullName || existing.fullName);
-
-      if (!emailResult.success) {
-        res.status(502).json({
-          status: "email_delivery_failed",
-          message: emailResult.error || "We couldn't send the verification email right now. Please try again later.",
-        });
-        return;
-      }
-
-      res.status(200).json({
-        status: "otp_sent",
-        message: `A 6-digit verification code has been sent to ${cleanEmail}. Please enter it to complete registration.`,
-        email: cleanEmail,
-        ...(emailResult.debugOtp ? { debugOtp: emailResult.debugOtp } : {}),
-      });
-      return;
-    }
-
-    // New user registration (unverified until OTP is confirmed)
-    operation = "inserting user";
-    const customerId = await generateNextCustomerId();
-    const [user] = await db
-      .insert(usersTable)
-      .values({
-        customerId,
-        email: cleanEmail,
-        fullName: fullName || cleanEmail.split("@")[0],
-        phone: phone || null,
-        passwordHash: hashPassword(password),
-        authProvider: "email",
-        emailVerified: false,
-        status: "active",
-      })
-      .returning();
-
-    if (isTestMode) {
-      const now = new Date();
-      await db
-        .update(usersTable)
-        .set({
-          emailVerified: true,
-          lastLoginAt: now,
-        })
-        .where(eq(usersTable.id, user.id));
-      await createSession(user.id, res);
-      const refreshToken = createRefreshToken(user.id);
-      res.status(201).json({
-        user: publicUser({ ...user, emailVerified: true, lastLoginAt: now }),
-        refreshToken,
-      });
-      return;
-    }
-
-    // Generate 6-digit OTP
-    operation = "creating verification token";
-    const otp = generateOtp();
-    const otpHash = hashAuthToken(otp);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    await db.insert(authTokensTable).values({
-      userId: user.id,
-      tokenHash: otpHash,
-      purpose: "EMAIL_VERIFICATION",
-      expiresAt,
+    const ipAddress = typeof req.ip === "string" ? req.ip.slice(0, 45) : undefined;
+    const result = await requestSignupOtp({
+      email,
+      fullName,
+      phone,
+      password,
+      referralCode,
+      ipAddress,
     });
 
-    operation = "sending verification email";
-    const emailResult = await sendVerificationOtpEmail(cleanEmail, otp, fullName);
-
-    if (!emailResult.success) {
-      // Rollback newly created unverified user to prevent half-created accounts
-      try {
-        await db.delete(usersTable).where(eq(usersTable.id, user.id));
-      } catch (rollbackErr) {
-        logger.error({ err: rollbackErr, userId: user.id }, "Failed to roll back unverified user after email failure");
-      }
-
-      res.status(502).json({
-        status: "email_delivery_failed",
-        message: emailResult.error || "We couldn't send the verification email right now. Please try again later.",
+    if (!result.success) {
+      res.status(result.status).json({
+        status: result.code,
+        message: result.message,
       });
       return;
-    }
-
-    // Create Admin notification and audit log for new customer registration after email dispatch succeeds
-    try {
-      await db.insert(notificationsTable).values({
-        userId: user.id,
-        type: "NEW_CUSTOMER_REGISTRATION",
-        category: "IMPORTANT",
-        title: `👤 New Customer Registered - User ID: ${customerId}`,
-        body: `${fullName || cleanEmail.split("@")[0]} (${cleanEmail}) registered with Customer User ID ${customerId}.`,
-        channel: "in_app",
-        status: "SENT",
-        metadata: { customerId, email: cleanEmail, fullName: fullName || cleanEmail.split("@")[0] },
-      });
-      await db.insert(auditLogsTable).values({
-        actorUserId: user.id,
-        actorName: fullName || cleanEmail.split("@")[0],
-        actorRole: "customer",
-        action: "CUSTOMER_REGISTERED",
-        resourceType: "user",
-        resourceId: user.id,
-        metadata: { customerId, email: cleanEmail },
-      });
-    } catch (notifErr) {
-      logger.warn({ err: notifErr }, "Failed to create registration notification/audit log");
     }
 
     res.status(200).json({
       status: "otp_sent",
-      message: `A 6-digit verification code has been sent to ${cleanEmail}. Please enter it to complete registration.`,
-      email: cleanEmail,
-      ...(emailResult.debugOtp ? { debugOtp: emailResult.debugOtp } : {}),
+      message: result.message,
+      email: result.email,
     });
   } catch (error) {
-    if (typeof error === "object" && error !== null && "code" in error && error.code === "23505") {
-      res.status(409).json({ status: "email_taken", message: "An account with that email already exists. Please log in instead." });
-      return;
-    }
-    logAuthFailure(req, "/api/auth/signup", operation, error);
-    res.status(500).json({ status: "database_error", message: "Account could not be created." });
+    logAuthFailure(req, "/api/auth/signup", "requesting signup otp", error);
+    res.status(500).json({ status: "database_error", message: "Account action could not be completed. Please try again." });
   }
 });
 
@@ -405,106 +235,32 @@ router.post("/auth/verify-otp", async (req, res): Promise<void> => {
   }
 
   const { email, otp } = parsed.data;
-  const cleanEmail = normalizeEmail(email);
 
   try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, cleanEmail)).limit(1);
-    if (!user) {
-      res.status(404).json({ status: "user_not_found", message: "No account found with this email address." });
-      return;
-    }
+    const ipAddress = typeof req.ip === "string" ? req.ip.slice(0, 45) : undefined;
+    const result = await verifySignupOtp({
+      email,
+      otp,
+      ipAddress,
+    });
 
-    // An already verified account must never receive a session from this endpoint: the caller has proven
-    // nothing (no OTP, no password), so signing them in would be a full account takeover by e-mail address.
-    if (user.emailVerified) {
-      res.status(400).json({
-        status: "already_verified",
-        message: "Your email is already verified. Please log in with your password.",
+    if (!result.success) {
+      res.status(result.status).json({
+        status: result.code,
+        message: result.message,
       });
       return;
     }
-
-    const otpHash = hashAuthToken(otp);
-    const tokens = await db
-      .select()
-      .from(authTokensTable)
-      .where(
-        and(
-          eq(authTokensTable.userId, user.id),
-          eq(authTokensTable.purpose, "EMAIL_VERIFICATION"),
-          eq(authTokensTable.tokenHash, otpHash)
-        )
-      )
-      .limit(1);
-
-    const token = tokens[0];
-    if (!token) {
-      const { locked } = recordOtpFailure(cleanEmail);
-      if (locked) {
-        // Invalidate active verification tokens for user
-        await db
-          .delete(authTokensTable)
-          .where(
-            and(
-              eq(authTokensTable.userId, user.id),
-              eq(authTokensTable.purpose, "EMAIL_VERIFICATION")
-            )
-          );
-        clearOtpAttempts(cleanEmail);
-        res.status(429).json({
-          status: "too_many_attempts",
-          message: "Too many invalid attempts. For security, this verification code has been invalidated. Please request a new code.",
-        });
-        return;
-      }
-      res.status(400).json({
-        status: "invalid_otp",
-        message: "Invalid verification code. Please check your email and try again.",
-      });
-      return;
-    }
-    clearOtpAttempts(cleanEmail);
-
-    if (token.consumedAt) {
-      res.status(400).json({
-        status: "already_used",
-        message: "This verification code has already been used. Please request a new one.",
-      });
-      return;
-    }
-
-    if (new Date() > new Date(token.expiresAt)) {
-      res.status(400).json({
-        status: "expired_otp",
-        message: "Verification code has expired. Please click 'Resend Code'.",
-      });
-      return;
-    }
-
-    // Mark token as consumed
-    await db
-      .update(authTokensTable)
-      .set({ consumedAt: new Date() })
-      .where(eq(authTokensTable.id, token.id));
-
-    // Mark user as verified
-    const [updatedUser] = await db
-      .update(usersTable)
-      .set({
-        emailVerified: true,
-        lastLoginAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(usersTable.id, user.id))
-      .returning();
 
     // Create session cookie
-    await createSession(updatedUser.id, res);
+    await createSession(result.user.id, res);
+    const refreshToken = createRefreshToken(result.user.id);
 
     res.status(200).json({
       status: "verified",
-      message: "Email verified successfully! Welcome to Zelevos.",
-      user: publicUser(updatedUser),
+      message: result.message,
+      user: publicUser(result.user),
+      refreshToken,
     });
   } catch (error) {
     logAuthFailure(req, "/api/auth/verify-otp", "verifying otp", error);
@@ -528,49 +284,32 @@ router.post("/auth/resend-otp", async (req, res): Promise<void> => {
   const cleanEmail = normalizeEmail(parsed.data.email);
 
   try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, cleanEmail)).limit(1);
-    if (!user) {
-      res.status(404).json({ status: "user_not_found", message: "No account found with this email." });
-      return;
-    }
-
-    if (user.emailVerified) {
-      res.status(400).json({
-        status: "already_verified",
-        message: "Your email is already verified. Please log in directly.",
-      });
-      return;
-    }
-
-    // Invalidate previous unconsumed verification tokens
-    await db
-      .update(authTokensTable)
-      .set({ consumedAt: new Date() })
+    const ipAddress = typeof req.ip === "string" ? req.ip.slice(0, 45) : undefined;
+    const [recentOtp] = await db
+      .select()
+      .from(emailOtpsTable)
       .where(
         and(
-          eq(authTokensTable.userId, user.id),
-          eq(authTokensTable.purpose, "EMAIL_VERIFICATION")
+          eq(emailOtpsTable.email, cleanEmail),
+          eq(emailOtpsTable.purpose, "signup")
         )
-      );
+      )
+      .orderBy(desc(emailOtpsTable.createdAt))
+      .limit(1);
 
-    // Generate new OTP
-    const otp = generateOtp();
-    const otpHash = hashAuthToken(otp);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-    await db.insert(authTokensTable).values({
-      userId: user.id,
-      tokenHash: otpHash,
-      purpose: "EMAIL_VERIFICATION",
-      expiresAt,
+    const metadata = (recentOtp?.metadata || {}) as Record<string, any>;
+    const result = await requestSignupOtp({
+      email: cleanEmail,
+      fullName: metadata.fullName,
+      phone: metadata.phone,
+      referralCode: metadata.referralCode,
+      ipAddress,
     });
 
-    const emailResult = await sendVerificationOtpEmail(cleanEmail, otp, user.fullName);
-
-    if (!emailResult.success) {
-      res.status(502).json({
-        status: "email_delivery_failed",
-        message: emailResult.error || "We couldn't send the verification email right now. Please try again later.",
+    if (!result.success) {
+      res.status(result.status).json({
+        status: result.code,
+        message: result.message,
       });
       return;
     }
@@ -579,7 +318,6 @@ router.post("/auth/resend-otp", async (req, res): Promise<void> => {
       status: "otp_sent",
       message: `A new 6-digit verification code has been sent to ${cleanEmail}.`,
       email: cleanEmail,
-      ...(emailResult.debugOtp ? { debugOtp: emailResult.debugOtp } : {}),
     });
   } catch (error) {
     logAuthFailure(req, "/api/auth/resend-otp", "resending otp", error);
@@ -631,48 +369,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       return;
     }
 
-    // Enforce email verification: User MUST be verified to log in
-    if (!user.emailVerified) {
-      // Issue a fresh OTP so user can verify immediately
-      const otp = generateOtp();
-      const otpHash = hashAuthToken(otp);
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-      await db
-        .update(authTokensTable)
-        .set({ consumedAt: new Date() })
-        .where(
-          and(
-            eq(authTokensTable.userId, user.id),
-            eq(authTokensTable.purpose, "EMAIL_VERIFICATION")
-          )
-        );
-
-      await db.insert(authTokensTable).values({
-        userId: user.id,
-        tokenHash: otpHash,
-        purpose: "EMAIL_VERIFICATION",
-        expiresAt,
-      });
-
-      const emailResult = await sendVerificationOtpEmail(cleanEmail, otp, user.fullName);
-
-      if (!emailResult.success && process.env.NODE_ENV === "production") {
-        res.status(502).json({
-          status: "email_delivery_failed",
-          message: "We could not send the verification email. Please try again shortly.",
-        });
-        return;
-      }
-
-      res.status(403).json({
-        status: "email_not_verified",
-        message: "Your email is not verified yet. We have sent a 6-digit verification code to your email. Please enter it to log in.",
-        email: cleanEmail,
-        ...(emailResult.debugOtp ? { debugOtp: emailResult.debugOtp } : {}),
-      });
-      return;
-    }
+    // Existing users keep logging in normally and are not forced to verify (Section D Phase 2 Rule 6)
 
     // 2FA check
     if (user.totpEnabled && user.totpSecret) {
@@ -843,10 +540,6 @@ router.post(
         if (!emailResult.success) {
           logger.warn({ userId: user.id }, "Password reset OTP email could not be delivered");
         }
-
-        if (emailResult.debugOtp && process.env.NODE_ENV !== "production" && process.env.ALLOW_DEBUG_OTP === "true") {
-          debugOtp = emailResult.debugOtp;
-        }
       } else {
         // Account enumeration protection: perform constant-time simulated hash
         crypto.createHash("sha256").update(cleanEmail + "constant_delay_salt").digest("hex");
@@ -861,10 +554,6 @@ router.post(
       status: "otp_sent",
       message: "If an account exists for this email, we’ll send a verification code.",
     };
-
-    if (debugOtp) {
-      responsePayload.debugOtp = debugOtp;
-    }
 
     res.status(200).json(responsePayload);
   }

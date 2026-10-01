@@ -42,6 +42,13 @@ interface AuthDialogProps {
   onAuthenticated: (user: AuthUser) => void;
 }
 
+function maskEmail(raw: string): string {
+  if (!raw || !raw.includes("@")) return "***";
+  const [local, domain] = raw.split("@");
+  const maskedLocal = local.length <= 2 ? `${local[0]}***` : `${local.slice(0, 2)}***${local.slice(-1)}`;
+  return `${maskedLocal}@${domain}`;
+}
+
 export function AuthDialog({
   initialMode = "login",
   contextNotice = null,
@@ -54,6 +61,7 @@ export function AuthDialog({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
 
   // Registration OTP Verification state
   const [otp, setOtp] = useState("");
@@ -61,7 +69,6 @@ export function AuthDialog({
   const [resendTimer, setResendTimer] = useState(0);
   const [resending, setResending] = useState(false);
   const [otpInfoMessage, setOtpInfoMessage] = useState("");
-  const [debugOtp, setDebugOtp] = useState<string | null>(null);
 
   // Forgot Password / Password Reset state
   const [forgotEmail, setForgotEmail] = useState("");
@@ -84,7 +91,26 @@ export function AuthDialog({
     setMode(initialMode);
   }, [initialMode]);
 
-  // Countdown timer for registration OTP resend
+  // Read referral code from ?ref= query param or zelevos_ref cookie
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const ref = urlParams.get("ref");
+      if (ref) {
+        setReferralCode(ref.trim().toUpperCase());
+        document.cookie = `zelevos_ref=${encodeURIComponent(ref.trim())};path=/;max-age=${30 * 24 * 60 * 60};SameSite=Lax`;
+      } else {
+        const match = document.cookie.match(/(?:^|;\s*)zelevos_ref=([^;]+)/);
+        if (match?.[1]) {
+          setReferralCode(decodeURIComponent(match[1]).toUpperCase());
+        }
+      }
+    } catch {
+      // Ignore cookie errors
+    }
+  }, []);
+
+  // Countdown timer for registration OTP resend (60s)
   useEffect(() => {
     if (resendTimer <= 0) return;
     const interval = setInterval(() => {
@@ -170,7 +196,14 @@ export function AuthDialog({
       const endpoint = mode === "signup" ? "/api/auth/signup" : "/api/auth/login";
       const payload =
         mode === "signup"
-          ? { fullName: fullName.trim(), phone: phone.trim() || undefined, email: email.trim(), password, confirmPassword }
+          ? {
+              fullName: fullName.trim(),
+              phone: phone.trim() || undefined,
+              email: email.trim(),
+              password,
+              confirmPassword,
+              referralCode: referralCode.trim() || undefined,
+            }
           : { email: email.trim(), password };
 
       const response = await fetch(endpoint, {
@@ -193,10 +226,9 @@ export function AuthDialog({
         setPendingEmail(data.email || email.trim());
         setMode("verify_otp");
         setOtp("");
-        setResendTimer(45);
-        setDebugOtp(data.debugOtp || "");
+        setResendTimer(60);
         setOtpInfoMessage(
-          data.message || `We sent a 6-digit verification code to ${data.email || email.trim()}.`
+          data.message || `We sent a 6-digit verification code to ${maskEmail(data.email || email.trim())}.`
         );
         return;
       }
@@ -296,9 +328,8 @@ export function AuthDialog({
         throw new Error(data.message || "Failed to resend verification code.");
       }
 
-      setResendTimer(45);
-      setDebugOtp(data.debugOtp || "");
-      setSuccessNotice(`New verification code sent to ${targetEmail}`);
+      setResendTimer(60);
+      setSuccessNotice(`New verification code sent to ${maskEmail(targetEmail)}`);
       setTimeout(() => setSuccessNotice(""), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not resend verification code.");
@@ -348,7 +379,6 @@ export function AuthDialog({
       setResetOtp("");
       setResetResendTimer(60);
       setResetOtpTimer(600); // 10 minutes
-      setDebugOtp(data.debugOtp || "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
@@ -434,8 +464,7 @@ export function AuthDialog({
 
       setResetResendTimer(60);
       setResetOtpTimer(600);
-      setDebugOtp(data.debugOtp || "");
-      setSuccessNotice(`Verification code sent to ${forgotEmail.trim()}`);
+      setSuccessNotice(`Verification code sent to ${maskEmail(forgotEmail.trim())}`);
       setTimeout(() => setSuccessNotice(""), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not resend verification code.");
@@ -817,27 +846,6 @@ export function AuthDialog({
                 </label>
               </div>
 
-              {debugOtp && (
-                <div
-                  style={{
-                    padding: "8px 12px",
-                    background: "#fef3c7",
-                    border: "1px solid #fde68a",
-                    borderRadius: "8px",
-                    fontSize: "11px",
-                    color: "#92400e",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                >
-                  <ShieldCheck size={14} />
-                  <span>
-                    Sandbox test code: <strong>{debugOtp}</strong>
-                  </span>
-                </div>
-              )}
-
               {error && (
                 <div className="auth-error" role="alert" style={{ margin: 0 }}>
                   {error}
@@ -1213,7 +1221,7 @@ export function AuthDialog({
             <p style={{ margin: "0 0 20px", color: "var(--muted)", fontSize: "13px", lineHeight: 1.5 }}>
               We've sent a 6-digit verification code to{" "}
               <strong style={{ color: "#0f172a", wordBreak: "break-all" }}>
-                {pendingEmail || email}
+                {maskEmail(pendingEmail || email)}
               </strong>
               . Enter the code below to complete registration and sign in.
             </p>
@@ -1266,27 +1274,6 @@ export function AuthDialog({
                   />
                 </label>
               </div>
-
-              {debugOtp && (
-                <div
-                  style={{
-                    padding: "8px 12px",
-                    background: "#fef3c7",
-                    border: "1px solid #fde68a",
-                    borderRadius: "8px",
-                    fontSize: "11px",
-                    color: "#92400e",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                >
-                  <ShieldCheck size={14} />
-                  <span>
-                    Sandbox test code: <strong>{debugOtp}</strong>
-                  </span>
-                </div>
-              )}
 
               {error && (
                 <div className="auth-error" role="alert" style={{ margin: 0 }}>
@@ -1599,6 +1586,40 @@ export function AuthDialog({
                 </label>
               )}
 
+              {mode === "signup" && (
+                <label style={{ margin: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <span style={{ color: "#344054", fontSize: "10px", fontWeight: 800 }}>
+                      Have a referral code? (Optional)
+                    </span>
+                    <span style={{ color: "#059669", fontSize: "10px", fontWeight: 700 }}>
+                      Get an exclusive discount on your first booking 🎁
+                    </span>
+                  </div>
+                  <input
+                    id="signup-referral-input"
+                    type="text"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. VOYAGE10"
+                    autoCapitalize="characters"
+                    style={{
+                      width: "100%",
+                      height: "43px",
+                      padding: "0 12px",
+                      border: "1px solid var(--border)",
+                      borderRadius: "8px",
+                      outline: 0,
+                      color: "var(--text)",
+                      background: "var(--soft)",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      letterSpacing: "0.5px",
+                    }}
+                  />
+                </label>
+              )}
+
               {error && (
                 <div className="auth-error" role="alert" style={{ marginTop: "4px" }}>
                   {error}
@@ -1625,7 +1646,7 @@ export function AuthDialog({
                   ? "Processing..."
                   : mode === "login"
                   ? "Log in"
-                  : "Create account / Sign up"}
+                  : "Send OTP & Continue"}
                 {!loading && <ArrowRight size={15} />}
               </button>
             </form>

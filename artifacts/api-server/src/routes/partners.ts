@@ -271,7 +271,6 @@ router.post("/partners/password/forgot", async (req, res) => {
       status: "success",
       message: "A verification code has been sent to your registered email.",
       email: partner.email.replace(/(.{2})(.*)(@.*)/, "$1***$3"),
-      ...(emailResult.debugOtp ? { debugOtp: emailResult.debugOtp } : {}),
     });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Failed to send reset code." });

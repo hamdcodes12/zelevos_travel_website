@@ -1,6 +1,8 @@
 import { createInsertSchema } from "drizzle-zod";
 import {
   boolean,
+  integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -31,6 +33,10 @@ export const usersTable = pgTable("users", {
   authProvider: text("auth_provider").notNull().default("email"),
   providerAccountId: text("provider_account_id"),
   emailVerified: boolean("email_verified").default(false),
+  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+  referredByPartnerId: uuid("referred_by_partner_id"),
+  referralCodeUsed: text("referral_code_used"),
+  referredAt: timestamp("referred_at", { withTimezone: true }),
   status: text("status").notNull().default("active"),
   isArchived: boolean("is_archived").notNull().default(false),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
@@ -96,8 +102,27 @@ export const insertAdminSessionSchema = createInsertSchema(adminSessionsTable).o
   createdAt: true,
 });
 
+export const emailOtpsTable = pgTable("email_otps", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull(),
+  otpHash: text("otp_hash").notNull(),
+  purpose: text("purpose").notNull().default("signup"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  consumedAt: timestamp("consumed_at", { withTimezone: true }),
+  ipAddress: text("ip_address"),
+  metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const insertEmailOtpSchema = createInsertSchema(emailOtpsTable).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof usersTable.$inferSelect;
 export type Session = typeof sessionsTable.$inferSelect;
 export type AdminUser = typeof adminUsersTable.$inferSelect;
 export type AdminSession = typeof adminSessionsTable.$inferSelect;
+export type EmailOtp = typeof emailOtpsTable.$inferSelect;
