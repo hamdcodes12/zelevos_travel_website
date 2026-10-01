@@ -170,6 +170,24 @@ const DDL_MIGRATIONS = `
   ALTER TABLE vendors ADD COLUMN IF NOT EXISTS change_request_areas TEXT;
   ALTER TABLE vendors ADD COLUMN IF NOT EXISTS change_request_message TEXT;
   ALTER TABLE vendors ADD COLUMN IF NOT EXISTS onboarding_step INTEGER DEFAULT 1;
+  ALTER TABLE vendors ADD COLUMN IF NOT EXISTS suspended_from TIMESTAMPTZ;
+  ALTER TABLE vendors ADD COLUMN IF NOT EXISTS suspended_by TEXT;
+
+  CREATE TABLE IF NOT EXISTS supplier_suspensions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vendor_id UUID NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
+    suspension_type TEXT NOT NULL DEFAULT 'TEMPORARY',
+    reason TEXT NOT NULL,
+    notes TEXT,
+    suspended_from TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    suspended_until TIMESTAMPTZ,
+    suspended_by TEXT,
+    lifted_at TIMESTAMPTZ,
+    lifted_by TEXT,
+    lift_reason TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS supplier_suspensions_vendor_id_idx ON supplier_suspensions(vendor_id);
 
   CREATE TABLE IF NOT EXISTS vendor_documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -246,6 +264,34 @@ const DDL_MIGRATIONS = `
   );
 
   ALTER TABLE partners ADD COLUMN IF NOT EXISTS password_hash TEXT;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS ban_reason TEXT;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS suspended_from TIMESTAMPTZ;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS suspension_until TIMESTAMPTZ;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS suspension_reason TEXT;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS suspended_by TEXT;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS discount_type TEXT DEFAULT 'percent';
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS discount_value NUMERIC DEFAULT 5.0;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS discount_max_cap INTEGER;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS discount_first_booking_only BOOLEAN DEFAULT FALSE;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS discount_enabled BOOLEAN DEFAULT TRUE;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE;
+  ALTER TABLE partners ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+
+  CREATE TABLE IF NOT EXISTS partner_suspensions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    partner_id UUID NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+    action TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    notes TEXT,
+    suspended_from TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    suspended_until TIMESTAMPTZ,
+    performed_by TEXT,
+    lifted_at TIMESTAMPTZ,
+    lifted_by TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS partner_suspensions_partner_id_idx ON partner_suspensions(partner_id);
 
   CREATE TABLE IF NOT EXISTS partner_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

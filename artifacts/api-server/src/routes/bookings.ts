@@ -112,13 +112,21 @@ router.post("/bookings", requireAuth, async (req, res) => {
     let partnerId: string | null = null;
     if (data.referralCode) {
       const [partner] = await db
-        .select({ id: partnersTable.id })
+        .select({ id: partnersTable.id, status: partnersTable.status, suspensionUntil: partnersTable.suspensionUntil })
         .from(partnersTable)
-        .where(and(eq(partnersTable.referralCode, data.referralCode.trim().toUpperCase()), eq(partnersTable.status, "approved")))
+        .where(eq(partnersTable.referralCode, data.referralCode.trim().toUpperCase()))
         .limit(1);
-      if (partner) {
-        partnerId = partner.id;
+      if (!partner) {
+        res.status(400).json({ status: "invalid_referral_code", message: "Invalid referral code." });
+        return;
       }
+      const isAutoLifted = partner.status === "suspended" && partner.suspensionUntil && new Date(partner.suspensionUntil) <= new Date();
+      const effectiveStatus = isAutoLifted ? "approved" : partner.status;
+      if (effectiveStatus !== "approved") {
+        res.status(400).json({ status: "inactive_referral_code", message: "This referral code is currently inactive." });
+        return;
+      }
+      partnerId = partner.id;
     }
 
     // 4. Generate Master Booking ID: ZL{YYMMDD}{4-digit sequence}

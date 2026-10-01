@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import multer from "multer";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 import {
   db,
@@ -16,6 +16,7 @@ import {
   usersTable,
   auditLogsTable,
   notificationsTable,
+  supplierSuspensionsTable,
 } from "@workspace/db";
 import { requireRole, requireVendorScope } from "../middlewares/rbac";
 import { requireAuthOrAdmin } from "../middlewares/authMiddleware";
@@ -50,6 +51,51 @@ function verifySupplierPassword(vendor: { temporaryPassword: string | null }, ca
 
 function isApprovedVendor(vendor: { status?: string | null; approvalStatus?: string | null }): boolean {
   return (vendor.status || vendor.approvalStatus || "").toUpperCase() === "APPROVED";
+}
+
+/**
+ * Automatically checks and lifts temporary vendor suspensions if the suspensionUntil date has passed.
+ */
+export async function checkAutoLiftVendorSuspension(vendor: any): Promise<any> {
+  if (!vendor) return vendor;
+  const statusUpper = (vendor.status || vendor.approvalStatus || "").toUpperCase();
+  if (
+    statusUpper === "SUSPENDED" &&
+    vendor.suspensionType === "TEMPORARY" &&
+    vendor.suspensionUntil &&
+    new Date(vendor.suspensionUntil) <= new Date()
+  ) {
+    try {
+      const [updated] = await db
+        .update(vendorsTable)
+        .set({
+          status: "APPROVED",
+          approvalStatus: "approved",
+          suspensionType: "NONE",
+          suspensionReason: null,
+          suspensionUntil: null,
+          suspendedFrom: null,
+          suspendedBy: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(vendorsTable.id, vendor.id))
+        .returning();
+
+      await db
+        .update(supplierSuspensionsTable)
+        .set({
+          liftedAt: new Date(),
+          liftedBy: "SYSTEM_AUTO_EXPIRY",
+          liftReason: "Temporary suspension duration elapsed",
+        })
+        .where(and(eq(supplierSuspensionsTable.vendorId, vendor.id), isNull(supplierSuspensionsTable.liftedAt)));
+
+      return updated || vendor;
+    } catch {
+      return vendor;
+    }
+  }
+  return vendor;
 }
 
 /** Only what the applicant needs: never internal notes, strikes, suspension data or any credential. */
@@ -151,7 +197,7 @@ const selfRegistrationSchema = z
     businessName: z.string().trim().min(2, "Company / Business name must be at least 2 characters"),
     businessType: z.string().trim().default("Private Limited"),
     contactName: z.string().trim().min(2, "Contact person name is required"),
-    email: z.string().trim().email("Valid business email is required"),
+    email: z.string().trim().email("A valid email address is required"),
     phone: z.string().trim().min(8, "Phone number is required"),
     hasWebsite: z.union([z.boolean(), z.string().transform((v) => v === "true" || v === "yes")]).optional().default(false),
     website: z.string().trim().optional(),
@@ -229,12 +275,26 @@ router.post(["/suppliers/register", "/vendor/register"], async (req, res): Promi
     const data = parsed.data;
     const cleanEmail = data.email.toLowerCase().trim();
 
-    // Check duplicate
+    // Check duplicate among suppliers
     const [existing] = await db.select().from(vendorsTable).where(eq(vendorsTable.email, cleanEmail)).limit(1);
     if (existing) {
       res.status(409).json({
         status: "conflict",
         message: "A supplier with this email address already exists. Please check your application status or login.",
+      });
+      return;
+    }
+
+    // Task 11: Check if email already belongs to a customer account
+    const [existingCustomer] = await db
+      .select({ id: usersTable.id, role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.email, cleanEmail))
+      .limit(1);
+    if (existingCustomer && (existingCustomer.role === "customer" || !existingCustomer.role || existingCustomer.role === "user")) {
+      res.status(400).json({
+        status: "email_in_use",
+        message: "This email is already used for a customer account. Please use a different email to register as a supplier.",
       });
       return;
     }
@@ -686,8 +746,9 @@ router.get(["/admin/suppliers", "/admin/vendors"], requireRole(["admin", "operat
     const { search, status, serviceType } = req.query;
 
     const allVendors = await db.select().from(vendorsTable).orderBy(desc(vendorsTable.createdAt));
+    const processedVendors = await Promise.all(allVendors.map((v: any) => checkAutoLiftVendorSuspension(v)));
 
-    let filtered = allVendors;
+    let filtered = processedVendors;
 
     // Search filter: matches vendorId, businessName, contactName, email, phone, city
     if (search && typeof search === "string" && search.trim()) {
@@ -873,15 +934,17 @@ router.get(["/admin/suppliers/:id", "/admin/vendors/:id"], requireRole(["admin",
       ? or(eq(vendorsTable.id, paramId), eq(vendorsTable.vendorId, paramId))
       : eq(vendorsTable.vendorId, paramId);
 
-    const [vendor] = await db.select().from(vendorsTable).where(condition).limit(1);
+    let [vendor] = await db.select().from(vendorsTable).where(condition).limit(1);
 
     if (!vendor) {
       res.status(404).json({ status: "not_found", message: "Supplier not found." });
       return;
     }
 
-    // Load related documents, services, bookings, invoices, audit history
-    const [documents, services, tasks, invoices, auditLogs] = await Promise.all([
+    vendor = await checkAutoLiftVendorSuspension(vendor);
+
+    // Load related documents, services, bookings, invoices, audit history, suspension history
+    const [documents, services, tasks, invoices, auditLogs, suspensionHistory] = await Promise.all([
       db.select().from(vendorDocumentsTable).where(eq(vendorDocumentsTable.vendorId, vendor.id)).orderBy(desc(vendorDocumentsTable.createdAt)),
       db.select().from(vendorServicesTable).where(eq(vendorServicesTable.vendorId, vendor.id)).orderBy(desc(vendorServicesTable.createdAt)),
       db
@@ -902,6 +965,12 @@ router.get(["/admin/suppliers/:id", "/admin/vendors/:id"], requireRole(["admin",
         .where(and(eq(auditLogsTable.resourceType, "vendor"), eq(auditLogsTable.resourceId, vendor.id)))
         .orderBy(desc(auditLogsTable.createdAt))
         .limit(20),
+      db
+        .select()
+        .from(supplierSuspensionsTable)
+        .where(eq(supplierSuspensionsTable.vendorId, vendor.id))
+        .orderBy(desc(supplierSuspensionsTable.createdAt))
+        .catch(() => []),
     ]);
 
     // Financial calculations for supplier
@@ -1018,6 +1087,7 @@ router.get(["/admin/suppliers/:id", "/admin/vendors/:id"], requireRole(["admin",
         bookings: tasks,
         invoices,
         auditLogs,
+        suspensionHistory,
         vendorAccount,
         documentChecklist,
         finance: {
@@ -1215,12 +1285,16 @@ router.post(["/admin/suppliers/:id/status", "/admin/vendors/:id/status"], requir
     let newSuspensionType = vendor.suspensionType || "NONE";
     let newSuspensionReason = vendor.suspensionReason;
     let newSuspensionUntil: Date | null = vendor.suspensionUntil;
+    let newSuspendedFrom: Date | null = vendor.suspendedFrom || null;
+    let newSuspendedBy: string | null = vendor.suspendedBy || null;
     let newMisbehaviorStrikes = vendor.misbehaviorStrikes || 0;
     let newCustomerIssuesCount = vendor.customerIssuesCount || 0;
     let newDisciplinaryNotes = vendor.disciplinaryNotes || "";
     let newChangeRequestAreas = vendor.changeRequestAreas || [];
     let newChangeRequestMessage = vendor.changeRequestMessage || null;
     let newApprovedAt = vendor.approvedAt || null;
+
+    const actorAdmin = (req as any).admin?.name || (req as any).admin?.email || (req as any).user?.fullName || "Admin";
 
     // Validate state transitions
     if (act === "approve") {
@@ -1234,6 +1308,8 @@ router.post(["/admin/suppliers/:id/status", "/admin/vendors/:id/status"], requir
       newSuspensionType = "NONE";
       newSuspensionReason = null;
       newSuspensionUntil = null;
+      newSuspendedFrom = null;
+      newSuspendedBy = null;
       newApprovedAt = new Date();
       newChangeRequestAreas = [];
       newChangeRequestMessage = null;
@@ -1272,21 +1348,37 @@ router.post(["/admin/suppliers/:id/status", "/admin/vendors/:id/status"], requir
         });
         return;
       }
+      const isPermanentRequest = req.body?.suspensionType === "PERMANENT";
       newStatus = "SUSPENDED";
       newApprovalStatus = "suspended";
-      newSuspensionType = "TEMPORARY";
-      newSuspensionReason = reason || "Temporary administrative suspension";
-      if (suspensionUntil) {
+      newSuspensionType = isPermanentRequest ? "PERMANENT" : "TEMPORARY";
+      newSuspensionReason = reason || (isPermanentRequest ? "Permanent administrative suspension" : "Temporary administrative suspension");
+      const startDate = req.body?.startDate || req.body?.suspendedFrom ? new Date(req.body.startDate || req.body.suspendedFrom) : new Date();
+      newSuspendedFrom = startDate;
+      newSuspendedBy = actorAdmin;
+
+      if (isPermanentRequest) {
+        newSuspensionUntil = null;
+      } else if (suspensionUntil) {
         newSuspensionUntil = new Date(suspensionUntil);
       } else if (durationDays && Number(durationDays) > 0) {
-        newSuspensionUntil = new Date(Date.now() + Number(durationDays) * 24 * 60 * 60 * 1000);
+        newSuspensionUntil = new Date(startDate.getTime() + Number(durationDays) * 24 * 60 * 60 * 1000);
       } else {
-        newSuspensionUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // default 7 days
+        newSuspensionUntil = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000); // default 7 days
       }
-      if (notes) {
-        const timestampStr = new Date().toISOString();
-        newDisciplinaryNotes = `${newDisciplinaryNotes ? newDisciplinaryNotes + "\n" : ""}[${timestampStr}] TEMPORARY SUSPENSION (${reason || "No reason"}): ${notes}`;
-      }
+
+      await db.insert(supplierSuspensionsTable).values({
+        vendorId: vendor.id,
+        suspensionType: newSuspensionType,
+        reason: newSuspensionReason,
+        notes: notes || null,
+        suspendedFrom: newSuspendedFrom,
+        suspendedUntil: newSuspensionUntil,
+        suspendedBy: newSuspendedBy,
+      });
+
+      const timestampStr = new Date().toISOString();
+      newDisciplinaryNotes = `${newDisciplinaryNotes ? newDisciplinaryNotes + "\n" : ""}[${timestampStr}] ${newSuspensionType} SUSPENSION (${reason || "No reason"}): ${notes || ""}`;
     } else if (act === "permanent_suspend" || act === "blacklist" || act === "permanent_ban") {
       if (currentStatus !== "APPROVED" && currentStatus !== "SUSPENDED") {
         res.status(400).json({
@@ -1300,9 +1392,22 @@ router.post(["/admin/suppliers/:id/status", "/admin/vendors/:id/status"], requir
       newSuspensionType = "PERMANENT";
       newSuspensionReason = reason || "Permanent blacklist due to repeated violations or serious misbehavior";
       newSuspensionUntil = null;
+      newSuspendedFrom = new Date();
+      newSuspendedBy = actorAdmin;
+
+      await db.insert(supplierSuspensionsTable).values({
+        vendorId: vendor.id,
+        suspensionType: "PERMANENT",
+        reason: newSuspensionReason,
+        notes: notes || null,
+        suspendedFrom: newSuspendedFrom,
+        suspendedUntil: null,
+        suspendedBy: newSuspendedBy,
+      });
+
       const timestampStr = new Date().toISOString();
       newDisciplinaryNotes = `${newDisciplinaryNotes ? newDisciplinaryNotes + "\n" : ""}[${timestampStr}] PERMANENT BLACKLIST (${reason || "Violations"}): ${notes || "Vendor permanently banned from platform"}`;
-    } else if (act === "reactivate") {
+    } else if (act === "reactivate" || act === "lift_suspension" || act === "lift-suspension") {
       if (currentStatus !== "SUSPENDED" && currentStatus !== "REJECTED") {
         res.status(400).json({
           status: "invalid_transition",
@@ -1316,9 +1421,25 @@ router.post(["/admin/suppliers/:id/status", "/admin/vendors/:id/status"], requir
       newSuspensionType = "NONE";
       newSuspensionReason = null;
       newSuspensionUntil = null;
+      newSuspendedFrom = null;
+      newSuspendedBy = null;
       newApprovedAt = vendor.approvedAt || new Date();
+
+      try {
+        await db
+          .update(supplierSuspensionsTable)
+          .set({
+            liftedAt: new Date(),
+            liftedBy: actorAdmin,
+            liftReason: reason || "Suspension lifted by admin",
+          })
+          .where(and(eq(supplierSuspensionsTable.vendorId, vendor.id), isNull(supplierSuspensionsTable.liftedAt)));
+      } catch {
+        // non-fatal
+      }
+
       const timestampStr = new Date().toISOString();
-      newDisciplinaryNotes = `${newDisciplinaryNotes ? newDisciplinaryNotes + "\n" : ""}[${timestampStr}] REINSTATED: Supplier reactivated by admin.`;
+      newDisciplinaryNotes = `${newDisciplinaryNotes ? newDisciplinaryNotes + "\n" : ""}[${timestampStr}] REINSTATED: Supplier reactivated by ${actorAdmin}.`;
     } else if (act === "record_incident" || act === "strike") {
       newMisbehaviorStrikes += 1;
       newCustomerIssuesCount += 1;
@@ -1395,6 +1516,8 @@ router.post(["/admin/suppliers/:id/status", "/admin/vendors/:id/status"], requir
         suspensionType: newSuspensionType,
         suspensionReason: newSuspensionReason,
         suspensionUntil: newSuspensionUntil,
+        suspendedFrom: newSuspendedFrom,
+        suspendedBy: newSuspendedBy,
         misbehaviorStrikes: newMisbehaviorStrikes,
         customerIssuesCount: newCustomerIssuesCount,
         disciplinaryNotes: newDisciplinaryNotes,
@@ -1878,7 +2001,7 @@ router.post("/vendor/login", async (req, res): Promise<void> => {
 
   try {
     const cleanEmail = email.toLowerCase();
-    const [vendor] = await db.select().from(vendorsTable).where(eq(vendorsTable.email, cleanEmail)).limit(1);
+    let [vendor] = await db.select().from(vendorsTable).where(eq(vendorsTable.email, cleanEmail)).limit(1);
 
     const rejectCredentials = () =>
       res.status(401).json({ status: "invalid_credentials", message: "Invalid email or password." });
@@ -1917,6 +2040,9 @@ router.post("/vendor/login", async (req, res): Promise<void> => {
       rejectCredentials();
       return;
     }
+
+    // Auto-lift if temporary suspension duration has passed
+    vendor = await checkAutoLiftVendorSuspension(vendor);
 
     // 2. ALLOWLIST: only an APPROVED supplier may log in. Every other state (present or future) is denied.
     const currentStatus = (vendor.status || vendor.approvalStatus || "").toUpperCase();
@@ -2033,17 +2159,27 @@ async function resolveCurrentVendor(req: any) {
     }
 
     if (req.user.vendorId) {
-      const [v] = await db
+      let [v] = await db
         .select()
         .from(vendorsTable)
         .where(or(eq(vendorsTable.id, req.user.vendorId), eq(vendorsTable.vendorId, req.user.vendorId)))
         .limit(1);
-      if (v) return isApprovedVendor(v) ? v : null;
+      if (v) {
+        v = await checkAutoLiftVendorSuspension(v);
+        const st = (v.status || v.approvalStatus || "").toUpperCase();
+        if (st === "APPROVED" || st === "SUSPENDED") return v;
+        return null;
+      }
     }
 
     if (req.user.email) {
-      const [v] = await db.select().from(vendorsTable).where(eq(vendorsTable.email, req.user.email)).limit(1);
-      if (v) return isApprovedVendor(v) ? v : null;
+      let [v] = await db.select().from(vendorsTable).where(eq(vendorsTable.email, req.user.email)).limit(1);
+      if (v) {
+        v = await checkAutoLiftVendorSuspension(v);
+        const st = (v.status || v.approvalStatus || "").toUpperCase();
+        if (st === "APPROVED" || st === "SUSPENDED") return v;
+        return null;
+      }
     }
   }
 
@@ -2189,6 +2325,17 @@ router.post(["/vendor/portal/requests/:taskId/accept", "/vendor/requests/:taskId
     // Strict IDOR Check: Ensure task is assigned to THIS vendor
     if (task.assignedVendorId !== vendor.id) {
       res.status(403).json({ status: "forbidden", message: "Not authorized to access tasks assigned to another vendor." });
+      return;
+    }
+
+    // Task 10: Suspended suppliers cannot accept tasks
+    const effectiveVendor = await checkAutoLiftVendorSuspension(vendor);
+    const vendorStatus = (effectiveVendor.status || effectiveVendor.approvalStatus || "").toUpperCase();
+    if (vendorStatus === "SUSPENDED" || effectiveVendor.suspensionType === "TEMPORARY" || effectiveVendor.suspensionType === "PERMANENT") {
+      res.status(403).json({
+        status: "account_suspended",
+        message: "Your supplier account is currently suspended and cannot accept tasks.",
+      });
       return;
     }
 

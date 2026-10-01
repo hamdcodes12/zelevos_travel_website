@@ -85,6 +85,11 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
   } | null>(null);
   const [actionReason, setActionReason] = useState("");
   const [selectedChangeAreas, setSelectedChangeAreas] = useState<string[]>([]);
+  const [suspensionType, setSuspensionType] = useState<"TEMPORARY" | "PERMANENT">("TEMPORARY");
+  const [suspensionUntil, setSuspensionUntil] = useState<string>(() => {
+    const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    return d.toISOString().split("T")[0];
+  });
   const [actionProcessing, setActionProcessing] = useState(false);
 
   // In-Dossier: Add Service State
@@ -312,6 +317,10 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
       onToast(`Please provide a note or reason for ${actionTarget.action === "request_changes" ? "requesting changes" : "rejection"}.`);
       return;
     }
+    if (actionTarget.action === "suspend" && suspensionType === "PERMANENT" && !actionReason.trim()) {
+      onToast("Please provide a reason for permanent suspension.");
+      return;
+    }
 
     setActionProcessing(true);
     try {
@@ -323,6 +332,8 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
           action: actionTarget.action,
           reason: actionReason.trim() || undefined,
           areas: actionTarget.action === "request_changes" ? selectedChangeAreas : undefined,
+          suspensionType: actionTarget.action === "suspend" ? suspensionType : undefined,
+          suspensionUntil: actionTarget.action === "suspend" && suspensionType === "TEMPORARY" ? new Date(suspensionUntil).toISOString() : undefined,
         }),
       });
 
@@ -466,7 +477,7 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
   };
 
   // Helper badge renderers
-  const renderStatusBadge = (statusStr: string) => {
+  const renderStatusBadge = (statusStr: string, supplier?: any) => {
     const s = (statusStr || "").toUpperCase();
     if (s === "APPROVED") {
       return (
@@ -574,6 +585,12 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
       );
     }
     if (s === "SUSPENDED") {
+      let label = "Suspended";
+      if (supplier?.suspensionType === "TEMPORARY" && supplier?.suspensionUntil) {
+        label = `Suspended until ${new Date(supplier.suspensionUntil).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
+      } else if (supplier?.suspensionType === "PERMANENT") {
+        label = "Permanently suspended";
+      }
       return (
         <span
           style={{
@@ -584,13 +601,13 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
             borderRadius: "9999px",
             fontSize: "11px",
             fontWeight: 700,
-            background: "#f1f5f9",
-            color: "#475569",
-            border: "1px solid #cbd5e1",
+            background: "#fff1f2",
+            color: "#be123c",
+            border: "1px solid #fecdd3",
           }}
         >
           <Pause size={13} />
-          Suspended
+          {label}
         </span>
       );
     }
@@ -1151,7 +1168,7 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: "16px" }}>{renderStatusBadge(currentStatus)}</td>
+                      <td style={{ padding: "16px" }}>{renderStatusBadge(currentStatus, s)}</td>
 
                       {/* Onboarded Date */}
                       <td style={{ padding: "16px", color: "#64748b", fontSize: "12px" }}>
@@ -1980,6 +1997,82 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
               </div>
             )}
 
+            {actionTarget.action === "suspend" && (
+              <div style={{ marginBottom: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155" }}>
+                  Suspension Duration & Policy:
+                </label>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "8px",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: suspensionType === "TEMPORARY" ? "1px solid #3b82f6" : "1px solid #e2e8f0",
+                      background: suspensionType === "TEMPORARY" ? "#eff6ff" : "#f8fafc",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="supplierSuspensionType"
+                      checked={suspensionType === "TEMPORARY"}
+                      onChange={() => setSuspensionType("TEMPORARY")}
+                      style={{ marginTop: "3px" }}
+                    />
+                    <div>
+                      <div style={{ fontSize: "12px", fontWeight: 700, color: "#0f172a" }}>Until a specific date</div>
+                      <div style={{ fontSize: "11px", color: "#64748b" }}>Supplier will automatically regain active status on this date.</div>
+                      {suspensionType === "TEMPORARY" && (
+                        <div style={{ marginTop: "8px" }}>
+                          <input
+                            type="date"
+                            value={suspensionUntil}
+                            min={new Date().toISOString().split("T")[0]}
+                            onChange={(e) => setSuspensionUntil(e.target.value)}
+                            style={{
+                              padding: "6px 10px",
+                              borderRadius: "6px",
+                              border: "1px solid #cbd5e1",
+                              fontSize: "12px",
+                              background: "#ffffff",
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </label>
+
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "8px",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: suspensionType === "PERMANENT" ? "1px solid #ef4444" : "1px solid #e2e8f0",
+                      background: suspensionType === "PERMANENT" ? "#fef2f2" : "#f8fafc",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="supplierSuspensionType"
+                      checked={suspensionType === "PERMANENT"}
+                      onChange={() => setSuspensionType("PERMANENT")}
+                      style={{ marginTop: "3px" }}
+                    />
+                    <div>
+                      <div style={{ fontSize: "12px", fontWeight: 700, color: "#0f172a" }}>Permanent / until manually lifted</div>
+                      <div style={{ fontSize: "11px", color: "#64748b" }}>Requires admin to manually lift suspension before supplier can operate. Reason required.</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
             {(actionTarget.action === "reject" || actionTarget.action === "suspend" || actionTarget.action === "request_changes") && (
               <div style={{ marginBottom: "18px" }}>
                 <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
@@ -2168,7 +2261,7 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
                     >
                       {supplierDossier?.vendorId}
                     </span>
-                    {supplierDossier && renderStatusBadge(supplierDossier.status || supplierDossier.approvalStatus)}
+                    {supplierDossier && renderStatusBadge(supplierDossier.status || supplierDossier.approvalStatus, supplierDossier)}
                   </div>
                   <span style={{ fontSize: "12px", color: "#64748b" }}>
                     Primary Contact: {supplierDossier?.contactName} · {supplierDossier?.email} · {supplierDossier?.phone}
@@ -2250,6 +2343,54 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
                       </button>
                     </>
                   )}
+
+                {supplierDossier && (supplierDossier.status || supplierDossier.approvalStatus || "").toUpperCase() === "APPROVED" && (
+                  <button
+                    type="button"
+                    id="dossier-action-suspend"
+                    onClick={() => setActionTarget({ supplier: supplierDossier, action: "suspend" })}
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: "8px",
+                      border: "1px solid #fde68a",
+                      background: "#fffbeb",
+                      color: "#d97706",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                    }}
+                  >
+                    <Pause size={14} />
+                    <span>Suspend</span>
+                  </button>
+                )}
+
+                {supplierDossier && (supplierDossier.status || supplierDossier.approvalStatus || "").toUpperCase() === "SUSPENDED" && (
+                  <button
+                    type="button"
+                    id="dossier-action-lift-suspension"
+                    onClick={() => setActionTarget({ supplier: supplierDossier, action: "reactivate" })}
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: "#059669",
+                      color: "#ffffff",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                    }}
+                  >
+                    <Play size={14} />
+                    <span>Lift Suspension</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -3647,154 +3788,7 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
         </div>
       )}
 
-      {/* Status Action Confirmation Modal (Approve, Request Changes, Reject, Suspend, Reactivate) */}
-      {actionTarget && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15, 23, 42, 0.6)",
-            backdropFilter: "blur(4px)",
-            display: "grid",
-            placeItems: "center",
-            padding: "20px",
-            zIndex: 10002,
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !actionProcessing) setActionTarget(null);
-          }}
-        >
-          <div style={{ width: "min(100%, 460px)", background: "#ffffff", borderRadius: "16px", padding: "24px", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)" }}>
-            <h4 style={{ margin: "0 0 10px", fontSize: "17px", fontWeight: 800, color: "#0f172a" }}>
-              {actionTarget.action === "approve"
-                ? "Approve Supplier"
-                : actionTarget.action === "request_changes"
-                ? "Request Changes / Additional Documents"
-                : actionTarget.action === "reject"
-                ? "Reject Supplier Application"
-                : actionTarget.action === "suspend"
-                ? "Suspend Supplier"
-                : "Reactivate Supplier"}
-            </h4>
-            <p style={{ margin: "0 0 14px", fontSize: "13px", color: "#64748b", lineHeight: 1.5 }}>
-              {actionTarget.action === "approve"
-                ? `Are you sure you want to approve "${actionTarget.supplier.businessName}"? This will provision their official vendor account and enable them to accept booking fulfillment requests.`
-                : actionTarget.action === "request_changes"
-                ? `Enter instructions or specify additional verification documents needed from "${actionTarget.supplier.businessName}". They will be able to resubmit via their application tracker.`
-                : `Specify reason for ${actionTarget.action} for "${actionTarget.supplier.businessName}".`}
-            </p>
 
-            {actionTarget.action === "request_changes" && (
-              <div style={{ marginBottom: "14px" }}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
-                  Identify Specific Areas Needing Action:
-                </label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                  {[
-                    "Business Information",
-                    "Location & Tax Information",
-                    "Services",
-                    "Verification Documents",
-                    "Agreement / Compliance Terms",
-                    "Other",
-                  ].map((area) => {
-                    const isChecked = selectedChangeAreas.includes(area);
-                    return (
-                      <label
-                        key={area}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          fontSize: "12px",
-                          color: "#334155",
-                          cursor: "pointer",
-                          background: isChecked ? "#eff6ff" : "#f8fafc",
-                          padding: "6px 10px",
-                          borderRadius: "6px",
-                          border: isChecked ? "1px solid #bfdbfe" : "1px solid #e2e8f0",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedChangeAreas([...selectedChangeAreas, area]);
-                            } else {
-                              setSelectedChangeAreas(selectedChangeAreas.filter((a) => a !== area));
-                            }
-                          }}
-                        />
-                        <span>{area}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {(actionTarget.action === "request_changes" || actionTarget.action === "reject" || actionTarget.action === "suspend") && (
-              <div>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
-                  {actionTarget.action === "request_changes" ? "Compliance Instructions & Notes *" : "Reason *"}
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={actionReason}
-                  onChange={(e) => setActionReason(e.target.value)}
-                  placeholder={
-                    actionTarget.action === "request_changes"
-                      ? "e.g. Please provide updated GST registration certificate and signed tour operator compliance agreement."
-                      : "Enter reason..."
-                  }
-                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none", marginBottom: "16px" }}
-                />
-              </div>
-            )}
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button
-                type="button"
-                disabled={actionProcessing}
-                onClick={() => setActionTarget(null)}
-                style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#ffffff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={actionProcessing}
-                onClick={handleExecuteStatusAction}
-                style={{
-                  padding: "8px 18px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background:
-                    actionTarget.action === "approve"
-                      ? "#059669"
-                      : actionTarget.action === "request_changes"
-                      ? "#d97706"
-                      : "#dc2626",
-                  color: "#ffffff",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  cursor: actionProcessing ? "not-allowed" : "pointer",
-                }}
-              >
-                {actionProcessing
-                  ? "Processing..."
-                  : actionTarget.action === "approve"
-                  ? "Confirm Approval"
-                  : actionTarget.action === "request_changes"
-                  ? "Confirm Request"
-                  : "Confirm"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Rejection Prompt Modal for Single Document */}
       {rejectingDocId && (

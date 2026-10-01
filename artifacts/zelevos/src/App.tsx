@@ -3560,13 +3560,30 @@ function Home() {
     void currentUser().then(setUser).catch(() => showToast('Account status could not be loaded.')).finally(() => setAuthLoading(false));
   }, []);
 
-  // Preserve partner referral attribution from the URL.
+  // Validate and preserve partner referral attribution from the URL.
   useEffect(() => {
     try {
       const url = new URL(window.location.href);
-      const refParam = url.searchParams.get('ref');
+      const refParam = url.searchParams.get('ref')?.trim();
       if (refParam) {
-        sessionStorage.setItem('zelevos_partner_ref', refParam);
+        fetch(`/api/partners/validate-ref?code=${encodeURIComponent(refParam)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.valid && data.partner) {
+              sessionStorage.setItem('zelevos_partner_ref', data.partner.referralCode);
+              sessionStorage.setItem('zelevos_referral_code', data.partner.referralCode);
+              showToast(`Referral code ${data.partner.referralCode} applied! Welcome to Zelevos.`);
+            } else {
+              sessionStorage.removeItem('zelevos_partner_ref');
+              sessionStorage.removeItem('zelevos_referral_code');
+              showToast('This referral link is no longer active. Welcome to Zelevos! Browse our packages below.');
+            }
+          })
+          .catch(() => {
+            sessionStorage.removeItem('zelevos_partner_ref');
+            sessionStorage.removeItem('zelevos_referral_code');
+            showToast('This referral link is no longer active. Welcome to Zelevos! Browse our packages below.');
+          });
       }
     } catch {
       // ignore

@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { Router, type IRouter } from "express";
 import { z } from "zod/v4";
-import { eq, desc, or } from "drizzle-orm";
+import { eq, desc, or, and, isNull, sql } from "drizzle-orm";
 import {
   db,
   partnersTable,
@@ -9,6 +9,7 @@ import {
   usersTable,
   customTripRequestsTable,
   bookingsTable,
+  partnerSuspensionsTable,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/authMiddleware";
 import { requireRole, requirePartnerScope } from "../middlewares/rbac";
@@ -29,13 +30,54 @@ const router: IRouter = Router();
 const partnerOtps = new Map<string, { otpHash: string; expiresAt: number; attempts: number }>();
 
 /**
+ * Automatically checks and lifts temporary partner suspensions if the suspensionUntil date has passed.
+ */
+export async function checkAutoLiftPartnerSuspension(partner: any): Promise<any> {
+  if (!partner) return partner;
+  const statusLower = (partner.status || "").toLowerCase();
+  if (
+    statusLower === "suspended" &&
+    partner.suspensionUntil &&
+    new Date(partner.suspensionUntil) <= new Date()
+  ) {
+    try {
+      const [updated] = await db
+        .update(partnersTable)
+        .set({
+          status: "approved",
+          suspensionReason: null,
+          suspensionUntil: null,
+          suspendedFrom: null,
+          suspendedBy: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(partnersTable.id, partner.id))
+        .returning();
+
+      await db
+        .update(partnerSuspensionsTable)
+        .set({
+          liftedAt: new Date(),
+          liftedBy: "SYSTEM_AUTO_EXPIRY",
+        })
+        .where(and(eq(partnerSuspensionsTable.partnerId, partner.id), isNull(partnerSuspensionsTable.liftedAt)));
+
+      return updated || partner;
+    } catch {
+      return partner;
+    }
+  }
+  return partner;
+}
+
+/**
  * Helper to identify partner by session cookie or logged-in user
  * Note: x-partner-id header trust is completely eliminated (ZEL-03)
  */
 async function getAuthenticatedPartner(req: any) {
   // 1. Check verified partner session cookie
   const sessionPartner = await partnerFromRequest(req);
-  if (sessionPartner) return sessionPartner;
+  if (sessionPartner) return await checkAutoLiftPartnerSuspension(sessionPartner);
 
   // 2. Check standard auth user email
   if (req.user?.email) {
@@ -44,7 +86,7 @@ async function getAuthenticatedPartner(req: any) {
       .from(partnersTable)
       .where(eq(partnersTable.email, req.user.email))
       .limit(1);
-    if (p) return p;
+    if (p) return await checkAutoLiftPartnerSuspension(p);
   }
 
   return null;
@@ -159,7 +201,7 @@ router.post("/partners/login", async (req, res) => {
   const { identifier, password } = parsed.data;
 
   try {
-    const [partner] = await db
+    let [partner] = await db
       .select()
       .from(partnersTable)
       .where(
@@ -176,8 +218,51 @@ router.post("/partners/login", async (req, res) => {
       return;
     }
 
-    if (partner.status === "suspended") {
-      res.status(403).json({ status: "suspended", message: "This partner account has been suspended. Please contact Zelevos support." });
+    partner = await checkAutoLiftPartnerSuspension(partner);
+    const partnerStatus = (partner.status || "").toLowerCase();
+
+    if (partnerStatus === "banned") {
+      res.status(403).json({
+        status: "banned",
+        message: "This partner account has been banned. Contact support.",
+        banReason: partner.banReason || undefined,
+      });
+      return;
+    }
+
+    if (partnerStatus === "suspended") {
+      const untilStr = partner.suspensionUntil ? ` until ${new Date(partner.suspensionUntil).toLocaleDateString()}` : "";
+      res.status(403).json({
+        status: "suspended",
+        message: `This partner account has been suspended${untilStr}. Please contact Zelevos support.`,
+        suspensionReason: partner.suspensionReason || undefined,
+        suspensionUntil: partner.suspensionUntil || undefined,
+      });
+      return;
+    }
+
+    if (partnerStatus === "rejected") {
+      res.status(403).json({
+        status: "rejected",
+        message: "Your partner registration was rejected. Please contact Zelevos support.",
+        rejectionReason: partner.rejectionReason || undefined,
+      });
+      return;
+    }
+
+    if (partnerStatus === "removed") {
+      res.status(403).json({
+        status: "removed",
+        message: "This partner account has been removed. Please contact Zelevos support.",
+      });
+      return;
+    }
+
+    if (partnerStatus === "pending") {
+      res.status(403).json({
+        status: "pending",
+        message: "Your partner account is pending approval by the Zelevos team. You will be notified once approved.",
+      });
       return;
     }
 
@@ -456,18 +541,110 @@ router.post("/partners/leads", async (req, res) => {
 
 /**
  * GET /api/admin/partners
- * Admin list and management of partners and commission rates.
+ * Admin list and management of partners with status tabs and metrics.
  */
-router.get("/admin/partners", requireRole(["admin", "finance"]), async (_req, res) => {
+router.get("/admin/partners", requireRole(["admin", "finance"]), async (req, res) => {
   try {
-    const partners = await db.select().from(partnersTable).orderBy(desc(partnersTable.createdAt));
+    const rawPartners = await db.select().from(partnersTable).orderBy(desc(partnersTable.createdAt));
+    const allPartners = await Promise.all(rawPartners.map((p: any) => checkAutoLiftPartnerSuspension(p)));
+
+    const counts = {
+      all: allPartners.length,
+      pending: allPartners.filter((p) => (p.status || "").toLowerCase() === "pending").length,
+      approved: allPartners.filter((p) => (p.status || "").toLowerCase() === "approved").length,
+      rejected: allPartners.filter((p) => (p.status || "").toLowerCase() === "rejected").length,
+      suspended: allPartners.filter((p) => (p.status || "").toLowerCase() === "suspended").length,
+      banned: allPartners.filter((p) => (p.status || "").toLowerCase() === "banned").length,
+      removed: allPartners.filter((p) => (p.status || "").toLowerCase() === "removed").length,
+    };
+
+    let filtered = allPartners;
+    const requestedStatus = typeof req.query.status === "string" ? req.query.status.toLowerCase().trim() : "all";
+    if (requestedStatus && requestedStatus !== "all") {
+      filtered = filtered.filter((p) => (p.status || "").toLowerCase() === requestedStatus);
+    }
+
+    const searchQuery = typeof req.query.search === "string" ? req.query.search.toLowerCase().trim() : "";
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (p) =>
+          p.agencyName?.toLowerCase().includes(searchQuery) ||
+          p.contactName?.toLowerCase().includes(searchQuery) ||
+          p.email?.toLowerCase().includes(searchQuery) ||
+          p.phone?.toLowerCase().includes(searchQuery) ||
+          p.referralCode?.toLowerCase().includes(searchQuery) ||
+          p.partnerId?.toLowerCase().includes(searchQuery)
+      );
+    }
+
     res.json({
       status: "success",
-      count: partners.length,
-      partners,
+      count: filtered.length,
+      counts,
+      partners: filtered.map((p) => ({
+        ...p,
+        referralLink: `https://zelevos.com/?ref=${p.referralCode}`,
+      })),
     });
   } catch (error) {
     res.status(500).json({ status: "error", message: error instanceof Error ? error.message : "Failed to load partners." });
+  }
+});
+
+/**
+ * Public referral code validation endpoint (Task 9)
+ * Used by checkout modal and landing page (?ref=CODE)
+ */
+router.get(["/partners/validate-ref", "/partners/check-code"], async (req, res) => {
+  const code = (req.query.code || req.query.ref || "").toString().trim().toUpperCase();
+  if (!code) {
+    res.status(400).json({ valid: false, message: "Referral code required." });
+    return;
+  }
+
+  try {
+    const [rawPartner] = await db
+      .select()
+      .from(partnersTable)
+      .where(eq(partnersTable.referralCode, code))
+      .limit(1);
+
+    if (!rawPartner) {
+      res.json({ valid: false, message: "Invalid referral code." });
+      return;
+    }
+
+    const partner = await checkAutoLiftPartnerSuspension(rawPartner);
+    const isApproved = (partner.status || "").toLowerCase() === "approved";
+
+    if (!isApproved) {
+      res.json({
+        valid: false,
+        inactive: true,
+        status: partner.status,
+        message: "This referral code is currently inactive.",
+      });
+      return;
+    }
+
+    res.json({
+      valid: true,
+      partner: {
+        id: partner.id,
+        agencyName: partner.agencyName,
+        contactName: partner.contactName,
+        referralCode: partner.referralCode,
+        commissionRatePercent: partner.commissionRatePercent,
+        discountType: partner.discountType || "percent",
+        discountValue: partner.discountValue || "5.0",
+        discountMaxCap: partner.discountMaxCap || null,
+        discountFirstBookingOnly: partner.discountFirstBookingOnly || false,
+        discountEnabled: partner.discountEnabled ?? true,
+      },
+      message: `Active partner referral from ${partner.agencyName}`,
+    });
+  } catch (err: any) {
+    res.status(500).json({ valid: false, message: "Failed to validate referral code." });
   }
 });
 
@@ -587,14 +764,181 @@ router.get("/partners/ledger", async (req, res) => {
 });
 
 /**
+ * POST /api/admin/partners/:id/status
+ * Unified Admin Partner Lifecycle Management (Approve, Reject, Suspend, Lift Suspension, Ban, Unban, Remove, Restore, Update)
+ */
+router.post(["/admin/partners/:id/status", "/partners/:id/status"], requireRole(["admin", "finance"]), async (req, res) => {
+  const id = typeof req.params.id === "string" ? req.params.id : String(req.params.id || "");
+  const { action, reason, durationDays, suspensionUntil, startDate, commissionRatePercent, discountType, discountValue, discountMaxCap, discountFirstBookingOnly, discountEnabled, agencyName, contactName, phone, email } = req.body;
+  const act = (action || "").toLowerCase().trim();
+
+  try {
+    const [partner] = await db.select().from(partnersTable).where(eq(partnersTable.id, id)).limit(1);
+    if (!partner) {
+      res.status(404).json({ status: "not_found", message: "Partner not found." });
+      return;
+    }
+
+    const previousStatus = partner.status;
+    const actorAdmin = (req as any).admin?.name || (req as any).admin?.email || (req as any).user?.fullName || "Admin";
+    const updateValues: Record<string, any> = { updatedAt: new Date() };
+
+    if (act === "approve" || act === "re-evaluate" || act === "reinstate") {
+      updateValues.status = "approved";
+      updateValues.rejectionReason = null;
+      updateValues.banReason = null;
+      updateValues.suspensionReason = null;
+      updateValues.suspensionUntil = null;
+      updateValues.suspendedFrom = null;
+      updateValues.suspendedBy = null;
+      updateValues.isArchived = false;
+      updateValues.archivedAt = null;
+      if (commissionRatePercent !== undefined && commissionRatePercent !== null) {
+        updateValues.commissionRatePercent = String(commissionRatePercent);
+      }
+    } else if (act === "reject") {
+      updateValues.status = "rejected";
+      updateValues.rejectionReason = reason || "Application rejected by admin";
+      await db.insert(partnerSuspensionsTable).values({
+        partnerId: partner.id,
+        action: "REJECT",
+        reason: updateValues.rejectionReason,
+        performedBy: actorAdmin,
+      });
+    } else if (act === "suspend") {
+      updateValues.status = "suspended";
+      updateValues.suspensionReason = reason || "Administrative suspension";
+      const start = startDate ? new Date(startDate) : new Date();
+      updateValues.suspendedFrom = start;
+      updateValues.suspendedBy = actorAdmin;
+
+      const isPermanent = req.body?.suspensionType === "PERMANENT";
+      if (isPermanent) {
+        updateValues.suspensionUntil = null;
+      } else if (suspensionUntil) {
+        updateValues.suspensionUntil = new Date(suspensionUntil);
+      } else if (durationDays && Number(durationDays) > 0) {
+        updateValues.suspensionUntil = new Date(start.getTime() + Number(durationDays) * 24 * 60 * 60 * 1000);
+      } else {
+        updateValues.suspensionUntil = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+      }
+
+      await db.insert(partnerSuspensionsTable).values({
+        partnerId: partner.id,
+        action: "SUSPEND",
+        reason: updateValues.suspensionReason,
+        notes: req.body?.notes || null,
+        suspendedFrom: updateValues.suspendedFrom,
+        suspendedUntil: updateValues.suspensionUntil,
+        performedBy: actorAdmin,
+      });
+    } else if (act === "lift_suspension") {
+      updateValues.status = "approved";
+      updateValues.suspensionReason = null;
+      updateValues.suspensionUntil = null;
+      updateValues.suspendedFrom = null;
+      updateValues.suspendedBy = null;
+
+      await db
+        .update(partnerSuspensionsTable)
+        .set({
+          liftedAt: new Date(),
+          liftedBy: actorAdmin,
+        })
+        .where(and(eq(partnerSuspensionsTable.partnerId, partner.id), isNull(partnerSuspensionsTable.liftedAt)));
+    } else if (act === "ban") {
+      updateValues.status = "banned";
+      updateValues.banReason = reason || "Violations of partner code of conduct";
+      await db.insert(partnerSuspensionsTable).values({
+        partnerId: partner.id,
+        action: "BAN",
+        reason: updateValues.banReason,
+        performedBy: actorAdmin,
+      });
+    } else if (act === "unban") {
+      updateValues.status = "approved";
+      updateValues.banReason = null;
+    } else if (act === "remove") {
+      updateValues.status = "removed";
+      updateValues.isArchived = true;
+      updateValues.archivedAt = new Date();
+      await db.insert(partnerSuspensionsTable).values({
+        partnerId: partner.id,
+        action: "REMOVE",
+        reason: reason || "Partner account removed by admin",
+        performedBy: actorAdmin,
+      });
+    } else if (act === "restore") {
+      updateValues.status = "approved";
+      updateValues.isArchived = false;
+      updateValues.archivedAt = null;
+    } else if (act === "update" || act === "edit") {
+      if (agencyName) updateValues.agencyName = agencyName.trim();
+      if (contactName) updateValues.contactName = contactName.trim();
+      if (phone) updateValues.phone = phone.trim();
+      if (email) updateValues.email = email.trim().toLowerCase();
+      if (commissionRatePercent !== undefined) updateValues.commissionRatePercent = String(commissionRatePercent);
+      if (discountType !== undefined) updateValues.discountType = discountType;
+      if (discountValue !== undefined) updateValues.discountValue = String(discountValue);
+      if (discountMaxCap !== undefined) updateValues.discountMaxCap = discountMaxCap ? Number(discountMaxCap) : null;
+      if (discountFirstBookingOnly !== undefined) updateValues.discountFirstBookingOnly = Boolean(discountFirstBookingOnly);
+      if (discountEnabled !== undefined) updateValues.discountEnabled = Boolean(discountEnabled);
+    } else {
+      res.status(400).json({
+        status: "invalid_action",
+        message: "Invalid action. Supported actions: approve, reject, suspend, lift_suspension, ban, unban, remove, restore, update.",
+      });
+      return;
+    }
+
+    const [updatedPartner] = await db
+      .update(partnersTable)
+      .set(updateValues)
+      .where(eq(partnersTable.id, id))
+      .returning();
+
+    await logAuditAction({
+      action: `PARTNER_${act.toUpperCase()}`,
+      resourceType: "partner",
+      resourceId: partner.id,
+      actorAdminId: (req as any).admin?.id,
+      actorUserId: req.user?.id,
+      actorRole: req.user?.role || "admin",
+      previousValue: { status: previousStatus },
+      newValue: { status: updatedPartner.status, action: act, reason },
+    });
+
+    res.json({
+      status: "success",
+      partner: {
+        ...updatedPartner,
+        referralLink: `https://zelevos.com/?ref=${updatedPartner.referralCode}`,
+      },
+      message: `Partner ${updatedPartner.agencyName} ${act === "update" ? "updated" : `status changed to ${updatedPartner.status}`}.`,
+    });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error instanceof Error ? error.message : "Failed to update partner status." });
+  }
+});
+
+/**
  * POST /api/admin/partners/:id/approve
- * Admin approval workflow for registered partner accounts.
+ * Admin approval workflow for registered partner accounts (backwards compatibility).
  */
 router.post(["/admin/partners/:id/approve", "/partners/:id/approve"], requireRole(["admin", "finance"]), async (req, res) => {
   const id = typeof req.params.id === "string" ? req.params.id : String(req.params.id || "");
   const commissionRate = req.body?.commissionRate || req.body?.commissionRatePercent;
   try {
-    const updateValues: Record<string, any> = { status: "approved", updatedAt: new Date() };
+    const updateValues: Record<string, any> = {
+      status: "approved",
+      rejectionReason: null,
+      banReason: null,
+      suspensionReason: null,
+      suspensionUntil: null,
+      suspendedFrom: null,
+      suspendedBy: null,
+      updatedAt: new Date(),
+    };
     if (commissionRate !== undefined && commissionRate !== null) {
       updateValues.commissionRatePercent = String(commissionRate);
     }
@@ -630,4 +974,5 @@ router.post(["/admin/partners/:id/approve", "/partners/:id/approve"], requireRol
 });
 
 export default router;
+
 

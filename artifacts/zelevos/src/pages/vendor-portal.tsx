@@ -255,6 +255,10 @@ export function VendorPortalPage() {
 
   // Accept Booking Request
   const handleAcceptRequest = async (taskId: string) => {
+    if (isSuspended) {
+      showToast("Your supplier account is suspended and cannot accept tasks. Contact support@zelevos.com.");
+      return;
+    }
     const ref = confirmRefs[taskId] || `CONF-${Date.now().toString().slice(-6)}`;
     setAcceptingId(taskId);
     try {
@@ -1680,26 +1684,33 @@ export function VendorPortalPage() {
 
       {/* Main Container */}
       <main style={{ maxWidth: "1280px", margin: "28px auto 0", padding: "0 24px", display: "grid", gap: "24px" }}>
-        {/* Suspended Warning */}
+        {/* Suspended Warning Banner */}
         {isSuspended && (
           <div
+            id="supplier-suspended-banner"
             style={{
               background: "#fef2f2",
-              border: "1px solid #fecaca",
+              border: "2px solid #ef4444",
               borderRadius: "14px",
-              padding: "18px 24px",
+              padding: "20px 24px",
               display: "flex",
               alignItems: "center",
-              gap: "14px",
+              gap: "16px",
               color: "#991b1b",
+              boxShadow: "0 4px 12px rgba(239, 68, 68, 0.12)",
             }}
           >
-            <AlertTriangle size={24} color="#dc2626" />
-            <div>
-              <strong style={{ fontSize: "15px", display: "block" }}>Account Temporarily Suspended</strong>
-              <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#b91c1c" }}>
-                Your supplier account has been placed under suspension ({vendorData?.suspensionReason || "Administrative hold"}).
-                New booking assignments are paused. Please contact Zelevos Operations for review.
+            <AlertTriangle size={28} color="#dc2626" style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <strong style={{ fontSize: "16px", display: "block", color: "#991b1b" }}>
+                {vendorData?.suspensionType === "PERMANENT"
+                  ? "Your account has been permanently suspended."
+                  : vendorData?.suspensionUntil
+                  ? `Your account is suspended until ${new Date(vendorData.suspensionUntil).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}`
+                  : "Your account is temporarily suspended"}
+              </strong>
+              <p style={{ margin: "6px 0 0", fontSize: "13px", color: "#b91c1c", lineHeight: 1.5 }}>
+                (Reason: {vendorData?.suspensionReason || "Administrative review"}). New booking task acceptance is paused while suspended. Contact support at <a href="mailto:support@zelevos.com" style={{ color: "#991b1b", fontWeight: 700, textDecoration: "underline" }}>support@zelevos.com</a> if you have questions.
               </p>
             </div>
           </div>
@@ -1888,23 +1899,25 @@ export function VendorPortalPage() {
                           <button
                             type="button"
                             onClick={() => handleAcceptRequest(req.id)}
-                            disabled={acceptingId === req.id}
+                            disabled={isSuspended || acceptingId === req.id}
+                            title={isSuspended ? "Account suspended — cannot accept tasks" : ""}
                             style={{
-                              background: "#059669",
+                              background: isSuspended ? "#94a3b8" : "#059669",
                               color: "#ffffff",
                               border: "none",
                               padding: "8px 16px",
                               borderRadius: "6px",
                               fontSize: "13px",
                               fontWeight: 600,
-                              cursor: "pointer",
+                              cursor: isSuspended ? "not-allowed" : "pointer",
                               display: "flex",
                               alignItems: "center",
                               gap: "6px",
+                              opacity: isSuspended ? 0.6 : 1,
                             }}
                           >
                             <Check size={14} />
-                            <span>{acceptingId === req.id ? "Accepting..." : "Accept & Confirm"}</span>
+                            <span>{acceptingId === req.id ? "Accepting..." : isSuspended ? "Accept Disabled (Suspended)" : "Accept & Confirm"}</span>
                           </button>
                           <button
                             type="button"

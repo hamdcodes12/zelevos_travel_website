@@ -74,7 +74,7 @@ export function PackageCheckoutModal({
       const urlParams = new URLSearchParams(window.location.search);
       const ref = urlParams.get("ref");
       if (ref) return ref;
-      return sessionStorage.getItem("zelevos_partner_ref") || "";
+      return sessionStorage.getItem("zelevos_partner_ref") || sessionStorage.getItem("zelevos_referral_code") || "";
     } catch {
       return "";
     }

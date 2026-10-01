@@ -183,6 +183,11 @@ router.get("/operations/tasks", requireOps, async (req, res) => {
         vendorName: vendorsTable.businessName,
         vendorEmail: vendorsTable.email,
         vendorPhone: vendorsTable.phone,
+        vendorStatus: vendorsTable.status,
+        vendorApprovalStatus: vendorsTable.approvalStatus,
+        vendorSuspensionType: vendorsTable.suspensionType,
+        vendorSuspensionUntil: vendorsTable.suspensionUntil,
+        vendorSuspensionReason: vendorsTable.suspensionReason,
         bookingRef: bookingsTable.bookingId,
         customerName: bookingsTable.customerContact,
         travelDate: bookingsTable.travelDate,
@@ -193,7 +198,17 @@ router.get("/operations/tasks", requireOps, async (req, res) => {
       .where(conditions.length ? and(...conditions) : undefined)
       .orderBy(desc(bookingServicesTable.createdAt));
 
-    res.json({ tasks });
+    const mappedTasks = tasks.map((t: any) => {
+      const vStatus = (t.vendorStatus || "").toUpperCase();
+      const vApproval = (t.vendorApprovalStatus || "").toLowerCase();
+      const isSuspended = vStatus === "SUSPENDED" || vApproval === "suspended" || t.vendorSuspensionType === "TEMPORARY" || t.vendorSuspensionType === "PERMANENT";
+      return {
+        ...t,
+        isSupplierSuspended: isSuspended,
+      };
+    });
+
+    res.json({ tasks: mappedTasks });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Failed to fetch tasks." });
   }

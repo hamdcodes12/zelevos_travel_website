@@ -396,6 +396,28 @@ export function AdminOperationsTab({ onToast }: { onToast: (msg: string) => void
           </div>
         </div>
 
+        {tasks.some((t: any) => t.isSupplierSuspended && t.task?.status !== "CONFIRMED" && t.task?.status !== "VERIFIED") && (
+          <div
+            id="suspended-supplier-task-alert"
+            style={{
+              margin: "14px 20px 0",
+              padding: "12px 16px",
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              color: "#991b1b",
+              fontSize: "13px",
+              fontWeight: 600,
+            }}
+          >
+            <AlertTriangle size={18} color="#dc2626" style={{ flexShrink: 0 }} />
+            <span>Assigned supplier is suspended. Reassign task.</span>
+          </div>
+        )}
+
         <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
           <thead>
             <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#64748b" }}>
@@ -441,7 +463,27 @@ export function AdminOperationsTab({ onToast }: { onToast: (msg: string) => void
                       {task.title}
                     </td>
                     <td style={{ padding: "14px 16px", color: "#334155" }}>
-                      {t.vendorName || task.assignedOwner || (isFlightTask ? "Zelevos Flight Desk" : "Pending Vendor")}
+                      <div>{t.vendorName || task.assignedOwner || (isFlightTask ? "Zelevos Flight Desk" : "Pending Vendor")}</div>
+                      {t.isSupplierSuspended && (
+                        <div
+                          style={{
+                            marginTop: "4px",
+                            padding: "3px 8px",
+                            borderRadius: "6px",
+                            background: "#fef2f2",
+                            border: "1px solid #fecaca",
+                            color: "#dc2626",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <AlertTriangle size={12} color="#dc2626" />
+                          <span>Assigned supplier is suspended. Reassign task.</span>
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: "14px 16px", fontSize: "12px", color: "#64748b" }}>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>

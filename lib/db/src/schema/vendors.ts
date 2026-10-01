@@ -33,6 +33,8 @@ export const vendorsTable = pgTable("vendors", {
   suspensionType: text("suspension_type").notNull().default("NONE"), // 'NONE', 'TEMPORARY', 'PERMANENT'
   suspensionReason: text("suspension_reason"),
   suspensionUntil: timestamp("suspension_until", { withTimezone: true }),
+  suspendedFrom: timestamp("suspended_from", { withTimezone: true }),
+  suspendedBy: text("suspended_by"),
   misbehaviorStrikes: integer("misbehavior_strikes").notNull().default(0),
   disciplinaryNotes: text("disciplinary_notes"),
   netRateTerms: text("net_rate_terms"),
@@ -46,6 +48,21 @@ export const vendorsTable = pgTable("vendors", {
   totalBookingsCompleted: integer("total_bookings_completed").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const supplierSuspensionsTable = pgTable("supplier_suspensions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  vendorId: uuid("vendor_id").notNull().references(() => vendorsTable.id, { onDelete: "cascade" }),
+  suspensionType: text("suspension_type").notNull().default("TEMPORARY"), // 'TEMPORARY', 'PERMANENT'
+  reason: text("reason").notNull(),
+  notes: text("notes"),
+  suspendedFrom: timestamp("suspended_from", { withTimezone: true }).notNull().defaultNow(),
+  suspendedUntil: timestamp("suspended_until", { withTimezone: true }),
+  suspendedBy: text("suspended_by"),
+  liftedAt: timestamp("lifted_at", { withTimezone: true }),
+  liftedBy: text("lifted_by"),
+  liftReason: text("lift_reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const vendorDocumentsTable = pgTable("vendor_documents", {
@@ -125,11 +142,19 @@ export const insertVendorInvoiceSchema = createInsertSchema(vendorInvoicesTable)
   updatedAt: true,
 });
 
+export const insertSupplierSuspensionSchema = createInsertSchema(supplierSuspensionsTable).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Vendor = typeof vendorsTable.$inferSelect;
 export type InsertVendor = z.infer<typeof insertVendorSchema>;
+export type SupplierSuspension = typeof supplierSuspensionsTable.$inferSelect;
+export type InsertSupplierSuspension = z.infer<typeof insertSupplierSuspensionSchema>;
 export type VendorDocument = typeof vendorDocumentsTable.$inferSelect;
 export type InsertVendorDocument = z.infer<typeof insertVendorDocumentSchema>;
 export type VendorService = typeof vendorServicesTable.$inferSelect;
 export type InsertVendorService = z.infer<typeof insertVendorServiceSchema>;
 export type VendorInvoice = typeof vendorInvoicesTable.$inferSelect;
 export type InsertVendorInvoice = z.infer<typeof insertVendorInvoiceSchema>;
+

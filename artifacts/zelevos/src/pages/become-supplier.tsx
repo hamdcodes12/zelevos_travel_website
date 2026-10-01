@@ -254,7 +254,7 @@ export function BecomeSupplierPage() {
         errors.contactName = "Owner / Primary Contact Person is required.";
       }
       if (!formData.email.trim() || !formData.email.includes("@") || !formData.email.includes(".")) {
-        errors.email = "A valid business email address is required.";
+        errors.email = "A valid email address is required.";
       }
       if (!formData.phone.trim()) {
         errors.phone = "Phone / WhatsApp number is required.";
@@ -1069,13 +1069,13 @@ export function BecomeSupplierPage() {
 
                       <div>
                         <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
-                          Business Email (Will be your Login ID) *
+                          Email Address (Will be your Login ID) *
                         </label>
                         <input
                           id="supplier-input-email"
                           type="email"
                           required
-                          placeholder="supplier@company.com"
+                          placeholder="e.g. yourname@gmail.com or supplier@company.com"
                           value={formData.email}
                           onChange={(e) => {
                             setFormData({ ...formData, email: e.target.value });
