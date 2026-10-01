@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, useRef, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -22,6 +22,7 @@ import {
   MapPin,
   Menu,
   MessageCircle,
+  MessageSquare,
   MoreHorizontal,
   Plane,
   Plus,
@@ -70,6 +71,7 @@ import { GlobalSearchModal } from '@/components/global-search-modal';
 import { PartnerPortalPage } from '@/pages/partner-portal';
 import { BecomeSupplierPage } from '@/pages/become-supplier';
 import { VendorPortalPage } from '@/pages/vendor-portal';
+import { PasswordInput } from '@/components/ui/password-input';
 
 const queryClient = new QueryClient();
 
@@ -369,6 +371,30 @@ export function scrollToHomeSection(
   }
 }
 
+function formatRelativeTime(dateStr?: string): string {
+  if (!dateStr) return '';
+  const diff = Math.max(0, Date.now() - new Date(dateStr).getTime());
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function getNotificationFallbackIcon(notif: any) {
+  const cat = (notif.category || notif.type || '').toUpperCase();
+  if (cat.includes('FLIGHT')) return <Plane size={20} className="text-sky-600" />;
+  if (cat.includes('PAYMENT')) return <CreditCard size={20} className="text-emerald-600" />;
+  if (cat.includes('BOOKING') || cat.includes('TRIP_DETAILS')) return <Luggage size={20} className="text-indigo-600" />;
+  if (cat.includes('PROPOSAL')) return <Sparkles size={20} className="text-amber-600" />;
+  if (cat.includes('OFFER') || cat.includes('BROADCAST')) return <Ticket size={20} className="text-rose-600" />;
+  if (cat.includes('SUPPORT')) return <MessageSquare size={20} className="text-blue-600" />;
+  return <Bell size={20} className="text-slate-600" />;
+}
+
 function Navbar({
   user,
   authLoading,
@@ -400,6 +426,45 @@ function Navbar({
   const [activeSupportTicketId, setActiveSupportTicketId] = useState<string | null>(null);
   const [location, setLocation] = useLocation();
   const isFlights = location === '/flights';
+
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const [visibleNotifCount, setVisibleNotifCount] = useState(8);
+  const [expandedNotifId, setExpandedNotifId] = useState<string | null>(null);
+
+  // Auto-close dropdowns on outside click, Escape, and route change (Task 17)
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (moreOpen && moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+      if (userMenuOpen && userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMoreOpen(false);
+        setUserMenuOpen(false);
+        setMobileOpen(false);
+        setNotifDrawerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [moreOpen, userMenuOpen]);
+
+  // Close menus on route change
+  useEffect(() => {
+    setMoreOpen(false);
+    setUserMenuOpen(false);
+    setMobileOpen(false);
+    setNotifDrawerOpen(false);
+  }, [location]);
 
   const fetchCustomerNotifications = async () => {
     if (!user) return;
@@ -685,37 +750,39 @@ function Navbar({
               {label}
             </a>
           ))}
-          <button
-            className={`more-link ${activeSection === 'Travel Hub' ? 'active' : ''}`}
-            onClick={() => setMoreOpen(!moreOpen)}
-          >
-            More <ChevronDown size={14} />
-          </button>
-          <AnimatePresence>
-            {moreOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                className="more-menu"
-              >
-                <a
-                  href="/#travel-hub"
-                  className={activeSection === 'Travel Hub' ? 'active' : ''}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setMoreOpen(false);
-                    setActiveSection('Travel Hub');
-                    if (location !== '/') {
-                      setLocation('/');
-                      setTimeout(() => {
-                        document.querySelector('#travel-hub')?.scrollIntoView({ behavior: 'smooth' });
-                      }, 120);
-                    } else {
-                      document.querySelector('#travel-hub')?.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
+          <div ref={moreMenuRef} style={{ position: 'relative', display: 'inline-block' }}>
+            <button
+              className={`more-link ${activeSection === 'Travel Hub' ? 'active' : ''}`}
+              onClick={() => setMoreOpen(!moreOpen)}
+              aria-expanded={moreOpen}
+            >
+              More <ChevronDown size={14} />
+            </button>
+            <AnimatePresence>
+              {moreOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="more-menu"
                 >
+                  <a
+                    href="/#travel-hub"
+                    className={activeSection === 'Travel Hub' ? 'active' : ''}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setMoreOpen(false);
+                      setActiveSection('Travel Hub');
+                      if (location !== '/') {
+                        setLocation('/');
+                        setTimeout(() => {
+                          document.querySelector('#travel-hub')?.scrollIntoView({ behavior: 'smooth' });
+                        }, 120);
+                      } else {
+                        document.querySelector('#travel-hub')?.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                  >
                   Travel Hub
                 </a>
                 <a
@@ -752,6 +819,7 @@ function Navbar({
               </motion.div>
             )}
           </AnimatePresence>
+          </div>
         </nav>
         <div className="nav-actions">
           <button
@@ -829,7 +897,7 @@ function Navbar({
                 )}
               </button>
 
-              <div style={{ position: 'relative' }}>
+              <div ref={userMenuRef} style={{ position: 'relative' }}>
                 <button
                   type="button"
                   id="user-profile-dropdown-btn"
@@ -1072,7 +1140,11 @@ function Navbar({
                 <div>
                   <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>Notifications</h3>
                   <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
-                    {unreadNotifCount > 0 ? `${unreadNotifCount} unread alert${unreadNotifCount > 1 ? 's' : ''}` : 'You are all caught up!'}
+                    {unreadNotifCount > 0
+                      ? `${unreadNotifCount} unread alert${unreadNotifCount > 1 ? 's' : ''}`
+                      : customerNotifs.length > 0
+                      ? `${customerNotifs.length} total updates`
+                      : "You're all caught up!"}
                   </p>
                 </div>
               </div>
@@ -1083,7 +1155,7 @@ function Navbar({
                     id="clear-all-notifications-btn"
                     onClick={handleClearAllNotifications}
                     style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 6px', borderRadius: '4px' }}
-                    title="Soft-clear all notifications without deleting server records"
+                    title="Clear all notifications"
                   >
                     Clear all
                   </button>
@@ -1142,8 +1214,19 @@ function Navbar({
               ))}
             </div>
 
-            {/* Notification List */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Notification List (Task 6: Max 70vh, overscroll-behavior contain, smooth scroll) */}
+            <div
+              style={{
+                flex: 1,
+                maxHeight: '70vh',
+                overflowY: 'auto',
+                overscrollBehavior: 'contain',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
               {(() => {
                 const filtered = customerNotifs.filter((n) => {
                   if (notifCategoryFilter === 'ALL') return true;
@@ -1156,225 +1239,263 @@ function Navbar({
                       <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f8fafc', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
                         <Bell size={24} />
                       </div>
-                      <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: '#475569' }}>No notifications in this category</p>
-                      <p style={{ margin: '4px 0 0', fontSize: '12px' }}>Updates, trip alerts and special offers will appear here.</p>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: '#334155' }}>You're all caught up!</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b' }}>No notifications found in this view.</p>
                     </div>
                   );
                 }
 
-                return filtered.map((notif) => {
-                  const isUnread = !!notif.unread;
-                  const messageText = notif.message || notif.body || '';
-                  const titleText = notif.title || notif.category || 'Notification';
-                  const isSupport = Boolean(notif.ticketId || notif.type === 'SUPPORT_REPLY' || (notif.category || '').toUpperCase() === 'SUPPORT');
-                  return (
-                    <div
-                      key={notif.id}
-                      id={`notification-card-${notif.id}`}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleNotificationCardClick(notif)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleNotificationCardClick(notif);
-                        }
-                      }}
-                      style={{
-                        borderRadius: '12px',
-                        border: isUnread ? '1.5px solid #93c5fd' : '1px solid #e2e8f0',
-                        background: isUnread ? '#f8faff' : '#ffffff',
-                        boxShadow: isUnread ? '0 3px 12px rgba(59, 130, 246, 0.08)' : '0 1px 3px rgba(0,0,0,0.03)',
-                        overflow: 'hidden',
-                        transition: 'all 0.18s ease',
-                        cursor: 'pointer',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#3b82f6';
-                        e.currentTarget.style.boxShadow = '0 6px 18px rgba(37, 99, 235, 0.12)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = isUnread ? '#93c5fd' : '#e2e8f0';
-                        e.currentTarget.style.boxShadow = isUnread ? '0 3px 12px rgba(59, 130, 246, 0.08)' : '0 1px 3px rgba(0,0,0,0.03)';
-                      }}
-                    >
-                      {notif.imageUrl && (
-                        <div style={{ width: '100%', height: '140px', background: '#0f172a', overflow: 'hidden' }}>
-                          <img
-                            src={notif.imageUrl}
-                            alt=""
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        </div>
-                      )}
-                      <div style={{ padding: '14px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            {isUnread && (
-                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563eb', display: 'inline-block' }} />
+                const visibleItems = filtered.slice(0, visibleNotifCount);
+
+                return (
+                  <>
+                    {visibleItems.map((notif) => {
+                      const isUnread = !!notif.unread;
+                      const messageText = notif.message || notif.body || '';
+                      const titleText = notif.title || notif.category || 'Zelevos Update';
+                      const isExpanded = expandedNotifId === notif.id;
+                      const isSupport = Boolean(notif.ticketId || notif.type === 'SUPPORT_REPLY' || (notif.category || '').toUpperCase() === 'SUPPORT');
+
+                      return (
+                        <div
+                          key={notif.id}
+                          id={`notification-card-${notif.id}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleNotificationCardClick(notif)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleNotificationCardClick(notif);
+                            }
+                          }}
+                          style={{
+                            display: 'flex',
+                            gap: '12px',
+                            padding: '12px',
+                            borderRadius: '12px',
+                            border: isUnread ? '1.5px solid #93c5fd' : '1px solid #e2e8f0',
+                            background: isUnread ? '#f0f7ff' : '#ffffff',
+                            boxShadow: isUnread ? '0 2px 8px rgba(37, 99, 235, 0.08)' : '0 1px 3px rgba(0,0,0,0.03)',
+                            cursor: 'pointer',
+                            transition: 'all 0.18s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#3b82f6';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.12)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = isUnread ? '#93c5fd' : '#e2e8f0';
+                            e.currentTarget.style.boxShadow = isUnread ? '0 2px 8px rgba(37, 99, 235, 0.08)' : '0 1px 3px rgba(0,0,0,0.03)';
+                          }}
+                        >
+                          {/* 48-56px Thumbnail (Task 6) */}
+                          <div
+                            style={{
+                              width: '52px',
+                              height: '52px',
+                              minWidth: '52px',
+                              borderRadius: '10px',
+                              overflow: 'hidden',
+                              background: '#f1f5f9',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {notif.imageUrl ? (
+                              <img
+                                src={notif.imageUrl}
+                                alt=""
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              getNotificationFallbackIcon(notif)
                             )}
-                            <span
+                          </div>
+
+                          {/* Content on right (Task 6) */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginBottom: '3px' }}>
+                              <span
+                                style={{
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  background: (notif.category || '').toUpperCase() === 'SUPPORT' ? '#dbeafe' : (notif.category || '').toUpperCase() === 'OFFER' ? '#fef3c7' : (notif.category || '').toUpperCase() === 'PAYMENT' ? '#dcfce7' : (notif.category || '').toUpperCase() === 'IMPORTANT' ? '#fee2e2' : '#f1f5f9',
+                                  color: (notif.category || '').toUpperCase() === 'SUPPORT' ? '#1d4ed8' : (notif.category || '').toUpperCase() === 'OFFER' ? '#b45309' : (notif.category || '').toUpperCase() === 'PAYMENT' ? '#15803d' : (notif.category || '').toUpperCase() === 'IMPORTANT' ? '#b91c1c' : '#475569',
+                                }}
+                              >
+                                {notif.category || notif.type || 'Notice'}
+                              </span>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                                  {formatRelativeTime(notif.createdAt)}
+                                </span>
+                                {isUnread && (
+                                  <span
+                                    style={{
+                                      width: '7px',
+                                      height: '7px',
+                                      borderRadius: '50%',
+                                      background: '#2563eb',
+                                      display: 'inline-block',
+                                    }}
+                                  />
+                                )}
+                              </div>
+                            </div>
+
+                            <h4
                               style={{
-                                fontSize: '10px',
-                                fontWeight: 700,
-                                textTransform: 'uppercase',
-                                padding: '2px 7px',
-                                borderRadius: '6px',
-                                background: (notif.category || '').toUpperCase() === 'SUPPORT' ? '#dbeafe' : (notif.category || '').toUpperCase() === 'OFFER' ? '#fef3c7' : (notif.category || '').toUpperCase() === 'PAYMENT' ? '#dcfce7' : (notif.category || '').toUpperCase() === 'IMPORTANT' ? '#fee2e2' : '#f1f5f9',
-                                color: (notif.category || '').toUpperCase() === 'SUPPORT' ? '#1d4ed8' : (notif.category || '').toUpperCase() === 'OFFER' ? '#b45309' : (notif.category || '').toUpperCase() === 'PAYMENT' ? '#15803d' : (notif.category || '').toUpperCase() === 'IMPORTANT' ? '#b91c1c' : '#475569',
+                                margin: '0 0 3px',
+                                fontSize: '13px',
+                                fontWeight: isUnread ? 700 : 600,
+                                color: isUnread ? '#0f172a' : '#334155',
+                                lineHeight: 1.3,
                               }}
                             >
-                              {notif.category || 'Announcement'}
-                            </span>
-                          </div>
-                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                            {notif.createdAt ? new Date(notif.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
-                          </span>
-                        </div>
+                              {titleText}
+                            </h4>
 
-                        {/* Bold unread / normal read title (Section 19) */}
-                        <h4 style={{ margin: '0 0 5px', fontSize: '14px', fontWeight: isUnread ? 800 : 600, color: isUnread ? '#0f172a' : '#334155' }}>
-                          {titleText}
-                        </h4>
-
-                        {/* Bold unread / normal read preview */}
-                        <p style={{
-                          margin: 0,
-                          fontSize: '13px',
-                          fontWeight: isUnread ? 600 : 400,
-                          color: isUnread ? '#1e293b' : '#475569',
-                          lineHeight: 1.45,
-                          whiteSpace: 'pre-line',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }}>
-                          {messageText || 'Click to view full message.'}
-                        </p>
-
-                        {notif.isRevoked && (
-                          <div style={{ marginTop: '8px', padding: '6px 10px', borderRadius: '6px', background: '#fff1f2', border: '1px solid #fecdd3', color: '#be123c', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Ban size={13} />
-                            <span>This offer has been revoked by Zelevos and is no longer active.</span>
-                          </div>
-                        )}
-                        {notif.isExpired && !notif.isRevoked && (
-                          <div style={{ marginTop: '8px', padding: '6px 10px', borderRadius: '6px', background: '#fefce8', border: '1px solid #fef08a', color: '#854d0e', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Clock size={13} />
-                            <span>This offer has expired.</span>
-                          </div>
-                        )}
-
-                        <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#2563eb', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                            {isSupport ? 'View Conversation' : 'View full message'} <ChevronRight size={13} />
-                          </span>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            {/* Soft Clear Button (Section 20, 21: Preserves database record & audit log) */}
-                            <button
-                              type="button"
-                              onClick={(e) => handleClearNotification(notif.id, e)}
+                            <p
                               style={{
-                                fontSize: '11px',
-                                color: '#94a3b8',
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '2px 5px',
+                                margin: 0,
+                                fontSize: '12px',
+                                lineHeight: 1.45,
+                                color: isUnread ? '#1e293b' : '#64748b',
+                                display: isExpanded ? 'block' : '-webkit-box',
+                                WebkitLineClamp: isExpanded ? 'unset' : 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
                               }}
-                              title="Clear notification from active list"
                             >
-                              Clear
-                            </button>
+                              {messageText || 'Click to view details.'}
+                            </p>
 
-                            {notif.actionButton && (
-                              notif.isRevoked ? (
-                                <span
-                                  style={{
-                                    padding: '5px 10px',
-                                    borderRadius: '7px',
-                                    background: '#f1f5f9',
-                                    color: '#94a3b8',
-                                    fontSize: '11px',
-                                    fontWeight: 600,
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                  }}
-                                >
-                                  <Ban size={12} /> Revoked
-                                </span>
-                              ) : notif.isExpired ? (
-                                <span
-                                  style={{
-                                    padding: '5px 10px',
-                                    borderRadius: '7px',
-                                    background: '#f1f5f9',
-                                    color: '#94a3b8',
-                                    fontSize: '11px',
-                                    fontWeight: 600,
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                  }}
-                                >
-                                  <Clock size={12} /> Expired
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    void handleNotificationCtaClick(notif);
-                                  }}
-                                  style={{
-                                    padding: '6px 12px',
-                                    borderRadius: '7px',
-                                    background: '#2563eb',
-                                    color: '#ffffff',
-                                    border: 'none',
-                                    fontSize: '11px',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                  }}
-                                >
-                                  <span>{notif.actionButton}</span>
-                                  <ArrowRight size={12} />
-                                </button>
-                              )
-                            )}
-
-                            {isUnread && (
+                            {messageText.length > 80 && (
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  void handleMarkNotificationRead(notif.id);
+                                  setExpandedNotifId(isExpanded ? null : notif.id);
                                 }}
                                 style={{
-                                  fontSize: '11px',
-                                  color: '#2563eb',
                                   background: 'none',
                                   border: 'none',
-                                  cursor: 'pointer',
-                                  textDecoration: 'underline',
+                                  padding: 0,
+                                  marginTop: '4px',
+                                  fontSize: '11px',
                                   fontWeight: 600,
+                                  color: '#2563eb',
+                                  cursor: 'pointer',
                                 }}
                               >
-                                Mark as read
+                                {isExpanded ? 'Show less' : 'Read more'}
                               </button>
                             )}
+
+                            {notif.isRevoked && (
+                              <div style={{ marginTop: '6px', padding: '4px 8px', borderRadius: '6px', background: '#fff1f2', border: '1px solid #fecdd3', color: '#be123c', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Ban size={12} />
+                                <span>Offer revoked</span>
+                              </div>
+                            )}
+
+                            {notif.isExpired && !notif.isRevoked && (
+                              <div style={{ marginTop: '6px', padding: '4px 8px', borderRadius: '6px', background: '#fefce8', border: '1px solid #fef08a', color: '#854d0e', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Clock size={12} />
+                                <span>Offer expired</span>
+                              </div>
+                            )}
+
+                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 600, color: '#2563eb', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                                {isSupport ? 'Conversation' : 'Details'} <ChevronRight size={12} />
+                              </span>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleClearNotification(notif.id, e)}
+                                  style={{
+                                    fontSize: '11px',
+                                    color: '#94a3b8',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: '2px 4px',
+                                  }}
+                                  title="Dismiss notification"
+                                >
+                                  Dismiss
+                                </button>
+
+                                {notif.actionButton && !notif.isRevoked && !notif.isExpired && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void handleNotificationCtaClick(notif);
+                                    }}
+                                    style={{
+                                      padding: '4px 10px',
+                                      borderRadius: '6px',
+                                      background: '#2563eb',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      fontSize: '11px',
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                    }}
+                                  >
+                                    <span>{notif.actionButton}</span>
+                                    <ArrowRight size={11} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                });
+                      );
+                    })}
+
+                    {filtered.length > visibleNotifCount && (
+                      <button
+                        type="button"
+                        onClick={() => setVisibleNotifCount((prev) => prev + 8)}
+                        style={{
+                          margin: '8px auto 4px',
+                          padding: '7px 18px',
+                          borderRadius: '20px',
+                          border: '1px solid #cbd5e1',
+                          background: '#f8fafc',
+                          color: '#334155',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <Plus size={13} />
+                        Load more ({filtered.length - visibleNotifCount} remaining)
+                      </button>
+                    )}
+                  </>
+                );
               })()}
             </div>
           </motion.aside>
@@ -3247,11 +3368,11 @@ function ResetPasswordPage() {
             <form onSubmit={(e) => void submit(e)} style={{ display: 'grid', gap: '16px' }}>
               <label style={{ display: 'grid', gap: '6px', fontSize: '12px', fontWeight: 700 }}>
                 New password
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" required minLength={8} style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px' }} />
+                <PasswordInput id="reset-page-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" required minLength={8} style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px' }} />
               </label>
               <label style={{ display: 'grid', gap: '6px', fontSize: '12px', fontWeight: 700 }}>
                 Confirm new password
-                <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat password" required minLength={8} style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px' }} />
+                <PasswordInput id="reset-page-confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat password" required minLength={8} style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px' }} />
               </label>
               <Button type="submit" disabled={status === 'loading'}>{status === 'loading' ? 'Updating...' : 'Set new password'}</Button>
               {status === 'error' && <p style={{ color: '#e11d48', fontSize: '13px' }}>{message}</p>}
@@ -3854,6 +3975,8 @@ function FlightsRoute() {
     notice?: string | null;
     onSuccess?: () => void;
   }>({ open: false, mode: 'login' });
+  const [customTripModalOpen, setCustomTripModalOpen] = useState(false);
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
   const [toast, setToast] = useState('');
 
   const showToast = (message: string) => {
@@ -3885,6 +4008,8 @@ function FlightsRoute() {
         authLoading={authLoading}
         onLogin={(mode = 'login') => setAuthModal({ open: true, mode })}
         onLogout={() => void handleLogout()}
+        onOpenBuildMyTrip={() => setCustomTripModalOpen(true)}
+        onOpenSupport={() => setSupportModalOpen(true)}
       />
       <FlightsPage
         user={user}
@@ -3893,6 +4018,17 @@ function FlightsRoute() {
         onLogout={() => void handleLogout()}
       />
       <Footer />
+      {customTripModalOpen && (
+        <CustomTripModal
+          user={user}
+          onClose={() => setCustomTripModalOpen(false)}
+        />
+      )}
+      {supportModalOpen && (
+        <SupportTicketModal
+          onClose={() => setSupportModalOpen(false)}
+        />
+      )}
       {authModal.open && (
         <AuthDialog
           initialMode={authModal.mode}

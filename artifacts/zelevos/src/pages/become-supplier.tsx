@@ -28,6 +28,7 @@ import {
   FileCheck,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { PasswordInput } from "@/components/ui/password-input";
 
 interface UploadedDoc {
   id?: string;
@@ -1655,9 +1656,8 @@ export function BecomeSupplierPage() {
                           <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                             Portal Password (Min 8 Characters) *
                           </label>
-                          <input
+                          <PasswordInput
                             id="supplier-input-password"
-                            type="password"
                             required
                             minLength={8}
                             placeholder="••••••••••••"
@@ -1686,9 +1686,8 @@ export function BecomeSupplierPage() {
                           <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                             Confirm Password *
                           </label>
-                          <input
+                          <PasswordInput
                             id="supplier-input-confirm-password"
-                            type="password"
                             required
                             minLength={8}
                             placeholder="••••••••••••"
@@ -2023,9 +2022,8 @@ export function BecomeSupplierPage() {
                     fontSize: "14px",
                   }}
                 />
-                <input
+                <PasswordInput
                   id="status-search-password"
-                  type="password"
                   required
                   autoComplete="current-password"
                   placeholder="Your application password"

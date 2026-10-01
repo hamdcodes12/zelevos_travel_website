@@ -48,6 +48,23 @@ export function AdminOperationsTab({ onToast }: { onToast: (msg: string) => void
   const [replyStatus, setReplyStatus] = useState<string>("IN_PROGRESS");
   const [replySending, setReplySending] = useState(false);
 
+  useEffect(() => {
+    if (!flightModalOpen && !selectedTicketId) return;
+    const orig = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (flightModalOpen) setFlightModalOpen(false);
+        if (selectedTicketId) setSelectedTicketId(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = orig;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [flightModalOpen, selectedTicketId]);
+
   const loadData = async () => {
     setLoading(true);
     let anyLoaded = false;
@@ -697,7 +714,12 @@ export function AdminOperationsTab({ onToast }: { onToast: (msg: string) => void
 
       {/* Manual Flight Fulfillment Desk Modal (PRD Section 13) */}
       {flightModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setFlightModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden relative">
             <div className="p-5 bg-gradient-to-r from-blue-700 to-indigo-800 text-white flex justify-between items-center">
               <div>
@@ -710,7 +732,8 @@ export function AdminOperationsTab({ onToast }: { onToast: (msg: string) => void
               <button
                 type="button"
                 onClick={() => setFlightModalOpen(false)}
-                className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition"
+                aria-label="Close modal"
+                className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition focus:outline-none focus:ring-2 focus:ring-white"
               >
                 <X size={18} />
               </button>
@@ -802,6 +825,9 @@ export function AdminOperationsTab({ onToast }: { onToast: (msg: string) => void
       {selectedTicketId && (
         <div
           id="ops-view-inquiry-modal"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedTicketId(null);
+          }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
         >
           <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden relative my-auto max-h-[92vh] flex flex-col">

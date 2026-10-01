@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, Sparkles, Calendar, Users, Wallet, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
+import { useModalA11y } from "./ui/modal-helper";
 
 export function CustomTripModal({ onClose, user }: { onClose: () => void; user?: any }) {
   const [step, setStep] = useState<"form" | "submitting" | "success">("form");
@@ -23,6 +24,13 @@ export function CustomTripModal({ onClose, user }: { onClose: () => void; user?:
 
   const [leadNumber, setLeadNumber] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  const isDirty = step === "form" && Boolean(destinations.trim() || startDate || specialRequests.trim());
+  const { contentRef, requestClose, handleBackdropClick } = useModalA11y({
+    isOpen: true,
+    onClose,
+    isDirty,
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,8 +72,14 @@ export function CustomTripModal({ onClose, user }: { onClose: () => void; user?:
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden relative my-auto">
+    <div
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto"
+    >
+      <div
+        ref={contentRef}
+        className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden relative my-auto"
+      >
         <div className="p-5 bg-gradient-to-r from-blue-700 to-indigo-800 text-white flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Sparkles size={20} className="text-amber-300" />
@@ -75,9 +89,10 @@ export function CustomTripModal({ onClose, user }: { onClose: () => void; user?:
             </div>
           </div>
           <button
-            onClick={onClose}
+            type="button"
+            onClick={requestClose}
             id="close-custom-trip-btn"
-            className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition"
+            className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition focus:outline-none focus:ring-2 focus:ring-white"
             aria-label="Close modal"
           >
             <X size={18} />

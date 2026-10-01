@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, CheckCircle, ArrowRight, Building, User, Mail, Phone } from "lucide-react";
+import { useModalA11y } from "./ui/modal-helper";
 
 export function PartnerRegistrationModal({
   onClose,
@@ -15,6 +16,13 @@ export function PartnerRegistrationModal({
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ referralCode: string; partnerId: string } | null>(null);
   const [error, setError] = useState("");
+
+  const isDirty = !result && Boolean(agencyName || contactName || email || phone);
+  const { contentRef, requestClose, handleBackdropClick } = useModalA11y({
+    isOpen: true,
+    onClose,
+    isDirty,
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +66,14 @@ export function PartnerRegistrationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+    <div
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn overflow-y-auto"
+    >
+      <div
+        ref={contentRef}
+        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
           <div>
@@ -71,8 +85,10 @@ export function PartnerRegistrationModal({
             </h2>
           </div>
           <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition"
+            type="button"
+            onClick={requestClose}
+            aria-label="Close modal"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <X size={16} />
           </button>

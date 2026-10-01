@@ -37,6 +37,23 @@ export function CustomerSupportModal({ ticketId, onClose, onToast }: CustomerSup
     }
   }, [ticketId]);
 
+  useEffect(() => {
+    const orig = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (!replyText.trim() || window.confirm("Discard changes?")) {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = orig;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose, replyText]);
+
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim()) return;

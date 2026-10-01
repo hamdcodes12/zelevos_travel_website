@@ -58,6 +58,7 @@ import { AdminFinanceTab } from "../components/admin-finance-tab";
 import { AdminCustomTripsTab } from "../components/admin-custom-trips-tab";
 import { AdminBroadcastsTab } from "../components/admin-broadcasts-tab";
 import { AdminUserDossierModal } from "../components/admin-user-dossier-modal";
+import { PasswordInput } from "@/components/ui/password-input";
 
 type AdminProfile = {
   id: string;
@@ -921,38 +922,14 @@ export function AdminPage() {
                   <Lock size={13} color="#64748b" />
                   <span>Admin Password</span>
                 </label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type={showPassword ? "text" : "password"}
+                  <PasswordInput
+                    id="admin-login-password"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="••••••••••••"
                     required
                     className="admin-input-field"
-                    style={{ paddingRight: "40px" }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: "absolute",
-                      right: "12px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      background: "transparent",
-                      border: "none",
-                      color: "#94a3b8",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: "2px",
-                    }}
-                    title={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
               </div>
 
               {/* Remember me & Forgot password */}
@@ -3108,8 +3085,8 @@ export function AdminPage() {
                     <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                       Current Password
                     </label>
-                    <input
-                      type="password"
+                    <PasswordInput
+                      id="admin-current-password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       required
@@ -3130,8 +3107,8 @@ export function AdminPage() {
                     <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                       New Password (min. 8 characters)
                     </label>
-                    <input
-                      type="password"
+                    <PasswordInput
+                      id="admin-new-password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
@@ -3152,8 +3129,8 @@ export function AdminPage() {
                     <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                       Confirm New Password
                     </label>
-                    <input
-                      type="password"
+                    <PasswordInput
+                      id="admin-confirm-password"
                       value={confirmNewPassword}
                       onChange={(e) => setConfirmNewPassword(e.target.value)}
                       required

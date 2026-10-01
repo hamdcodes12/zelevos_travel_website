@@ -22,6 +22,7 @@ import {
   Send,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { PasswordInput } from "@/components/ui/password-input";
 
 interface PartnerData {
   id: string;
@@ -436,9 +437,8 @@ export function PartnerPortalPage() {
                       Set / Forgot Password?
                     </button>
                   </div>
-                  <input
+                  <PasswordInput
                     id="partner-password-input"
-                    type="password"
                     required
                     placeholder="Enter your password"
                     value={loginPassword}
@@ -536,8 +536,8 @@ export function PartnerPortalPage() {
                       <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                         New Password (min 8 characters)
                       </label>
-                      <input
-                        type="password"
+                      <PasswordInput
+                        id="partner-forgot-password-input"
                         required
                         minLength={8}
                         placeholder="At least 8 characters"
@@ -625,8 +625,8 @@ export function PartnerPortalPage() {
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>Account Password * (min 8 characters)</label>
-                  <input
-                    type="password"
+                  <PasswordInput
+                    id="partner-reg-password-input"
                     required
                     minLength={8}
                     placeholder="Create a secure password"

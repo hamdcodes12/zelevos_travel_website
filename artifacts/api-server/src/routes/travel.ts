@@ -1455,10 +1455,21 @@ router.get("/notifications", requireAuth, async (req, res): Promise<void> => {
         (linkedBroadcast.expiresAt && new Date(linkedBroadcast.expiresAt) <= now)
       ));
 
+      const title = notification.title || linkedBroadcast?.title || (notification.metadata as any)?.title || "Notification";
+      const message = notification.body || (notification as any).message || linkedBroadcast?.message || (linkedBroadcast as any)?.offerDetails || (notification.metadata as any)?.message || (notification.metadata as any)?.body || "";
+      const imageUrl = (notification as any).imageUrl || linkedBroadcast?.imageUrl || (notification.metadata as any)?.imageUrl || null;
+      const category = (notification as any).category || linkedBroadcast?.category || notification.type || "ANNOUNCEMENT";
+      const actionUrl = (notification as any).actionUrl || (linkedBroadcast as any)?.actionUrl || (notification.metadata as any)?.actionUrl || null;
+
       return {
         ...notification,
+        title,
+        message,
+        body: message,
+        imageUrl,
+        category,
+        actionUrl,
         ticketId: notification.ticketId || (notification.metadata as any)?.ticketId || null,
-        message: notification.body,
         unread: !notification.readAt,
         broadcastStatus: linkedBroadcast?.status || null,
         isRevoked,

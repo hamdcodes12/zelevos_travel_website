@@ -40,6 +40,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function VendorPortalPage() {
   const [, setLocation] = useLocation();
@@ -128,6 +129,36 @@ export function VendorPortalPage() {
   useEffect(() => {
     checkVendorSession();
   }, []);
+
+  // Modal Escape and scroll-lock management
+  const isAnyModalOpen = Boolean(rejectingTask || changingTask || voucherTask || showAddService || showAddDoc || showAddInvoice);
+  useEffect(() => {
+    if (!isAnyModalOpen) return;
+    const orig = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (rejectingTask) {
+          if (!rejectReason.trim() || window.confirm("Discard changes?")) setRejectingTask(null);
+        } else if (changingTask) {
+          if (!changeNotes.trim() || window.confirm("Discard changes?")) setChangingTask(null);
+        } else if (voucherTask) {
+          if ((!voucherRef.trim() && !voucherFile) || window.confirm("Discard changes?")) setVoucherTask(null);
+        } else if (showAddService) {
+          if ((!newService.title.trim() && !newService.location.trim()) || window.confirm("Discard changes?")) setShowAddService(false);
+        } else if (showAddDoc) {
+          if ((!docTitle.trim() && !docFile) || window.confirm("Discard changes?")) setShowAddDoc(false);
+        } else if (showAddInvoice) {
+          if ((!newInvoice.invoiceNumber.trim() && !newInvoice.notes.trim()) || window.confirm("Discard changes?")) setShowAddInvoice(false);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = orig;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isAnyModalOpen, rejectingTask, changingTask, voucherTask, showAddService, showAddDoc, showAddInvoice, rejectReason, changeNotes, voucherRef, voucherFile, newService, docTitle, docFile, newInvoice]);
 
   const checkVendorSession = async () => {
     setAuthLoading(true);
@@ -1319,8 +1350,8 @@ export function VendorPortalPage() {
                     >
                       <Lock size={18} />
                     </div>
-                    <input
-                      type={showPassword ? "text" : "password"}
+                    <PasswordInput
+                      id="vendor-login-password"
                       required
                       placeholder="Enter your password"
                       value={loginPassword}
@@ -1348,25 +1379,6 @@ export function VendorPortalPage() {
                         e.target.style.boxShadow = "none";
                       }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      style={{
-                        position: "absolute",
-                        right: "12px",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#94A3B8",
-                        padding: "4px",
-                        display: "grid",
-                        placeItems: "center",
-                      }}
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
                   </div>
                 </div>
 
@@ -2208,9 +2220,30 @@ export function VendorPortalPage() {
       {/* MODALS */}
       {/* 1. Reject Task Modal */}
       {rejectingTask && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}>
-          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "480px", width: "100%", padding: "24px" }}>
-            <h3 style={{ margin: "0 0 10px", fontSize: "16px" }}>Decline Booking Request</h3>
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              if (rejectReason.trim() && !window.confirm("Discard changes?")) return;
+              setRejectingTask(null);
+            }
+          }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}
+        >
+          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "480px", width: "100%", padding: "24px", position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700 }}>Decline Booking Request</h3>
+              <button
+                type="button"
+                aria-label="Close modal"
+                onClick={() => {
+                  if (rejectReason.trim() && !window.confirm("Discard changes?")) return;
+                  setRejectingTask(null);
+                }}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
             <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 16px" }}>
               Please explain why your team is unable to fulfill this task:
             </p>
@@ -2222,7 +2255,14 @@ export function VendorPortalPage() {
               style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", marginBottom: "16px" }}
             />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button type="button" onClick={() => setRejectingTask(null)} style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (rejectReason.trim() && !window.confirm("Discard changes?")) return;
+                  setRejectingTask(null);
+                }}
+                style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
+              >
                 Cancel
               </button>
               <button
@@ -2240,9 +2280,30 @@ export function VendorPortalPage() {
 
       {/* 2. Change Request Modal */}
       {changingTask && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}>
-          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "480px", width: "100%", padding: "24px" }}>
-            <h3 style={{ margin: "0 0 10px", fontSize: "16px" }}>Request Adjustments to Booking</h3>
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              if (changeNotes.trim() && !window.confirm("Discard changes?")) return;
+              setChangingTask(null);
+            }
+          }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}
+        >
+          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "480px", width: "100%", padding: "24px", position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700 }}>Request Adjustments to Booking</h3>
+              <button
+                type="button"
+                aria-label="Close modal"
+                onClick={() => {
+                  if (changeNotes.trim() && !window.confirm("Discard changes?")) return;
+                  setChangingTask(null);
+                }}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
             <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 16px" }}>
               Specify date, time, vehicle, or room adjustments required:
             </p>
@@ -2254,7 +2315,14 @@ export function VendorPortalPage() {
               style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", marginBottom: "16px" }}
             />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button type="button" onClick={() => setChangingTask(null)} style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (changeNotes.trim() && !window.confirm("Discard changes?")) return;
+                  setChangingTask(null);
+                }}
+                style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
+              >
                 Cancel
               </button>
               <button
@@ -2272,9 +2340,30 @@ export function VendorPortalPage() {
 
       {/* 3. Upload Voucher Modal */}
       {voucherTask && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}>
-          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "480px", width: "100%", padding: "24px" }}>
-            <h3 style={{ margin: "0 0 10px", fontSize: "16px" }}>Upload Service Voucher & Reference</h3>
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              if ((voucherRef.trim() || voucherFile) && !window.confirm("Discard changes?")) return;
+              setVoucherTask(null);
+            }
+          }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}
+        >
+          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "480px", width: "100%", padding: "24px", position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700 }}>Upload Service Voucher & Reference</h3>
+              <button
+                type="button"
+                aria-label="Close modal"
+                onClick={() => {
+                  if ((voucherRef.trim() || voucherFile) && !window.confirm("Discard changes?")) return;
+                  setVoucherTask(null);
+                }}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
             <div style={{ display: "grid", gap: "12px", marginBottom: "16px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>Confirmation Reference</label>
@@ -2297,7 +2386,14 @@ export function VendorPortalPage() {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button type="button" onClick={() => setVoucherTask(null)} style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  if ((voucherRef.trim() || voucherFile) && !window.confirm("Discard changes?")) return;
+                  setVoucherTask(null);
+                }}
+                style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
+              >
                 Cancel
               </button>
               <button
@@ -2315,9 +2411,30 @@ export function VendorPortalPage() {
 
       {/* 4. Add Service Modal */}
       {showAddService && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}>
-          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "520px", width: "100%", padding: "24px" }}>
-            <h3 style={{ margin: "0 0 14px", fontSize: "17px" }}>Add New Bookable Service</h3>
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              if ((newService.title.trim() || newService.location.trim()) && !window.confirm("Discard changes?")) return;
+              setShowAddService(false);
+            }
+          }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}
+        >
+          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "520px", width: "100%", padding: "24px", position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700 }}>Add New Bookable Service</h3>
+              <button
+                type="button"
+                aria-label="Close modal"
+                onClick={() => {
+                  if ((newService.title.trim() || newService.location.trim()) && !window.confirm("Discard changes?")) return;
+                  setShowAddService(false);
+                }}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
             <form onSubmit={handleCreateService} style={{ display: "grid", gap: "12px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 <div>
@@ -2398,7 +2515,14 @@ export function VendorPortalPage() {
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
-                <button type="button" onClick={() => setShowAddService(false)} style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if ((newService.title.trim() || newService.location.trim()) && !window.confirm("Discard changes?")) return;
+                    setShowAddService(false);
+                  }}
+                  style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
+                >
                   Cancel
                 </button>
                 <button type="submit" disabled={savingService} style={{ background: "#0f172a", color: "#ffffff", border: "none", padding: "8px 18px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
@@ -2412,9 +2536,30 @@ export function VendorPortalPage() {
 
       {/* 5. Add Document Modal */}
       {showAddDoc && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}>
-          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "480px", width: "100%", padding: "24px" }}>
-            <h3 style={{ margin: "0 0 14px", fontSize: "17px" }}>Upload Additional Document</h3>
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              if ((docTitle.trim() || docFile) && !window.confirm("Discard changes?")) return;
+              setShowAddDoc(false);
+            }
+          }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}
+        >
+          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "480px", width: "100%", padding: "24px", position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700 }}>Upload Additional Document</h3>
+              <button
+                type="button"
+                aria-label="Close modal"
+                onClick={() => {
+                  if ((docTitle.trim() || docFile) && !window.confirm("Discard changes?")) return;
+                  setShowAddDoc(false);
+                }}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
             <form onSubmit={handleUploadNewDoc} style={{ display: "grid", gap: "12px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "11px", fontWeight: 700, marginBottom: "4px" }}>Document Type</label>
@@ -2456,7 +2601,14 @@ export function VendorPortalPage() {
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
-                <button type="button" onClick={() => setShowAddDoc(false)} style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if ((docTitle.trim() || docFile) && !window.confirm("Discard changes?")) return;
+                    setShowAddDoc(false);
+                  }}
+                  style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
+                >
                   Cancel
                 </button>
                 <button type="submit" disabled={uploadingDoc} style={{ background: "#0f172a", color: "#ffffff", border: "none", padding: "8px 18px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
@@ -2470,9 +2622,30 @@ export function VendorPortalPage() {
 
       {/* 6. Add Invoice Modal */}
       {showAddInvoice && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}>
-          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "480px", width: "100%", padding: "24px" }}>
-            <h3 style={{ margin: "0 0 14px", fontSize: "17px" }}>Submit Fulfillment Invoice</h3>
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              if ((newInvoice.invoiceNumber.trim() || newInvoice.notes.trim()) && !window.confirm("Discard changes?")) return;
+              setShowAddInvoice(false);
+            }
+          }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 100, padding: "20px" }}
+        >
+          <div style={{ background: "#ffffff", borderRadius: "16px", maxWidth: "480px", width: "100%", padding: "24px", position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700 }}>Submit Fulfillment Invoice</h3>
+              <button
+                type="button"
+                aria-label="Close modal"
+                onClick={() => {
+                  if ((newInvoice.invoiceNumber.trim() || newInvoice.notes.trim()) && !window.confirm("Discard changes?")) return;
+                  setShowAddInvoice(false);
+                }}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
             <form onSubmit={handleCreateInvoice} style={{ display: "grid", gap: "12px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 <div>
@@ -2509,7 +2682,14 @@ export function VendorPortalPage() {
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
-                <button type="button" onClick={() => setShowAddInvoice(false)} style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if ((newInvoice.invoiceNumber.trim() || newInvoice.notes.trim()) && !window.confirm("Discard changes?")) return;
+                    setShowAddInvoice(false);
+                  }}
+                  style={{ background: "#f1f5f9", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
+                >
                   Cancel
                 </button>
                 <button type="submit" disabled={savingInvoice} style={{ background: "#0f172a", color: "#ffffff", border: "none", padding: "8px 18px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>

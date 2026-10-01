@@ -10,6 +10,7 @@ import {
   Lock,
   KeyRound,
 } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export type AuthUser = {
   id: string;
@@ -1011,9 +1012,8 @@ export function AuthDialog({
                 <span style={{ display: "block", marginBottom: "6px", color: "#344054", fontSize: "11px", fontWeight: 800 }}>
                   New Password
                 </span>
-                <input
+                <PasswordInput
                   id="new-password-input"
-                  type="password"
                   value={newPassword}
                   onChange={(e) => {
                     setNewPassword(e.target.value);
@@ -1041,9 +1041,8 @@ export function AuthDialog({
                 <span style={{ display: "block", marginBottom: "6px", color: "#344054", fontSize: "11px", fontWeight: 800 }}>
                   Confirm New Password
                 </span>
-                <input
+                <PasswordInput
                   id="confirm-new-password-input"
-                  type="password"
                   value={confirmNewPassword}
                   onChange={(e) => {
                     setConfirmNewPassword(e.target.value);
@@ -1550,9 +1549,8 @@ export function AuthDialog({
                     </button>
                   )}
                 </div>
-                <input
+                <PasswordInput
                   id="login-password-input"
-                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 8 characters"
@@ -1578,8 +1576,8 @@ export function AuthDialog({
                   <span style={{ display: "block", marginBottom: "6px", color: "#344054", fontSize: "10px", fontWeight: 800 }}>
                     Confirm Password
                   </span>
-                  <input
-                    type="password"
+                  <PasswordInput
+                    id="signup-confirm-password-input"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter your password"

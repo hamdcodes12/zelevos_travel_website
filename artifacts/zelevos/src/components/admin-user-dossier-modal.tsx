@@ -129,6 +129,19 @@ export function AdminUserDossierModal({ userId, onClose, onToast, onCustomerStat
     }
   }, [userId]);
 
+  useEffect(() => {
+    const orig = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = orig;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
   if (loading) {
     return (
       <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -161,7 +174,12 @@ export function AdminUserDossierModal({ userId, onClose, onToast, onCustomerStat
   const { user, stats, bookings, payments, invoices, refunds, supportTickets, notifications, activityTimeline, auditTrail } = dossier;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+    >
       <div className="bg-white rounded-2xl max-w-5xl w-full shadow-2xl border border-slate-100 max-h-[92vh] flex flex-col overflow-hidden my-auto">
         {/* Dossier Header */}
         <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
