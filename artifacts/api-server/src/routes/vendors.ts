@@ -764,19 +764,29 @@ router.get(["/admin/suppliers", "/admin/vendors"], requireRole(["admin", "operat
       );
     }
 
-    // Status filter: All, Pending Approval, Approved, Rejected, Suspended
-    if (status && typeof status === "string" && status.toLowerCase() !== "all") {
-      const st = status.trim().toUpperCase();
-      filtered = filtered.filter((v: any) => {
-        const vStatus = (v.status || v.approvalStatus || "").toUpperCase();
-        if (st === "PENDING_APPROVAL" || st === "PENDING") {
-          return vStatus === "PENDING_APPROVAL" || vStatus === "PENDING";
-        }
-        if (st === "APPROVED") return vStatus === "APPROVED";
-        if (st === "REJECTED") return vStatus === "REJECTED";
-        if (st === "SUSPENDED") return vStatus === "SUSPENDED";
-        return vStatus === st;
-      });
+    const includeArchived = req.query.includeArchived === "true" || req.query.archived === "true";
+
+    // Filter by archive state
+    if (status && typeof status === "string" && status.trim().toUpperCase() === "ARCHIVED") {
+      filtered = filtered.filter((v: any) => v.isArchived === true || v.status === "REMOVED");
+    } else {
+      if (!includeArchived) {
+        filtered = filtered.filter((v: any) => !v.isArchived && v.status !== "REMOVED");
+      }
+      // Status filter: All, Pending Approval, Approved, Rejected, Suspended
+      if (status && typeof status === "string" && status.toLowerCase() !== "all") {
+        const st = status.trim().toUpperCase();
+        filtered = filtered.filter((v: any) => {
+          const vStatus = (v.status || v.approvalStatus || "").toUpperCase();
+          if (st === "PENDING_APPROVAL" || st === "PENDING") {
+            return vStatus === "PENDING_APPROVAL" || vStatus === "PENDING";
+          }
+          if (st === "APPROVED") return vStatus === "APPROVED";
+          if (st === "REJECTED") return vStatus === "REJECTED";
+          if (st === "SUSPENDED") return vStatus === "SUSPENDED";
+          return vStatus === st;
+        });
+      }
     }
 
     // Service type filter
@@ -1596,10 +1606,113 @@ router.post(["/admin/suppliers/:id/status", "/admin/vendors/:id/status"], requir
   }
 });
 
+// Archive Supplier (Admin)
+router.post(["/admin/suppliers/:id/archive", "/admin/vendors/:id/archive"], requireRole(["admin"]), async (req, res) => {
+  const paramId = typeof req.params.id === "string" ? req.params.id : String(req.params.id || "");
+  const reason = typeof req.body?.reason === "string" ? req.body.reason.trim() : "Archived by administrator";
+
+  try {
+    const condition = isUuid(paramId)
+      ? or(eq(vendorsTable.id, paramId), eq(vendorsTable.vendorId, paramId))
+      : eq(vendorsTable.vendorId, paramId);
+
+    const [vendor] = await db.select().from(vendorsTable).where(condition).limit(1);
+    if (!vendor) {
+      res.status(404).json({ status: "not_found", message: "Supplier not found." });
+      return;
+    }
+
+    const now = new Date();
+    const adminActor = (req as any).admin?.adminId || "admin";
+    const [updated] = await db
+      .update(vendorsTable)
+      .set({
+        isArchived: true,
+        archivedAt: now,
+        archivedBy: adminActor,
+        archiveReason: reason,
+        updatedAt: now,
+      })
+      .where(eq(vendorsTable.id, vendor.id))
+      .returning();
+
+    await logAuditAction({
+      action: "SUPPLIER_ARCHIVED",
+      resourceType: "vendor",
+      resourceId: vendor.id,
+      previousValue: { isArchived: vendor.isArchived },
+      newValue: { isArchived: true, archiveReason: reason },
+      actorAdminId: (req as any).admin?.id,
+      actorRole: "admin",
+    });
+
+    res.json({
+      status: "success",
+      message: `Supplier ${vendor.businessName} (${vendor.vendorId}) successfully archived.`,
+      supplier: updated,
+      vendor: updated,
+    });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message || "Failed to archive supplier." });
+  }
+});
+
+// Restore Supplier (Admin)
+router.post(["/admin/suppliers/:id/restore", "/admin/vendors/:id/restore"], requireRole(["admin"]), async (req, res) => {
+  const paramId = typeof req.params.id === "string" ? req.params.id : String(req.params.id || "");
+
+  try {
+    const condition = isUuid(paramId)
+      ? or(eq(vendorsTable.id, paramId), eq(vendorsTable.vendorId, paramId))
+      : eq(vendorsTable.vendorId, paramId);
+
+    const [vendor] = await db.select().from(vendorsTable).where(condition).limit(1);
+    if (!vendor) {
+      res.status(404).json({ status: "not_found", message: "Supplier not found." });
+      return;
+    }
+
+    const now = new Date();
+    const restoredStatus = vendor.status === "REMOVED" ? "APPROVED" : vendor.status;
+    const [updated] = await db
+      .update(vendorsTable)
+      .set({
+        status: restoredStatus,
+        isArchived: false,
+        archivedAt: null,
+        archivedBy: null,
+        archiveReason: null,
+        updatedAt: now,
+      })
+      .where(eq(vendorsTable.id, vendor.id))
+      .returning();
+
+    await logAuditAction({
+      action: "SUPPLIER_RESTORED",
+      resourceType: "vendor",
+      resourceId: vendor.id,
+      previousValue: { isArchived: vendor.isArchived, status: vendor.status },
+      newValue: { isArchived: false, status: restoredStatus },
+      actorAdminId: (req as any).admin?.id,
+      actorRole: "admin",
+    });
+
+    res.json({
+      status: "success",
+      message: `Supplier ${vendor.businessName} (${vendor.vendorId}) successfully restored.`,
+      supplier: updated,
+      vendor: updated,
+    });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message || "Failed to restore supplier." });
+  }
+});
+
 // Remove / Delete Vendor (Admin)
 router.delete(["/admin/suppliers/:id", "/admin/vendors/:id"], requireRole(["admin"]), async (req, res) => {
   const paramId = typeof req.params.id === "string" ? req.params.id : String(req.params.id || "");
   const force = req.query.force === "true";
+  const purge = req.query.purge === "true" || req.query.hard === "true";
 
   try {
     const condition = isUuid(paramId)
@@ -1640,7 +1753,44 @@ router.delete(["/admin/suppliers/:id", "/admin/vendors/:id"], requireRole(["admi
         .where(eq(bookingServicesTable.assignedVendorId, vendor.id));
     }
 
-    // Soft-remove by setting status to REMOVED
+    if (purge) {
+      // Check if invoices or historical bookings exist
+      const allTasks = await db
+        .select({ id: bookingServicesTable.id })
+        .from(bookingServicesTable)
+        .where(eq(bookingServicesTable.assignedVendorId, vendor.id));
+
+      if (allTasks.length > 0 && !force) {
+        res.status(400).json({
+          status: "has_historical_records",
+          message: "Cannot purge vendor with historical fulfillment tasks. Please archive instead.",
+        });
+        return;
+      }
+
+      await db.delete(vendorDocumentsTable).where(eq(vendorDocumentsTable.vendorId, vendor.id)).catch(() => {});
+      await db.delete(vendorServicesTable).where(eq(vendorServicesTable.vendorId, vendor.id)).catch(() => {});
+      await db.delete(vendorsTable).where(eq(vendorsTable.id, vendor.id));
+
+      await logAuditAction({
+        action: "SUPPLIER_PURGED",
+        resourceType: "vendor",
+        resourceId: vendor.id,
+        previousValue: { vendorId: vendor.vendorId, businessName: vendor.businessName },
+        actorAdminId: (req as any).admin?.id,
+        actorRole: "admin",
+      });
+
+      res.json({
+        status: "success",
+        message: `Vendor ${vendor.businessName} (${vendor.vendorId}) permanently purged.`,
+      });
+      return;
+    }
+
+    // Soft-remove by setting status to REMOVED and isArchived to true
+    const now = new Date();
+    const adminActor = (req as any).admin?.adminId || "admin";
     const [updated] = await db
       .update(vendorsTable)
       .set({
@@ -1648,7 +1798,11 @@ router.delete(["/admin/suppliers/:id", "/admin/vendors/:id"], requireRole(["admi
         approvalStatus: "removed",
         suspensionType: "PERMANENT",
         suspensionReason: "Vendor removed / offboarded by admin",
-        updatedAt: new Date(),
+        isArchived: true,
+        archivedAt: now,
+        archivedBy: adminActor,
+        archiveReason: "Removed by administrator",
+        updatedAt: now,
       })
       .where(eq(vendorsTable.id, vendor.id))
       .returning();
@@ -1658,7 +1812,7 @@ router.delete(["/admin/suppliers/:id", "/admin/vendors/:id"], requireRole(["admi
       resourceType: "vendor",
       resourceId: vendor.id,
       previousValue: { status: vendor.status, businessName: vendor.businessName },
-      newValue: { status: "REMOVED", removedAt: new Date() },
+      newValue: { status: "REMOVED", isArchived: true, removedAt: now },
       actorAdminId: (req as any).admin?.id,
       actorRole: "admin",
     });

@@ -47,6 +47,7 @@ import {
   MoreVertical,
   Archive,
   RotateCcw,
+  Trash2,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { AdminPackagesTab } from "../components/admin-packages-tab";
@@ -147,6 +148,10 @@ type BookingItem = {
   paymentId: string | null;
   paymentOrderId: string | null;
   refundAmount: number | null;
+  isArchived?: boolean;
+  archivedAt?: string | null;
+  archivedBy?: string | null;
+  archiveReason?: string | null;
   customer: {
     id: string;
     customerId: string | null;
@@ -283,6 +288,7 @@ export function AdminPage() {
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [bookingSearch, setBookingSearch] = useState("");
   const [bookingStatusFilter, setBookingStatusFilter] = useState("ALL");
+  const [showArchivedBookings, setShowArchivedBookings] = useState(false);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [selectedBookingDetail, setSelectedBookingDetail] = useState<any | null>(null);
 
@@ -427,6 +433,12 @@ export function AdminPage() {
   }, [customerStatusFilter]);
 
   useEffect(() => {
+    if (admin && activeTab === "bookings") {
+      loadBookings();
+    }
+  }, [bookingStatusFilter, showArchivedBookings]);
+
+  useEffect(() => {
     const handleDocClick = () => setOpenActionMenuId(null);
     window.addEventListener("click", handleDocClick);
     return () => window.removeEventListener("click", handleDocClick);
@@ -530,12 +542,29 @@ export function AdminPage() {
     }
   };
 
+  const handleDeleteCustomer = async (id: string) => {
+    if (!confirm("Are you sure you want to permanently delete this customer account? This will permanently remove their profile.")) return;
+    try {
+      const res = await fetch(`/api/admin/customers/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to delete customer.");
+      showToast("Customer permanently deleted.");
+      await loadCustomers();
+    } catch (err: any) {
+      showToast(err.message || "Failed to delete customer.");
+    }
+  };
+
   const loadBookings = async () => {
     setBookingsLoading(true);
     try {
       const query = new URLSearchParams();
       if (bookingSearch) query.set("search", bookingSearch);
       if (bookingStatusFilter !== "ALL") query.set("status", bookingStatusFilter);
+      if (showArchivedBookings || bookingStatusFilter === "ARCHIVED") query.set("includeArchived", "true");
 
       const res = await fetch(`/api/admin/bookings?${query.toString()}`, { credentials: "include" });
       if (res.ok) {
@@ -546,6 +575,57 @@ export function AdminPage() {
       showToast("Could not load bookings.");
     } finally {
       setBookingsLoading(false);
+    }
+  };
+
+  const handleArchiveBooking = async (id: string, reason?: string) => {
+    if (!confirm("Are you sure you want to archive this booking?")) return;
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}/archive`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason || "Archived from admin console" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to archive booking.");
+      showToast("Booking archived successfully.");
+      await loadBookings();
+    } catch (err: any) {
+      showToast(err.message || "Failed to archive booking.");
+    }
+  };
+
+  const handleRestoreBooking = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}/restore`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to restore booking.");
+      showToast("Booking restored successfully.");
+      await loadBookings();
+    } catch (err: any) {
+      showToast(err.message || "Failed to restore booking.");
+    }
+  };
+
+  const handleDeleteBooking = async (id: string) => {
+    if (!confirm("Are you sure you want to permanently delete this booking? This action cannot be undone.")) return;
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to delete booking.");
+      showToast("Booking permanently deleted.");
+      await loadBookings();
+    } catch (err: any) {
+      showToast(err.message || "Failed to delete booking.");
     }
   };
 
@@ -2583,6 +2663,32 @@ export function AdminPage() {
                                         <Archive size={14} /> Archive Customer
                                       </button>
                                     )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOpenActionMenuId(null);
+                                        handleDeleteCustomer(c.id);
+                                      }}
+                                      style={{
+                                        width: "100%",
+                                        padding: "8px 14px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px",
+                                        border: "none",
+                                        borderTop: "1px solid #f1f5f9",
+                                        background: "none",
+                                        fontSize: "12px",
+                                        fontWeight: 600,
+                                        color: "#b91c1c",
+                                        textAlign: "left",
+                                        cursor: "pointer",
+                                      }}
+                                      className="hover:bg-red-50"
+                                    >
+                                      <Trash2 size={14} /> Delete Customer
+                                    </button>
                                   </div>
                                 )}
                               </div>
@@ -2694,7 +2800,18 @@ export function AdminPage() {
                   <option value="CANCELLED">CANCELLED</option>
                   <option value="SEARCHED">SEARCHED</option>
                   <option value="FAILED">FAILED</option>
+                  <option value="ARCHIVED">ARCHIVED</option>
                 </select>
+
+                <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#475569", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  <input
+                    type="checkbox"
+                    checked={showArchivedBookings}
+                    onChange={(e) => setShowArchivedBookings(e.target.checked)}
+                    style={{ cursor: "pointer" }}
+                  />
+                  <span>Show Archived</span>
+                </label>
 
                 <button
                   type="button"
@@ -2728,7 +2845,7 @@ export function AdminPage() {
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Amount</th>
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Payment</th>
                       <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569" }}>Status</th>
-                      <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569", textAlign: "right" }}>Inspect</th>
+                      <th style={{ padding: "12px 16px", fontWeight: 700, color: "#475569", textAlign: "right" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2740,7 +2857,7 @@ export function AdminPage() {
                       </tr>
                     ) : (
                       bookings.map((b) => (
-                        <tr key={b.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <tr key={b.id} style={{ borderBottom: "1px solid #f1f5f9", background: b.isArchived ? "#fff1f2" : "transparent" }}>
                           <td style={{ padding: "12px 16px" }}>
                             <span style={{ padding: "2px 7px", borderRadius: "4px", fontSize: "10px", fontWeight: 700, background: (b as any).kind === "FLIGHT" ? "#eff6ff" : "#f0fdf4", color: (b as any).kind === "FLIGHT" ? "#1d4ed8" : "#166534" }}>
                               {(b as any).kind || "FLIGHT"}
@@ -2771,14 +2888,35 @@ export function AdminPage() {
                             </span>
                           </td>
                           <td style={{ padding: "12px 16px" }}>
-                            <span style={{ padding: "2px 8px", borderRadius: "10px", fontSize: "10px", fontWeight: 700, background: b.status === "CONFIRMED" ? "#ecfdf5" : b.status === "CANCELLED" ? "#fef2f2" : "#f1f5f9", color: b.status === "CONFIRMED" ? "#065f46" : b.status === "CANCELLED" ? "#991b1b" : "#475569" }}>
-                              {b.status}
-                            </span>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                              <span style={{ padding: "2px 8px", borderRadius: "10px", fontSize: "10px", fontWeight: 700, background: b.status === "CONFIRMED" ? "#ecfdf5" : b.status === "CANCELLED" ? "#fef2f2" : "#f1f5f9", color: b.status === "CONFIRMED" ? "#065f46" : b.status === "CANCELLED" ? "#991b1b" : "#475569" }}>
+                                {b.status}
+                              </span>
+                              {b.isArchived && (
+                                <span style={{ padding: "1px 6px", borderRadius: "8px", fontSize: "9px", fontWeight: 800, background: "#ffe4e6", color: "#e11d48", textTransform: "uppercase" }}>
+                                  ARCHIVED
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td style={{ padding: "12px 16px", textAlign: "right" }}>
-                            <button type="button" onClick={() => viewBookingDetail(b.id)} style={{ padding: "5px 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", color: "#0f172a", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>
-                              Details
-                            </button>
+                            <div style={{ display: "flex", gap: "4px", justifyContent: "flex-end" }}>
+                              <button type="button" onClick={() => viewBookingDetail(b.id)} style={{ padding: "5px 8px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", color: "#0f172a", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>
+                                Details
+                              </button>
+                              {b.isArchived ? (
+                                <button type="button" onClick={() => handleRestoreBooking(b.id)} style={{ padding: "5px 8px", background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: "6px", color: "#059669", fontSize: "11px", fontWeight: 700, cursor: "pointer" }} title="Restore Booking">
+                                  Restore
+                                </button>
+                              ) : (
+                                <button type="button" onClick={() => handleArchiveBooking(b.id)} style={{ padding: "5px 8px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "6px", color: "#b45309", fontSize: "11px", fontWeight: 700, cursor: "pointer" }} title="Archive Booking">
+                                  Archive
+                                </button>
+                              )}
+                              <button type="button" onClick={() => handleDeleteBooking(b.id)} style={{ padding: "5px 8px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "6px", color: "#b91c1c", fontSize: "11px", fontWeight: 700, cursor: "pointer" }} title="Permanently Delete Booking">
+                                Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))

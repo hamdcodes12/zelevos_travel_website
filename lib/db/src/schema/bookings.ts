@@ -111,6 +111,11 @@ export const bookingsTable = pgTable("bookings", {
   payload: jsonb("payload").$type<Record<string, any>>().default({}),
   cancellationDetails: jsonb("cancellation_details").$type<Record<string, any>>(),
 
+  isArchived: boolean("is_archived").notNull().default(false),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  archivedBy: text("archived_by"),
+  archiveReason: text("archive_reason"),
+
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

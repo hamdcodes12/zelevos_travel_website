@@ -59,6 +59,10 @@ export const packagesTable = pgTable("packages", {
   featured: boolean("featured").notNull().default(false),
   isMembersOnly: boolean("is_members_only").notNull().default(false),
   offerExpiresAt: timestamp("offer_expires_at", { withTimezone: true }),
+  isArchived: boolean("is_archived").notNull().default(false),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  archivedBy: text("archived_by"),
+  archiveReason: text("archive_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

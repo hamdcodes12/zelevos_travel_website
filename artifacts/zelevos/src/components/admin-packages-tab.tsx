@@ -1130,6 +1130,32 @@ export function AdminPackagesTab({ onToast }: { onToast: (msg: string) => void }
                           </button>
                         )}
 
+                        {/* Lifecycle: Restore (Archived -> Paused) */}
+                        {pkg.status === "archived" && (
+                          <button
+                            type="button"
+                            id={`restore-btn-${pkg.id}`}
+                            title="Restore Package to Paused"
+                            onClick={() => handleStatusTransition(pkg.id, "paused")}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#ecfdf5",
+                              border: "1px solid #a7f3d0",
+                              borderRadius: "6px",
+                              color: "#059669",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            <Play size={12} />
+                            <span>Restore</span>
+                          </button>
+                        )}
+
                         {/* Permanent Delete */}
                         <button
                           type="button"

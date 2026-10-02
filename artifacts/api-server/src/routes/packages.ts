@@ -549,10 +549,18 @@ const packageCreateSchema = z.object({
 router.get("/admin/packages", requireRole(["admin"]), async (req, res) => {
   try {
     const statusQuery = typeof req.query.status === "string" ? req.query.status.toLowerCase() : "all";
+    const includeArchived = req.query.includeArchived === "true" || req.query.archived === "true";
 
     const conditions: any[] = [];
-    if (statusQuery && statusQuery !== "all") {
-      conditions.push(eq(packagesTable.status, statusQuery));
+    if (statusQuery === "archived") {
+      conditions.push(or(eq(packagesTable.status, "archived"), eq(packagesTable.isArchived, true)));
+    } else {
+      if (!includeArchived) {
+        conditions.push(eq(packagesTable.isArchived, false));
+      }
+      if (statusQuery && statusQuery !== "all") {
+        conditions.push(eq(packagesTable.status, statusQuery));
+      }
     }
 
     const rows = await db
@@ -888,6 +896,98 @@ router.post("/admin/packages/:id/expire", requireRole(["admin"]), async (req, re
   }
 });
 
+router.post("/admin/packages/:id/archive", requireRole(["admin"]), async (req, res) => {
+  const id = typeof req.params.id === "string" ? req.params.id.trim() : String(req.params.id || "").trim();
+  const reason = typeof req.body?.reason === "string" ? req.body.reason.trim() : "Archived by administrator";
+
+  try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const condition = isUuid
+      ? or(eq(packagesTable.id, id), eq(packagesTable.packageId, id), eq(packagesTable.slug, id))
+      : or(eq(packagesTable.packageId, id), eq(packagesTable.slug, id));
+
+    const [existing] = await db.select().from(packagesTable).where(condition).limit(1);
+    if (!existing) {
+      res.status(404).json({ status: "not_found", message: "Package not found." });
+      return;
+    }
+
+    const now = new Date();
+    const adminActor = (req as any).admin?.adminId || "admin";
+    const [updated] = await db
+      .update(packagesTable)
+      .set({
+        status: "archived",
+        isArchived: true,
+        archivedAt: now,
+        archivedBy: adminActor,
+        archiveReason: reason,
+        updatedAt: now,
+      })
+      .where(eq(packagesTable.id, existing.id))
+      .returning();
+
+    await logAuditAction({
+      action: "PACKAGE_ARCHIVED",
+      resourceType: "package",
+      resourceId: existing.id,
+      previousValue: { status: existing.status, isArchived: existing.isArchived },
+      newValue: { status: "archived", isArchived: true, archiveReason: reason },
+      actorAdminId: (req as any).admin?.id,
+      actorRole: "admin",
+    });
+
+    res.json({ status: "success", message: `Package "${existing.title}" archived successfully.`, package: updated });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message || "Failed to archive package." });
+  }
+});
+
+router.post("/admin/packages/:id/restore", requireRole(["admin"]), async (req, res) => {
+  const id = typeof req.params.id === "string" ? req.params.id.trim() : String(req.params.id || "").trim();
+
+  try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const condition = isUuid
+      ? or(eq(packagesTable.id, id), eq(packagesTable.packageId, id), eq(packagesTable.slug, id))
+      : or(eq(packagesTable.packageId, id), eq(packagesTable.slug, id));
+
+    const [existing] = await db.select().from(packagesTable).where(condition).limit(1);
+    if (!existing) {
+      res.status(404).json({ status: "not_found", message: "Package not found." });
+      return;
+    }
+
+    const now = new Date();
+    const [updated] = await db
+      .update(packagesTable)
+      .set({
+        status: "paused",
+        isArchived: false,
+        archivedAt: null,
+        archivedBy: null,
+        archiveReason: null,
+        updatedAt: now,
+      })
+      .where(eq(packagesTable.id, existing.id))
+      .returning();
+
+    await logAuditAction({
+      action: "PACKAGE_RESTORED",
+      resourceType: "package",
+      resourceId: existing.id,
+      previousValue: { status: existing.status, isArchived: existing.isArchived },
+      newValue: { status: "paused", isArchived: false },
+      actorAdminId: (req as any).admin?.id,
+      actorRole: "admin",
+    });
+
+    res.json({ status: "success", message: `Package "${existing.title}" restored to paused status.`, package: updated });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message || "Failed to restore package." });
+  }
+});
+
 router.delete("/admin/packages/:id", requireRole(["admin"]), async (req, res) => {
   const id = typeof req.params.id === "string" ? req.params.id.trim() : String(req.params.id || "").trim();
   const isHardDelete = req.query.hard === "true" || req.query.purge === "true";
@@ -904,6 +1004,20 @@ router.delete("/admin/packages/:id", requireRole(["admin"]), async (req, res) =>
     }
 
     if (isHardDelete) {
+      const { bookingsTable } = await import("@workspace/db");
+      const [bookingCount] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(bookingsTable)
+        .where(eq(bookingsTable.packageId, existing.id));
+
+      if (Number(bookingCount?.count || 0) > 0 && req.query.force !== "true") {
+        res.status(400).json({
+          status: "has_bookings",
+          message: `Package has ${bookingCount.count} existing booking(s). It cannot be permanently deleted. Please archive it instead to preserve booking records.`,
+        });
+        return;
+      }
+
       // 1. Delete associated components to avoid foreign key constraint violations
       await db.delete(packageDaysTable).where(eq(packageDaysTable.packageId, existing.id)).catch(() => {});
       await db.delete(hotelsTable).where(eq(hotelsTable.packageId, existing.id)).catch(() => {});
@@ -928,9 +1042,18 @@ router.delete("/admin/packages/:id", requireRole(["admin"]), async (req, res) =>
       return;
     }
 
+    const now = new Date();
+    const adminActor = (req as any).admin?.adminId || "admin";
     const [updated] = await db
       .update(packagesTable)
-      .set({ status: "archived", updatedAt: new Date() })
+      .set({
+        status: "archived",
+        isArchived: true,
+        archivedAt: now,
+        archivedBy: adminActor,
+        archiveReason: "Deleted/archived via admin console",
+        updatedAt: now,
+      })
       .where(eq(packagesTable.id, existing.id))
       .returning();
 
@@ -939,7 +1062,7 @@ router.delete("/admin/packages/:id", requireRole(["admin"]), async (req, res) =>
       resourceType: "package",
       resourceId: existing.id,
       previousValue: { status: existing.status },
-      newValue: { status: "archived" },
+      newValue: { status: "archived", isArchived: true },
       actorAdminId: (req as any).admin?.id,
       actorRole: "admin",
     });

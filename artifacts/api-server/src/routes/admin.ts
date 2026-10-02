@@ -27,6 +27,7 @@ import {
   paymentsTable,
   customTripRequestsTable,
   sessionsTable,
+  customersTable,
 } from "@workspace/db";
 import {
   createAdminSession,
@@ -868,13 +869,73 @@ router.post("/admin/customers/:id/restore", requireAdmin, async (req, res): Prom
   }
 });
 
+router.delete("/admin/customers/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = String(req.params.id).trim();
+
+  try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const condition = isUuid
+      ? or(eq(usersTable.id, id), eq(usersTable.customerId, id))
+      : eq(usersTable.customerId, id);
+
+    const [user] = await db.select().from(usersTable).where(condition).limit(1);
+
+    if (!user) {
+      res.status(404).json({ status: "not_found", message: "Customer account not found." });
+      return;
+    }
+
+    // Check for active or past bookings
+    const bookings = await db
+      .select({ id: bookingsTable.id })
+      .from(bookingsTable)
+      .where(eq(bookingsTable.ownerId, user.id))
+      .limit(1);
+
+    if (bookings.length > 0 && req.query.force !== "true") {
+      res.status(400).json({
+        status: "has_bookings",
+        message: "Cannot permanently delete customer with booking history. Please archive the customer account instead.",
+      });
+      return;
+    }
+
+    // Clean up dependent customer records
+    await db.delete(sessionsTable).where(eq(sessionsTable.userId, user.id)).catch(() => {});
+    await db.delete(notificationsTable).where(eq(notificationsTable.userId, user.id)).catch(() => {});
+    await db.delete(customersTable).where(eq(customersTable.userId, user.id)).catch(() => {});
+    await db.delete(usersTable).where(eq(usersTable.id, user.id));
+
+    await db.insert(auditLogsTable).values({
+      actorAdminId: req.admin!.id,
+      actorName: req.admin!.adminId,
+      actorRole: "admin",
+      action: "CUSTOMER_DELETED",
+      resourceType: "user",
+      resourceId: user.id,
+      previousValue: { email: user.email, customerId: user.customerId },
+      ipAddress: req.ip,
+      metadata: { customerId: user.customerId, email: user.email, deletedAt: new Date().toISOString() },
+    });
+
+    res.json({
+      status: "success",
+      message: `Customer ${user.customerId || user.email} permanently deleted.`,
+    });
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to delete customer");
+    res.status(500).json({ status: "database_error", message: "Unable to delete customer. Please try again." });
+  }
+});
+
 // --------------------------------------------------------------------------
-// 4. Bookings Management (All bookings across platform, search, filter, details)
+// 4. Bookings Management (All bookings across platform, search, filter, details, archive, delete)
 // --------------------------------------------------------------------------
 
 router.get("/admin/bookings", requireAdmin, async (req, res): Promise<void> => {
   const search = typeof req.query.search === "string" ? req.query.search.trim().toLowerCase() : "";
   const statusFilter = typeof req.query.status === "string" ? req.query.status.trim().toUpperCase() : "";
+  const includeArchived = req.query.includeArchived === "true" || req.query.archived === "true";
 
   try {
     const raw: Array<{ booking: typeof bookingsTable.$inferSelect; user: typeof usersTable.$inferSelect }> = await db
@@ -914,6 +975,10 @@ router.get("/admin/bookings", requireAdmin, async (req, res): Promise<void> => {
         paymentOrderId: booking.paymentOrderId ?? null,
         refundAmount: booking.refundAmount ?? null,
         cancellationDetails: booking.cancellationDetails ?? null,
+        isArchived: booking.isArchived ?? false,
+        archivedAt: booking.archivedAt ?? null,
+        archivedBy: booking.archivedBy ?? null,
+        archiveReason: booking.archiveReason ?? null,
         customer: {
           id: user.id,
           customerId: user.customerId ?? null,
@@ -925,8 +990,15 @@ router.get("/admin/bookings", requireAdmin, async (req, res): Promise<void> => {
       };
     });
 
-    if (statusFilter && statusFilter !== "ALL") {
-      items = items.filter((b: (typeof items)[number]) => b.status === statusFilter);
+    if (statusFilter === "ARCHIVED") {
+      items = items.filter((b) => b.isArchived);
+    } else {
+      if (!includeArchived) {
+        items = items.filter((b) => !b.isArchived);
+      }
+      if (statusFilter && statusFilter !== "ALL") {
+        items = items.filter((b: (typeof items)[number]) => b.status === statusFilter);
+      }
     }
 
     if (search) {
@@ -973,6 +1045,10 @@ router.get("/admin/bookings/:id", requireAdmin, async (req, res): Promise<void> 
     res.json({
       booking: {
         ...publicAdminBooking(booking),
+        isArchived: booking.isArchived ?? false,
+        archivedAt: booking.archivedAt ?? null,
+        archivedBy: booking.archivedBy ?? null,
+        archiveReason: booking.archiveReason ?? null,
         customer: {
           id: user.id,
           customerId: user.customerId ?? null,
@@ -985,6 +1061,171 @@ router.get("/admin/bookings/:id", requireAdmin, async (req, res): Promise<void> 
   } catch (error) {
     req.log.error({ err: error }, "Failed to fetch single booking detail");
     res.status(500).json({ status: "database_error", message: "Failed to load booking details." });
+  }
+});
+
+router.post("/admin/bookings/:id/archive", requireAdmin, async (req, res): Promise<void> => {
+  const id = String(req.params.id).trim();
+  const reason = typeof req.body?.reason === "string" ? req.body.reason.trim() : "Archived by administrator";
+
+  try {
+    const [booking] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, id)).limit(1);
+    if (!booking) {
+      res.status(404).json({ status: "not_found", message: "Booking record not found." });
+      return;
+    }
+
+    if (booking.isArchived) {
+      res.status(400).json({ status: "already_archived", message: "Booking is already archived." });
+      return;
+    }
+
+    const now = new Date();
+    const adminActor = req.admin?.adminId || "admin";
+    const [updated] = await db
+      .update(bookingsTable)
+      .set({
+        isArchived: true,
+        archivedAt: now,
+        archivedBy: adminActor,
+        archiveReason: reason,
+        updatedAt: now,
+      })
+      .where(eq(bookingsTable.id, id))
+      .returning();
+
+    await db.insert(auditLogsTable).values({
+      actorAdminId: req.admin!.id,
+      actorName: req.admin!.adminId,
+      actorRole: "admin",
+      action: "BOOKING_ARCHIVED",
+      resourceType: "booking",
+      resourceId: booking.id,
+      previousValue: { isArchived: false, status: booking.status },
+      newValue: { isArchived: true, archiveReason: reason },
+      ipAddress: req.ip,
+      metadata: {
+        bookingId: booking.bookingId || booking.bookingReference,
+        archivedAt: now.toISOString(),
+        reason,
+      },
+    });
+
+    res.json({
+      status: "success",
+      message: "Booking successfully archived.",
+      booking: publicAdminBooking(updated),
+    });
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to archive booking");
+    res.status(500).json({ status: "database_error", message: "Failed to archive booking." });
+  }
+});
+
+router.post("/admin/bookings/:id/restore", requireAdmin, async (req, res): Promise<void> => {
+  const id = String(req.params.id).trim();
+
+  try {
+    const [booking] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, id)).limit(1);
+    if (!booking) {
+      res.status(404).json({ status: "not_found", message: "Booking record not found." });
+      return;
+    }
+
+    if (!booking.isArchived) {
+      res.status(400).json({ status: "not_archived", message: "Booking is not archived." });
+      return;
+    }
+
+    const now = new Date();
+    const [updated] = await db
+      .update(bookingsTable)
+      .set({
+        isArchived: false,
+        archivedAt: null,
+        archivedBy: null,
+        archiveReason: null,
+        updatedAt: now,
+      })
+      .where(eq(bookingsTable.id, id))
+      .returning();
+
+    await db.insert(auditLogsTable).values({
+      actorAdminId: req.admin!.id,
+      actorName: req.admin!.adminId,
+      actorRole: "admin",
+      action: "BOOKING_RESTORED",
+      resourceType: "booking",
+      resourceId: booking.id,
+      previousValue: { isArchived: true, archiveReason: booking.archiveReason },
+      newValue: { isArchived: false },
+      ipAddress: req.ip,
+      metadata: {
+        bookingId: booking.bookingId || booking.bookingReference,
+        restoredAt: now.toISOString(),
+      },
+    });
+
+    res.json({
+      status: "success",
+      message: "Booking successfully restored.",
+      booking: publicAdminBooking(updated),
+    });
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to restore booking");
+    res.status(500).json({ status: "database_error", message: "Failed to restore booking." });
+  }
+});
+
+router.delete("/admin/bookings/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = String(req.params.id).trim();
+  const force = req.query.force === "true";
+
+  try {
+    const [booking] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, id)).limit(1);
+    if (!booking) {
+      res.status(404).json({ status: "not_found", message: "Booking record not found." });
+      return;
+    }
+
+    const hasFinancials = booking.paymentStatus === "CAPTURED" || (booking.amount && booking.amount > 0 && booking.status === "CONFIRMED");
+    if (hasFinancials && !force) {
+      res.status(400).json({
+        status: "has_financial_records",
+        message: "Cannot permanently delete a confirmed booking with captured payments. Please archive it instead to maintain financial audit trails.",
+      });
+      return;
+    }
+
+    // Clean up dependent payment transactions and audit logs or disassociate
+    await db.delete(paymentTransactionsTable).where(eq(paymentTransactionsTable.bookingId, booking.id)).catch(() => {});
+    await db.execute(sql`UPDATE custom_trip_requests SET booking_id = NULL WHERE booking_id = ${booking.id}`).catch(() => {});
+    await db.delete(bookingsTable).where(eq(bookingsTable.id, booking.id));
+
+    await db.insert(auditLogsTable).values({
+      actorAdminId: req.admin!.id,
+      actorName: req.admin!.adminId,
+      actorRole: "admin",
+      action: "BOOKING_DELETED",
+      resourceType: "booking",
+      resourceId: booking.id,
+      previousValue: {
+        bookingReference: booking.bookingReference,
+        pnr: booking.pnr,
+        status: booking.status,
+        amount: booking.amount,
+      },
+      ipAddress: req.ip,
+      metadata: { deletedAt: new Date().toISOString() },
+    });
+
+    res.json({
+      status: "success",
+      message: `Booking ${booking.bookingReference || booking.pnr || booking.id} permanently deleted.`,
+    });
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to delete booking");
+    res.status(500).json({ status: "database_error", message: "Failed to delete booking." });
   }
 });
 

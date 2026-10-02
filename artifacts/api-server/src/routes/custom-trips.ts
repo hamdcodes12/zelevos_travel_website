@@ -235,8 +235,11 @@ router.get("/custom-trips/:id", requireAuth, async (req, res) => {
  * GET /api/admin/custom-trips
  * Operations team reviews custom vacation leads with complete persisted customer fields.
  */
-router.get("/admin/custom-trips", requireRole(["admin", "operations_manager", "booking_executive"]), async (_req, res) => {
+router.get("/admin/custom-trips", requireRole(["admin", "operations_manager", "booking_executive"]), async (req, res) => {
   try {
+    const includeArchived = req.query.includeArchived === "true" || req.query.archived === "true";
+    const statusFilter = typeof req.query.status === "string" ? req.query.status.trim().toUpperCase() : "";
+
     const rows = await db
       .select({
         lead: customTripRequestsTable,
@@ -255,7 +258,7 @@ router.get("/admin/custom-trips", requireRole(["admin", "operations_manager", "b
       .leftJoin(bookingsTable, eq(customTripRequestsTable.bookingId, bookingsTable.id))
       .orderBy(desc(customTripRequestsTable.createdAt));
 
-    const leads = rows.map((row: any) => {
+    let leads = rows.map((row: any) => {
       const { lead, userCustomerId, userFullName, userEmail, userPhone, bookingRef, bookingStatus, bookingPaymentStatus, bookingPaymentId, bookingPaymentOrderId } = row;
       return {
         ...lead,
@@ -268,12 +271,146 @@ router.get("/admin/custom-trips", requireRole(["admin", "operations_manager", "b
         paymentStatus: bookingPaymentStatus || null,
         paymentId: bookingPaymentId || null,
         paymentOrderId: bookingPaymentOrderId || null,
+        isArchived: lead.isArchived ?? false,
+        archivedAt: lead.archivedAt ?? null,
+        archivedBy: lead.archivedBy ?? null,
+        archiveReason: lead.archiveReason ?? null,
       };
     });
+
+    if (statusFilter === "ARCHIVED") {
+      leads = leads.filter((l: any) => l.isArchived);
+    } else {
+      if (!includeArchived) {
+        leads = leads.filter((l: any) => !l.isArchived);
+      }
+      if (statusFilter && statusFilter !== "ALL") {
+        leads = leads.filter((l: any) => l.status === statusFilter);
+      }
+    }
 
     res.json({ status: "success", count: leads.length, leads });
   } catch (error) {
     res.status(500).json({ status: "error", message: error instanceof Error ? error.message : "Failed to load custom trip leads." });
+  }
+});
+
+router.post("/admin/custom-trips/:id/archive", requireRole(["admin", "operations_manager"]), async (req, res) => {
+  const id = typeof req.params.id === "string" ? req.params.id : String(req.params.id || "");
+  const reason = typeof req.body?.reason === "string" ? req.body.reason.trim() : "Archived by administrator";
+
+  try {
+    const [existing] = await db.select().from(customTripRequestsTable).where(eq(customTripRequestsTable.id, id)).limit(1);
+    if (!existing) {
+      res.status(404).json({ status: "not_found", message: "Custom trip lead not found." });
+      return;
+    }
+
+    const now = new Date();
+    const adminActor = (req as any).admin?.adminId || (req as any).user?.fullName || "admin";
+    const [updated] = await db
+      .update(customTripRequestsTable)
+      .set({
+        isArchived: true,
+        archivedAt: now,
+        archivedBy: adminActor,
+        archiveReason: reason,
+        updatedAt: now,
+      })
+      .where(eq(customTripRequestsTable.id, id))
+      .returning();
+
+    await logAuditAction({
+      action: "CUSTOM_TRIP_ARCHIVED",
+      resourceType: "custom_trip_request",
+      resourceId: existing.id,
+      previousValue: { isArchived: existing.isArchived },
+      newValue: { isArchived: true, archiveReason: reason },
+      actorAdminId: (req as any).admin?.id,
+      actorRole: "admin",
+    });
+
+    res.json({ status: "success", message: "Custom trip request successfully archived.", lead: updated });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message || "Failed to archive custom trip." });
+  }
+});
+
+router.post("/admin/custom-trips/:id/restore", requireRole(["admin", "operations_manager"]), async (req, res) => {
+  const id = typeof req.params.id === "string" ? req.params.id : String(req.params.id || "");
+
+  try {
+    const [existing] = await db.select().from(customTripRequestsTable).where(eq(customTripRequestsTable.id, id)).limit(1);
+    if (!existing) {
+      res.status(404).json({ status: "not_found", message: "Custom trip lead not found." });
+      return;
+    }
+
+    const now = new Date();
+    const [updated] = await db
+      .update(customTripRequestsTable)
+      .set({
+        isArchived: false,
+        archivedAt: null,
+        archivedBy: null,
+        archiveReason: null,
+        updatedAt: now,
+      })
+      .where(eq(customTripRequestsTable.id, id))
+      .returning();
+
+    await logAuditAction({
+      action: "CUSTOM_TRIP_RESTORED",
+      resourceType: "custom_trip_request",
+      resourceId: existing.id,
+      previousValue: { isArchived: existing.isArchived },
+      newValue: { isArchived: false },
+      actorAdminId: (req as any).admin?.id,
+      actorRole: "admin",
+    });
+
+    res.json({ status: "success", message: "Custom trip request successfully restored.", lead: updated });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message || "Failed to restore custom trip." });
+  }
+});
+
+router.delete("/admin/custom-trips/:id", requireRole(["admin", "operations_manager"]), async (req, res) => {
+  const id = typeof req.params.id === "string" ? req.params.id : String(req.params.id || "");
+  const force = req.query.force === "true";
+
+  try {
+    const [existing] = await db.select().from(customTripRequestsTable).where(eq(customTripRequestsTable.id, id)).limit(1);
+    if (!existing) {
+      res.status(404).json({ status: "not_found", message: "Custom trip lead not found." });
+      return;
+    }
+
+    if (existing.bookingId && !force) {
+      const [booking] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, existing.bookingId)).limit(1);
+      if (booking && (booking.status === "CONFIRMED" || booking.paymentStatus === "CAPTURED")) {
+        res.status(400).json({
+          status: "has_confirmed_booking",
+          message: "Cannot permanently delete a custom trip proposal with an active confirmed booking. Please archive it instead.",
+        });
+        return;
+      }
+    }
+
+    await db.delete(customTripRequestsTable).where(eq(customTripRequestsTable.id, id));
+
+    await logAuditAction({
+      action: "CUSTOM_TRIP_DELETED",
+      resourceType: "custom_trip_request",
+      resourceId: existing.id,
+      previousValue: { destinations: existing.destinations, customerEmail: existing.customerEmail },
+      actorAdminId: (req as any).admin?.id,
+      actorRole: "admin",
+    });
+
+    res.json({ status: "success", message: "Custom trip request permanently deleted." });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message || "Failed to delete custom trip." });
   }
 });
 

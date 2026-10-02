@@ -46,6 +46,10 @@ export const vendorsTable = pgTable("vendors", {
   cancellationRate: numeric("cancellation_rate").notNull().default("0"), // 0 - 100%
   customerIssuesCount: integer("customer_issues_count").notNull().default(0),
   totalBookingsCompleted: integer("total_bookings_completed").notNull().default(0),
+  isArchived: boolean("is_archived").notNull().default(false),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  archivedBy: text("archived_by"),
+  archiveReason: text("archive_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

@@ -161,6 +161,10 @@ describe("Email Service Unit Tests", () => {
     emailError: null,
     clientEmail: null,
     payload: {},
+    isArchived: false,
+    archivedAt: null,
+    archivedBy: null,
+    archiveReason: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

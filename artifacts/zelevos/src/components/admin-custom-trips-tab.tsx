@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Save, Send, Trash2, FileText, CheckCircle2, User, MapPin, Calendar, Clock, CreditCard, ExternalLink, ShieldCheck } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Save, Send, Trash2, FileText, CheckCircle2, User, MapPin, Calendar, Clock, CreditCard, ExternalLink, ShieldCheck, Archive, RotateCcw } from "lucide-react";
 
 export type ItineraryDay = {
   day: number;
@@ -38,6 +38,10 @@ export type Lead = {
   paymentStatus?: string | null;
   paymentId?: string | null;
   paymentOrderId?: string | null;
+  isArchived?: boolean;
+  archivedAt?: string | null;
+  archivedBy?: string | null;
+  archiveReason?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 };
@@ -57,12 +61,14 @@ export function AdminCustomTripsTab({ onToast }: { onToast: (message: string) =>
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
 
-  const load = async () => {
+  const load = async (includeArchived = showArchived) => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/custom-trips", { credentials: "include" });
+      const url = `/api/admin/custom-trips${includeArchived ? "?includeArchived=true" : ""}`;
+      const response = await fetch(url, { credentials: "include" });
       const payload = (await response.json()) as { leads?: Lead[]; message?: string };
       if (!response.ok) throw new Error(payload.message || "Custom trip leads could not be loaded.");
       const list = payload.leads || [];
@@ -78,6 +84,57 @@ export function AdminCustomTripsTab({ onToast }: { onToast: (message: string) =>
   useEffect(() => {
     void load();
   }, []);
+
+  const archiveLead = async (id: string) => {
+    const reason = window.prompt("Reason for archiving this custom trip lead:", "Archived by admin") || "Archived by admin";
+    try {
+      const response = await fetch(`/api/admin/custom-trips/${id}/archive`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to archive custom trip");
+      onToast("Custom trip archived successfully.");
+      await load(showArchived);
+    } catch (e: any) {
+      setError(e.message || "Failed to archive custom trip");
+    }
+  };
+
+  const restoreLead = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/custom-trips/${id}/restore`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to restore custom trip");
+      onToast("Custom trip restored successfully.");
+      await load(showArchived);
+    } catch (e: any) {
+      setError(e.message || "Failed to restore custom trip");
+    }
+  };
+
+  const deleteLead = async (id: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this custom trip lead? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/admin/custom-trips/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to delete custom trip");
+      onToast("Custom trip permanently deleted.");
+      await load(showArchived);
+    } catch (e: any) {
+      setError(e.message || "Failed to delete custom trip");
+    }
+  };
 
   const updateSelected = (changes: Partial<Lead>) =>
     setSelected((current) => (current ? { ...current, ...changes } : current));
@@ -161,11 +218,34 @@ export function AdminCustomTripsTab({ onToast }: { onToast: (message: string) =>
     <section className="admin-custom-trips-container" style={{ display: "grid", gridTemplateColumns: "minmax(280px, 340px) minmax(0, 1fr)", gap: "20px" }}>
       {/* Sidebar: Leads List */}
       <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "16px", height: "fit-content" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
           <h2 style={{ margin: 0, fontSize: "17px", fontWeight: 800, color: "#0f172a" }}>Custom Trip Leads</h2>
-          <span style={{ fontSize: "11px", fontWeight: 700, background: "#f1f5f9", color: "#475569", padding: "2px 8px", borderRadius: "999px" }}>
-            {leads.length} Leads
-          </span>
+          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+            <button
+              type="button"
+              id="admin-toggle-archived-leads-btn"
+              onClick={() => {
+                const next = !showArchived;
+                setShowArchived(next);
+                void load(next);
+              }}
+              style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                padding: "2px 8px",
+                borderRadius: "6px",
+                border: "1px solid #cbd5e1",
+                background: showArchived ? "#eff6ff" : "#f8fafc",
+                color: showArchived ? "#1d4ed8" : "#64748b",
+                cursor: "pointer",
+              }}
+            >
+              {showArchived ? "Archived (ON)" : "Show Archived"}
+            </button>
+            <span style={{ fontSize: "11px", fontWeight: 700, background: "#f1f5f9", color: "#475569", padding: "2px 8px", borderRadius: "999px" }}>
+              {leads.length} Leads
+            </span>
+          </div>
         </div>
 
         {loading && <p style={{ fontSize: "13px", color: "#64748b" }}>Loading leads...</p>}
@@ -197,20 +277,37 @@ export function AdminCustomTripsTab({ onToast }: { onToast: (message: string) =>
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
                   <strong style={{ fontSize: "12px", color: "#1e3a8a", fontFamily: "monospace" }}>{lead.leadNumber}</strong>
-                  <span
-                    style={{
-                      fontSize: "9px",
-                      fontWeight: 800,
-                      textTransform: "uppercase",
-                      padding: "2px 6px",
-                      borderRadius: "999px",
-                      background: badge.bg,
-                      color: badge.text,
-                      border: `1px solid ${badge.border}`,
-                    }}
-                  >
-                    {lead.status}
-                  </span>
+                  <div style={{ display: "flex", gap: "4px" }}>
+                    {lead.isArchived && (
+                      <span
+                        style={{
+                          fontSize: "9px",
+                          fontWeight: 800,
+                          padding: "2px 6px",
+                          borderRadius: "999px",
+                          background: "#fee2e2",
+                          color: "#b91c1c",
+                          border: "1px solid #fca5a5",
+                        }}
+                      >
+                        ARCHIVED
+                      </span>
+                    )}
+                    <span
+                      style={{
+                        fontSize: "9px",
+                        fontWeight: 800,
+                        textTransform: "uppercase",
+                        padding: "2px 6px",
+                        borderRadius: "999px",
+                        background: badge.bg,
+                        color: badge.text,
+                        border: `1px solid ${badge.border}`,
+                      }}
+                    >
+                      {lead.status}
+                    </span>
+                  </div>
                 </div>
                 <div style={{ fontWeight: 700, fontSize: "13px", color: "#0f172a", marginTop: "4px" }}>{lead.customerName}</div>
                 <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
@@ -238,7 +335,7 @@ export function AdminCustomTripsTab({ onToast }: { onToast: (message: string) =>
         ) : (
           <>
             {/* Lead Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "16px", flexWrap: "wrap" }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <span style={{ fontSize: "13px", fontWeight: 800, color: "#2563eb", fontFamily: "monospace" }}>{selected.leadNumber}</span>
@@ -257,6 +354,24 @@ export function AdminCustomTripsTab({ onToast }: { onToast: (message: string) =>
                   >
                     {selected.status}
                   </span>
+                  {selected.isArchived && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "3px 10px",
+                        borderRadius: "9999px",
+                        fontSize: "11px",
+                        fontWeight: 800,
+                        letterSpacing: "0.04em",
+                        background: "#fee2e2",
+                        color: "#b91c1c",
+                        border: "1px solid #fca5a5",
+                      }}
+                    >
+                      ARCHIVED
+                    </span>
+                  )}
                 </div>
                 <h1 style={{ margin: "6px 0 2px", fontSize: "22px", fontWeight: 800, color: "#0f172a" }}>{selected.customerName}</h1>
                 <p style={{ margin: 0, color: "#64748b", fontSize: "12px" }}>
@@ -264,50 +379,121 @@ export function AdminCustomTripsTab({ onToast }: { onToast: (message: string) =>
                 </p>
               </div>
 
-              {/* Status Action / Receipt if paid */}
-              {selected.status === "PAID" && (
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <a
-                    href={`/api/bookings/${selected.masterBookingId || selected.id}/receipt`}
-                    target="_blank"
-                    rel="noreferrer"
+              {/* Status Action / Archive / Delete / Receipt buttons */}
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                {selected.isArchived ? (
+                  <button
+                    type="button"
+                    id={`restore-lead-${selected.id}`}
+                    onClick={() => void restoreLead(selected.id)}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "6px",
-                      padding: "8px 14px",
+                      padding: "7px 12px",
                       borderRadius: "8px",
-                      background: "#ecfdf5",
-                      color: "#059669",
-                      border: "1px solid #a7f3d0",
+                      background: "#f0fdf4",
+                      color: "#15803d",
+                      border: "1px solid #bbf7d0",
                       fontSize: "12px",
                       fontWeight: 700,
-                      textDecoration: "none",
+                      cursor: "pointer",
                     }}
                   >
-                    <ShieldCheck size={14} /> View Receipt
-                  </a>
-                  <a
-                    href={`/api/bookings/${selected.masterBookingId || selected.id}/receipt/download?download=true`}
+                    <RotateCcw size={14} /> Restore Lead
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    id={`archive-lead-${selected.id}`}
+                    onClick={() => void archiveLead(selected.id)}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "6px",
-                      padding: "8px 14px",
+                      padding: "7px 12px",
                       borderRadius: "8px",
-                      background: "#2563eb",
-                      color: "#fff",
-                      border: "none",
+                      background: "#fff7ed",
+                      color: "#c2410c",
+                      border: "1px solid #fed7aa",
                       fontSize: "12px",
                       fontWeight: 700,
-                      textDecoration: "none",
+                      cursor: "pointer",
                     }}
                   >
-                    Download Receipt
-                  </a>
-                </div>
-              )}
+                    <Archive size={14} /> Archive Lead
+                  </button>
+                )}
+                <button
+                  type="button"
+                  id={`delete-lead-${selected.id}`}
+                  onClick={() => void deleteLead(selected.id)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "7px 12px",
+                    borderRadius: "8px",
+                    background: "#fef2f2",
+                    color: "#b91c1c",
+                    border: "1px solid #fecaca",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  <Trash2 size={14} /> Delete Lead
+                </button>
+                {selected.status === "PAID" && (
+                  <>
+                    <a
+                      href={`/api/bookings/${selected.masterBookingId || selected.id}/receipt`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "8px 14px",
+                        borderRadius: "8px",
+                        background: "#ecfdf5",
+                        color: "#059669",
+                        border: "1px solid #a7f3d0",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        textDecoration: "none",
+                      }}
+                    >
+                      <ShieldCheck size={14} /> View Receipt
+                    </a>
+                    <a
+                      href={`/api/bookings/${selected.masterBookingId || selected.id}/receipt/download?download=true`}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "8px 14px",
+                        borderRadius: "8px",
+                        background: "#2563eb",
+                        color: "#fff",
+                        border: "none",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        textDecoration: "none",
+                      }}
+                    >
+                      Download Receipt
+                    </a>
+                  </>
+                )}
+              </div>
             </div>
+
+            {selected.isArchived && (
+              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 14px", marginTop: "12px", color: "#991b1b", fontSize: "12px" }}>
+                <strong>Archived:</strong> This custom trip lead was archived on {selected.archivedAt ? new Date(selected.archivedAt).toLocaleString() : "recently"}{selected.archivedBy ? ` by ${selected.archivedBy}` : ""}. Reason: {selected.archiveReason || "None provided"}.
+              </div>
+            )}
 
             {/* A-Z COMPLETE CUSTOMER REQUEST SECTION */}
             <div style={{ marginTop: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>

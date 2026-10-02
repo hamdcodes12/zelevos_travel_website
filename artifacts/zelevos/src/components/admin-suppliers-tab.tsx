@@ -191,6 +191,44 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
   const suspendedCount = suppliers.filter(
     (s) => (s.status || s.approvalStatus || "").toUpperCase() === "SUSPENDED"
   ).length;
+  const archivedCount = suppliers.filter(
+    (s) => s.isArchived || (s.status || "").toUpperCase() === "REMOVED"
+  ).length;
+
+  const handleArchiveSupplier = async (supplierId: string) => {
+    if (!window.confirm("Archive this supplier? They will be removed from standard active operations.")) return;
+    try {
+      const res = await fetch(`/api/admin/suppliers/${supplierId}/archive`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "Archived via supplier management" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to archive supplier.");
+      onToast("Supplier archived successfully.");
+      void loadSuppliers();
+    } catch (err: any) {
+      onToast(err.message || "Failed to archive supplier.");
+    }
+  };
+
+  const handleRestoreSupplier = async (supplierId: string) => {
+    try {
+      const res = await fetch(`/api/admin/suppliers/${supplierId}/restore`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to restore supplier.");
+      onToast("Supplier restored successfully.");
+      void loadSuppliers();
+    } catch (err: any) {
+      onToast(err.message || "Failed to restore supplier.");
+    }
+  };
 
   // Handle Create Supplier Submit
   const handleCreateSupplier = async (e: React.FormEvent) => {
@@ -889,6 +927,7 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
             { id: "APPROVED", label: `Approved (${approvedCount})` },
             { id: "REJECTED", label: `Rejected (${rejectedCount})` },
             { id: "SUSPENDED", label: `Suspended (${suspendedCount})` },
+            { id: "ARCHIVED", label: `Archived (${archivedCount})` },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1340,6 +1379,52 @@ export function AdminSuppliersTab({ onToast }: AdminSuppliersTabProps) {
                               <span>Reactivate</span>
                             </button>
                           ) : null}
+
+                          {/* Archive / Restore Action */}
+                          {s.isArchived || currentStatus === "REMOVED" ? (
+                            <button
+                              type="button"
+                              title="Restore Supplier to Active Operations"
+                              onClick={() => handleRestoreSupplier(s.id)}
+                              style={{
+                                padding: "6px 10px",
+                                borderRadius: "6px",
+                                background: "#ecfdf5",
+                                color: "#059669",
+                                border: "1px solid #a7f3d0",
+                                fontSize: "11px",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                              }}
+                            >
+                              <Play size={13} />
+                              <span>Restore</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              title="Archive Supplier"
+                              onClick={() => handleArchiveSupplier(s.id)}
+                              style={{
+                                padding: "6px 10px",
+                                borderRadius: "6px",
+                                background: "#fff1f2",
+                                color: "#e11d48",
+                                border: "1px solid #fecdd3",
+                                fontSize: "11px",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                              }}
+                            >
+                              <span>Archive</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import crypto from "node:crypto";
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { z } from "zod/v4";
-import { db, usersTable, authTokensTable, notificationsTable, auditLogsTable, sessionsTable, emailOtpsTable } from "@workspace/db";
+import { db, usersTable, authTokensTable, notificationsTable, auditLogsTable, sessionsTable, emailOtpsTable, customersTable } from "@workspace/db";
 import {
   OAUTH_STATE_COOKIE,
   createSession,
@@ -212,29 +212,49 @@ router.post(["/auth/signup", "/auth/register"], async (req, res): Promise<void> 
           return;
         }
 
-        await db
+        const custId = existing.customerId || (await generateNextCustomerId());
+        const [updatedUser] = await db
           .update(usersTable)
           .set({
+            customerId: custId,
             fullName: fullName || existing.fullName || cleanEmail.split("@")[0],
             phone: phone || existing.phone || null,
             passwordHash: hashPassword(password),
             emailVerified: true,
+            lastLoginAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(usersTable.id, existing.id));
+          .where(eq(usersTable.id, existing.id))
+          .returning();
+
+        try {
+          await db.insert(customersTable).values({
+            userId: existing.id,
+            customerId: custId,
+            fullName: fullName || existing.fullName || cleanEmail.split("@")[0],
+            email: cleanEmail,
+            phone: phone || existing.phone || null,
+            preferences: {},
+          });
+        } catch {
+          // ignore duplicate customer profile
+        }
+
         await createSession(existing.id, res);
         const refreshToken = createRefreshToken(existing.id);
         res.status(201).json({
-          user: publicUser({ ...existing, emailVerified: true }),
+          user: publicUser(updatedUser),
           refreshToken,
         });
         return;
       }
 
       const now = new Date();
+      const customerId = await generateNextCustomerId();
       const [user] = await db
         .insert(usersTable)
         .values({
+          customerId,
           email: cleanEmail,
           passwordHash: hashPassword(password),
           fullName: fullName || cleanEmail.split("@")[0],
@@ -246,6 +266,19 @@ router.post(["/auth/signup", "/auth/register"], async (req, res): Promise<void> 
           lastLoginAt: now,
         })
         .returning();
+
+      try {
+        await db.insert(customersTable).values({
+          userId: user.id,
+          customerId,
+          fullName: fullName || cleanEmail.split("@")[0],
+          email: cleanEmail,
+          phone: phone || null,
+          preferences: {},
+        });
+      } catch {
+        // ignore duplicate customer profile
+      }
 
       await createSession(user.id, res);
       const refreshToken = createRefreshToken(user.id);

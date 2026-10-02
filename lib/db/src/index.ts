@@ -962,6 +962,27 @@ const DDL_MIGRATIONS = `
   ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code_used TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_at TIMESTAMPTZ;
 
+  -- Soft delete / archive support across sections (Phase 4 Task 2)
+  ALTER TABLE bookings ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE;
+  ALTER TABLE bookings ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+  ALTER TABLE bookings ADD COLUMN IF NOT EXISTS archived_by TEXT;
+  ALTER TABLE bookings ADD COLUMN IF NOT EXISTS archive_reason TEXT;
+
+  ALTER TABLE packages ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE;
+  ALTER TABLE packages ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+  ALTER TABLE packages ADD COLUMN IF NOT EXISTS archived_by TEXT;
+  ALTER TABLE packages ADD COLUMN IF NOT EXISTS archive_reason TEXT;
+
+  ALTER TABLE vendors ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE;
+  ALTER TABLE vendors ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+  ALTER TABLE vendors ADD COLUMN IF NOT EXISTS archived_by TEXT;
+  ALTER TABLE vendors ADD COLUMN IF NOT EXISTS archive_reason TEXT;
+
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS archived_by TEXT;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS archive_reason TEXT;
+
   -- Backfill existing users missing or non-standard customer_id to ZLV-CUS-XXXXXX
   DO $$
   DECLARE
