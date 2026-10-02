@@ -224,3 +224,85 @@ export const mapsRateLimiter = createRateLimiter({
   keyPrefix: "maps",
   message: "Too many location lookups. Please slow down and try again shortly.",
 });
+
+// 13. Coupon & Referral code validation limiter: 15 attempts per 5 minutes
+export const couponRateLimiter = createRateLimiter({
+  windowMs: 5 * 60 * 1000,
+  max: 15,
+  bucket: "coupon-validation",
+  message: "Too many coupon verification attempts. Please try again in a few minutes.",
+});
+
+// 14. Public submission forms (contact, custom trip request, flight inquiry): 10 submissions per 15 minutes
+export const publicFormRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  bucket: "public-forms",
+  message: "Too many submissions from this network. Please wait a few moments before trying again.",
+});
+
+interface LockoutRecord {
+  failures: number;
+  lockedUntil?: number;
+}
+const lockoutStore = new Map<string, LockoutRecord>();
+
+/**
+ * Login lockout middleware (Phase 9, Task 1 requirement 4):
+ * After 5 failed attempts per account or IP within 15 minutes, locks for 15 minutes with a generic message.
+ * Wraps existing login endpoints without rewriting or altering authentication logic.
+ */
+export function loginLockoutMiddleware(req: Request, res: Response, next: NextFunction): void {
+  if (process.env.NODE_ENV === "test" && !process.env.ENABLE_TEST_RATE_LIMIT) {
+    next();
+    return;
+  }
+
+  const ip = req.ip || "127.0.0.1";
+  const identifier = req.body && typeof req.body === "object"
+    ? String(req.body.email || req.body.adminId || req.body.identifier || "").trim().toLowerCase()
+    : "";
+
+  const keys = [`lockout:ip:${ip}`];
+  if (identifier) {
+    keys.push(`lockout:id:${identifier}`);
+  }
+
+  const now = Date.now();
+  for (const k of keys) {
+    const entry = lockoutStore.get(k);
+    if (entry && entry.lockedUntil && now < entry.lockedUntil) {
+      const retryAfterSeconds = Math.ceil((entry.lockedUntil - now) / 1000);
+      res.setHeader("Retry-After", retryAfterSeconds);
+      res.status(429).json({
+        status: "rate_limited",
+        message: "Too many failed login attempts. Please try again in 15 minutes.",
+        retryAfterSeconds,
+      });
+      return;
+    }
+  }
+
+  const originalJson = res.json.bind(res);
+  res.json = function (body: any) {
+    if (res.statusCode === 401) {
+      const LOCKOUT_WINDOW = 15 * 60 * 1000;
+      for (const k of keys) {
+        const entry = lockoutStore.get(k) || { failures: 0 };
+        entry.failures += 1;
+        if (entry.failures >= 5) {
+          entry.lockedUntil = Date.now() + LOCKOUT_WINDOW;
+        }
+        lockoutStore.set(k, entry);
+      }
+    } else if (res.statusCode >= 200 && res.statusCode < 300) {
+      for (const k of keys) {
+        lockoutStore.delete(k);
+      }
+    }
+    return originalJson(body);
+  };
+
+  next();
+}
+

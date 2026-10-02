@@ -66,7 +66,7 @@ const resendOtpSchema = z.object({
 const signupSchema = z.object({
   fullName: z.string().trim().min(2, "Full name must be at least 2 characters.").max(100).optional(),
   email: z.string().trim().email("Please enter a valid email address.").max(320),
-  password: z.string().min(8, "Password must be at least 8 characters long.").max(128),
+  password: z.string().min(8, "Password must be at least 8 characters long.").max(128).regex(/^(?=.*[A-Za-z])(?=.*\d)/, "Password must contain both letters and numbers."),
   confirmPassword: z.string().min(8).max(128).optional(),
   phone: z.string().trim().max(30).optional(),
   referralCode: z.string().trim().max(50).optional(),

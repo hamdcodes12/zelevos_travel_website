@@ -251,10 +251,15 @@ export async function createAdminSession(adminId: string, response: Response) {
   });
 }
 
+const ADMIN_INACTIVITY_MS = 30 * 60 * 1000;
+const adminInactivityTracker = new Map<string, number>();
+
 export async function destroyAdminSession(request: Request, response: Response) {
   const token = request.cookies?.[ADMIN_COOKIE];
   if (token) {
-    await db.delete(adminSessionsTable).where(eq(adminSessionsTable.tokenHash, hashSessionToken(token)));
+    const hash = hashSessionToken(token);
+    adminInactivityTracker.delete(hash);
+    await db.delete(adminSessionsTable).where(eq(adminSessionsTable.tokenHash, hash));
   }
   response.clearCookie(ADMIN_COOKIE, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/" });
 }
@@ -263,18 +268,32 @@ export async function adminFromRequest(request: Request): Promise<AdminUser | nu
   const token = request.cookies?.[ADMIN_COOKIE];
   if (!token) return null;
 
+  const tokenHash = hashSessionToken(token);
+  const now = Date.now();
+  const lastActive = adminInactivityTracker.get(tokenHash);
+
+  // Inactivity timeout: 30 minutes of no admin activity (Phase 9 requirement 10)
+  if (lastActive && now - lastActive > ADMIN_INACTIVITY_MS) {
+    adminInactivityTracker.delete(tokenHash);
+    await db.delete(adminSessionsTable).where(eq(adminSessionsTable.tokenHash, tokenHash));
+    return null;
+  }
+
   const [record] = await db
     .select({ session: adminSessionsTable, admin: adminUsersTable })
     .from(adminSessionsTable)
     .innerJoin(adminUsersTable, eq(adminSessionsTable.adminId, adminUsersTable.id))
-    .where(eq(adminSessionsTable.tokenHash, hashSessionToken(token)))
+    .where(eq(adminSessionsTable.tokenHash, tokenHash))
     .limit(1);
 
   if (!record) return null;
   if (record.session.expiresAt <= new Date()) {
+    adminInactivityTracker.delete(tokenHash);
     await db.delete(adminSessionsTable).where(eq(adminSessionsTable.id, record.session.id));
     return null;
   }
+
+  adminInactivityTracker.set(tokenHash, now);
   return record.admin;
 }
 

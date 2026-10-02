@@ -87,11 +87,29 @@ router.post("/admin/login", async (req, res): Promise<void> => {
       .limit(1);
 
     if (!admin) {
+      try {
+        await db.insert(auditLogsTable).values({
+          action: "ADMIN_LOGIN_FAILED",
+          resourceType: "admin",
+          ipAddress: req.ip,
+          metadata: { attemptedAdminId: cleanId, reason: "unknown_admin" },
+        });
+      } catch {}
       res.status(401).json({ status: "invalid_credentials", message: "Invalid Admin ID or password." });
       return;
     }
 
     if (!verifyPassword(password, admin.passwordHash)) {
+      try {
+        await db.insert(auditLogsTable).values({
+          actorAdminId: admin.id,
+          action: "ADMIN_LOGIN_FAILED",
+          resourceType: "admin",
+          resourceId: admin.id,
+          ipAddress: req.ip,
+          metadata: { attemptedAdminId: cleanId, reason: "invalid_password" },
+        });
+      } catch {}
       res.status(401).json({ status: "invalid_credentials", message: "Invalid Admin ID or password." });
       return;
     }
@@ -108,6 +126,16 @@ router.post("/admin/login", async (req, res): Promise<void> => {
         return;
       }
       if (!verifyTotp(admin.totpSecret, code)) {
+        try {
+          await db.insert(auditLogsTable).values({
+            actorAdminId: admin.id,
+            action: "ADMIN_LOGIN_FAILED",
+            resourceType: "admin",
+            resourceId: admin.id,
+            ipAddress: req.ip,
+            metadata: { attemptedAdminId: cleanId, reason: "invalid_totp_code" },
+          });
+        } catch {}
         res.status(401).json({ status: "invalid_2fa", message: "Invalid two-factor authentication code." });
         return;
       }

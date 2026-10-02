@@ -1556,6 +1556,37 @@ export function AuthDialog({
                     fontSize: "12px",
                   }}
                 />
+                {mode === "signup" && password.length > 0 && (() => {
+                  let score = 0;
+                  if (password.length >= 8) score++;
+                  if (/[A-Za-z]/.test(password) && /\d/.test(password)) score++;
+                  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+                  if (/[^A-Za-z0-9]/.test(password)) score++;
+                  const label = score <= 1 ? "Weak" : score === 2 ? "Moderate" : score === 3 ? "Good" : "Strong";
+                  const color = score <= 1 ? "#ef4444" : score === 2 ? "#f59e0b" : score === 3 ? "#0284c7" : "#10b981";
+                  return (
+                    <div style={{ marginTop: "6px" }}>
+                      <div style={{ display: "flex", gap: "4px", height: "4px", marginBottom: "4px" }}>
+                        {[1, 2, 3, 4].map((step) => (
+                          <div
+                            key={step}
+                            style={{
+                              flex: 1,
+                              height: "100%",
+                              borderRadius: "2px",
+                              background: score >= step ? color : "#e2e8f0",
+                              transition: "background 0.2s ease",
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "10px" }}>
+                        <span style={{ color, fontWeight: 700 }}>Strength: {label}</span>
+                        <span style={{ color: "#64748b" }}>Must contain letters and numbers</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </label>
 
               {mode === "signup" && (

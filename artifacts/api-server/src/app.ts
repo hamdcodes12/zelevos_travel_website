@@ -23,7 +23,11 @@ import {
   supplierApplicationRateLimiter,
   supplierUploadRateLimiter,
   mapsRateLimiter,
+  couponRateLimiter,
+  publicFormRateLimiter,
+  loginLockoutMiddleware,
 } from "./middlewares/rate-limiter";
+import { securityHeadersMiddleware } from "./middlewares/security-headers";
 import { requireProductionSupabaseConfig } from "./lib/supabase";
 import { assertProductionPaymentConfig } from "./services/payment-service";
 import { validateEmailConfiguration } from "./services/email-service";
@@ -39,9 +43,11 @@ const trustProxySetting = trustProxyEnv !== undefined
       : !isNaN(Number(trustProxyEnv))
       ? Number(trustProxyEnv)
       : trustProxyEnv)
-  : (process.env.NODE_ENV === "production" ? 1 : false);
+  : (process.env.NODE_ENV === "production" || process.env.RENDER ? 1 : false);
 
 app.set("trust proxy", trustProxySetting);
+app.disable("x-powered-by");
+app.use(securityHeadersMiddleware);
 
 requireProductionSupabaseConfig();
 
@@ -243,6 +249,35 @@ app.use(["/api/suppliers/application", "/api/suppliers/application-status"], sup
 app.use(["/api/suppliers/upload-document", "/api/vendor/upload-document"], supplierUploadRateLimiter);
 app.use(["/api/maps/autocomplete", "/api/maps/route", "/api/maps/static"], mapsRateLimiter);
 
+// Login lockout protection (5 failed attempts per account/IP locks out for 15 minutes)
+app.use(
+  [
+    "/api/auth/login",
+    "/api/admin/login",
+    "/api/partners/login",
+    "/api/vendor/login",
+  ],
+  loginLockoutMiddleware
+);
+
+// Coupon & Referral validation rate limiter
+app.use(
+  [
+    "/api/partners/validate-code",
+    "/api/custom-trips/validate-referral",
+  ],
+  couponRateLimiter
+);
+
+// Public form submissions rate limiter
+app.use(
+  [
+    "/api/custom-trips",
+    "/api/support",
+  ],
+  publicFormRateLimiter
+);
+
 // Never let credential material (hashes, TOTP secrets, temporary passwords) leave in a JSON response
 app.use("/api", redactSecretsMiddleware);
 
@@ -303,9 +338,13 @@ app.use((error: unknown, req: any, res: any, _next: unknown) => {
     ? "unauthorized"
     : "internal_error";
 
+  const safeMessage = process.env.NODE_ENV === "production" && statusCode >= 500
+    ? "An unexpected server error occurred. Please try again later."
+    : message;
+
   res.status(statusCode >= 400 && statusCode < 600 ? statusCode : 500).json({
     status: statusLabel,
-    message,
+    message: safeMessage,
   });
 });
 
