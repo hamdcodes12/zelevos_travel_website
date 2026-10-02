@@ -15,6 +15,7 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  Tag,
 } from "lucide-react";
 
 declare global {
@@ -79,6 +80,74 @@ export function CustomProposalModal({
     amount?: number;
   } | null>(null);
 
+  // Referral discount & coupon validation
+  const [referralCode, setReferralCode] = useState(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const ref = urlParams.get("ref");
+      if (ref) return ref;
+      return sessionStorage.getItem("zelevos_partner_ref") || sessionStorage.getItem("zelevos_referral_code") || "";
+    } catch {
+      return "";
+    }
+  });
+  const [validatingRef, setValidatingRef] = useState(false);
+  const [referralValidated, setReferralValidated] = useState<{
+    agencyName: string;
+    discountType: string;
+    discountValue: string | number;
+    discountMaxCap: number | null;
+  } | null>(null);
+  const [referralError, setReferralError] = useState("");
+
+  const validateReferral = async (overrideCode?: string) => {
+    const code = (overrideCode ?? referralCode).trim().toUpperCase();
+    if (!code) {
+      setReferralValidated(null);
+      setReferralError("");
+      return;
+    }
+    setValidatingRef(true);
+    setReferralError("");
+    try {
+      const res = await fetch(`/api/partners/validate-ref?code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+      if (res.ok && data.valid && data.partner) {
+        setReferralValidated({
+          agencyName: data.partner.agencyName,
+          discountType: data.partner.discountType || "percent",
+          discountValue: data.partner.discountValue ?? "5.0",
+          discountMaxCap: data.partner.discountMaxCap || null,
+        });
+      } else {
+        setReferralValidated(null);
+        setReferralError(data.message || "Invalid or inactive referral code.");
+      }
+    } catch {
+      setReferralValidated(null);
+      setReferralError("Could not validate referral code.");
+    } finally {
+      setValidatingRef(false);
+    }
+  };
+
+  useEffect(() => {
+    if (referralCode.trim()) {
+      void validateReferral(referralCode);
+    }
+  }, []);
+
+  const rawProposalAmount = Number(request.proposalAmount || 0);
+  const referralDiscountAmount = referralValidated
+    ? referralValidated.discountType === "flat"
+      ? Math.min(Number(referralValidated.discountValue || 0), rawProposalAmount)
+      : Math.min(
+          referralValidated.discountMaxCap || Infinity,
+          Math.round((rawProposalAmount * Number(referralValidated.discountValue || 0)) / 100)
+        )
+    : 0;
+  const finalProposalPayable = Math.max(1, rawProposalAmount - referralDiscountAmount);
+
   // If already paid:
   const isPaid = currentStatus === "PAID" || request.status === "PAID" || paymentSuccessDetails !== null;
   const isAccepted = currentStatus === "ACCEPTED" || currentStatus === "ACCEPTED_PENDING_PAYMENT";
@@ -91,6 +160,9 @@ export function CustomProposalModal({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          referralCode: referralCode.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.booking) {
@@ -515,6 +587,64 @@ export function CustomProposalModal({
             )}
           </div>
 
+          {/* REFERRAL / COUPON CODE (If not paid) */}
+          {!isPaid && currentStatus !== "CANCELLED" && (
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <label className="block text-xs font-bold text-slate-600 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Tag size={13} className="text-blue-600" /> Partner / Agent Referral Code
+                </span>
+                {referralValidated && (
+                  <span className="text-[11px] font-semibold text-emerald-600">✓ Code active</span>
+                )}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="custom-proposal-referral-code"
+                  placeholder="e.g. VOYAGE10"
+                  value={referralCode}
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase();
+                    setReferralCode(val);
+                    if (!val) {
+                      setReferralValidated(null);
+                      setReferralError("");
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-sm uppercase tracking-wider font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  id="custom-proposal-apply-ref-btn"
+                  onClick={() => void validateReferral()}
+                  disabled={!referralCode.trim() || validatingRef}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition flex items-center gap-1"
+                >
+                  {validatingRef ? "Checking..." : referralValidated ? "Applied ✓" : "Apply"}
+                </button>
+              </div>
+
+              {referralValidated && (
+                <div className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold">{referralValidated.agencyName}</span>
+                    <span className="text-emerald-700 ml-1">
+                      ({referralValidated.discountType === "flat" ? `₹${referralValidated.discountValue} flat` : `${referralValidated.discountValue}%`} partner discount)
+                    </span>
+                  </div>
+                  <span className="font-extrabold text-emerald-700">-₹{referralDiscountAmount.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+
+              {referralError && (
+                <p className="text-xs text-rose-600 font-medium flex items-center gap-1">
+                  <AlertCircle size={13} /> {referralError}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* PRICING BREAKDOWN */}
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -523,9 +653,15 @@ export function CustomProposalModal({
             <div className="flex justify-between items-center text-sm">
               <span className="text-slate-600">Curated Trip Package</span>
               <span className="font-semibold text-slate-900">
-                ₹{Number(request.proposalAmount || 0).toLocaleString("en-IN")}
+                ₹{rawProposalAmount.toLocaleString("en-IN")}
               </span>
             </div>
+            {referralDiscountAmount > 0 && (
+              <div className="flex justify-between items-center text-xs font-semibold text-emerald-700">
+                <span>Partner Referral Discount</span>
+                <span>-₹{referralDiscountAmount.toLocaleString("en-IN")}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center text-xs text-slate-500">
               <span>Taxes & GST</span>
               <span className="text-emerald-700 font-medium">Inclusive</span>
@@ -533,7 +669,7 @@ export function CustomProposalModal({
             <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-base font-extrabold text-slate-900">
               <span>Final Total</span>
               <span className="text-blue-900">
-                ₹{Number(request.proposalAmount || 0).toLocaleString("en-IN")}
+                ₹{finalProposalPayable.toLocaleString("en-IN")}
               </span>
             </div>
           </div>

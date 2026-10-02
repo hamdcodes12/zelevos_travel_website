@@ -193,14 +193,23 @@ export async function finalizeCapturedPayment(claim: CapturedPaymentClaim): Prom
   if (paidBooking.partnerId) {
     const [partner] = await db.select().from(partnersTable).where(eq(partnersTable.id, paidBooking.partnerId)).limit(1);
     if (partner) {
+      const commAmount = Math.round((paidBooking.totalPrice * Number(partner.commissionRatePercent)) / 100);
       await db.insert(commissionsTable).values({
         partnerId: partner.id,
         bookingId: paidBooking.id,
         bookingAmount: paidBooking.totalPrice,
         commissionPercent: partner.commissionRatePercent,
-        commissionAmount: Math.round((paidBooking.totalPrice * Number(partner.commissionRatePercent)) / 100),
+        commissionAmount: commAmount,
         status: "PENDING",
       });
+      await db
+        .update(partnersTable)
+        .set({
+          totalCommissionEarned: (partner.totalCommissionEarned || 0) + commAmount,
+          totalBookingsCount: (partner.totalBookingsCount || 0) + 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(partnersTable.id, partner.id));
     }
   }
 

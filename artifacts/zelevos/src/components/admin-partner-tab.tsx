@@ -83,6 +83,59 @@ export function AdminPartnerTab({ onToast }: AdminPartnerTabProps) {
   });
   const [editingProcessing, setEditingProcessing] = useState(false);
 
+  // Commission Payout Modal State (Task 18)
+  const [payoutTarget, setPayoutTarget] = useState<any | null>(null);
+  const [payoutMethod, setPayoutMethod] = useState("NEFT/RTGS");
+  const [payoutRef, setPayoutRef] = useState("");
+  const [payoutNotes, setPayoutNotes] = useState("");
+  const [payoutProcessing, setPayoutProcessing] = useState(false);
+
+  const handleApproveCommission = async (commId: string) => {
+    try {
+      const res = await fetch(`/api/admin/commissions/${commId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ notes: "Approved by Admin" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to approve commission.");
+      onToast("Commission approved and marked eligible for payout!");
+      loadData();
+    } catch (err: any) {
+      onToast(err.message || "Approval failed.");
+    }
+  };
+
+  const handleExecutePayout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payoutTarget) return;
+    setPayoutProcessing(true);
+    try {
+      const res = await fetch(`/api/admin/commissions/${payoutTarget.id}/payout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          payoutMethod,
+          referenceNumber: payoutRef.trim(),
+          notes: payoutNotes.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to record payout.");
+      onToast(`Payout of ₹${payoutTarget.commissionAmount?.toLocaleString("en-IN")} recorded successfully!`);
+      setPayoutTarget(null);
+      setPayoutRef("");
+      setPayoutNotes("");
+      loadData();
+    } catch (err: any) {
+      onToast(err.message || "Payout processing failed.");
+    } finally {
+      setPayoutProcessing(false);
+    }
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -1527,7 +1580,7 @@ export function AdminPartnerTab({ onToast }: AdminPartnerTabProps) {
         </div>
       )}
 
-      {/* Partner Commission Ledger Table */}
+      {/* Partner Commission Ledger Table (Task 18) */}
       <div
         style={{
           background: "#ffffff",
@@ -1537,13 +1590,38 @@ export function AdminPartnerTab({ onToast }: AdminPartnerTabProps) {
           overflow: "hidden",
         }}
       >
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0" }}>
-          <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "#0f172a" }}>
-            Partner Commission Ledger
-          </h3>
-          <span style={{ fontSize: "11px", color: "#64748b" }}>
-            Real-time audit log of all bookings attributed to partner referral codes and automatic payout calculations.
-          </span>
+        <div style={{ padding: "18px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800, color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
+              <DollarSign size={18} className="text-blue-600" />
+              Partner Commission Ledger & Payout Settlement
+            </h3>
+            <span style={{ fontSize: "12px", color: "#64748b" }}>
+              Real-time audit ledger of all booking commissions attributed to partner referral codes, approval workflow, and payment settlement.
+            </span>
+          </div>
+
+          {/* Quick Ledger Metrics */}
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <div style={{ padding: "6px 14px", borderRadius: "10px", background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+              <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Total Accrued</div>
+              <div style={{ fontSize: "14px", fontWeight: 800, color: "#0f172a" }}>
+                ₹{commissions.reduce((acc, c) => acc + (c.commissionAmount || 0), 0).toLocaleString("en-IN")}
+              </div>
+            </div>
+            <div style={{ padding: "6px 14px", borderRadius: "10px", background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
+              <div style={{ fontSize: "10px", color: "#047857", fontWeight: 700, textTransform: "uppercase" }}>Settled / Paid</div>
+              <div style={{ fontSize: "14px", fontWeight: 800, color: "#047857" }}>
+                ₹{commissions.filter((c) => (c.status || "").toLowerCase() === "paid").reduce((acc, c) => acc + (c.commissionAmount || 0), 0).toLocaleString("en-IN")}
+              </div>
+            </div>
+            <div style={{ padding: "6px 14px", borderRadius: "10px", background: "#eff6ff", border: "1px solid #bfdbfe" }}>
+              <div style={{ fontSize: "10px", color: "#1d4ed8", fontWeight: 700, textTransform: "uppercase" }}>Pending Payout</div>
+              <div style={{ fontSize: "14px", fontWeight: 800, color: "#1d4ed8" }}>
+                ₹{commissions.filter((c) => (c.status || "").toLowerCase() !== "paid").reduce((acc, c) => acc + (c.commissionAmount || 0), 0).toLocaleString("en-IN")}
+              </div>
+            </div>
+          </div>
         </div>
 
         <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
@@ -1554,66 +1632,264 @@ export function AdminPartnerTab({ onToast }: AdminPartnerTabProps) {
               <th style={{ padding: "12px 16px" }}>Booking Amount</th>
               <th style={{ padding: "12px 16px" }}>Commission Rate</th>
               <th style={{ padding: "12px 16px" }}>Earned Commission</th>
-              <th style={{ padding: "12px 18px" }}>Payout Status</th>
+              <th style={{ padding: "12px 16px" }}>Payout Status</th>
+              <th style={{ padding: "12px 18px", textAlign: "right" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ padding: "32px", textAlign: "center", color: "#64748b" }}>
+                <td colSpan={7} style={{ padding: "32px", textAlign: "center", color: "#64748b" }}>
                   <RefreshCw size={20} className="animate-spin" style={{ margin: "0 auto 8px" }} />
                   Loading commission ledger...
                 </td>
               </tr>
             ) : commissions.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: "32px", textAlign: "center", color: "#64748b" }}>
+                <td colSpan={7} style={{ padding: "32px", textAlign: "center", color: "#64748b" }}>
                   No referral bookings logged yet. When customers book using partner codes, entries appear here automatically.
                 </td>
               </tr>
             ) : (
-              commissions.map((c) => (
-                <tr key={c.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "14px 18px" }}>
-                    <strong style={{ display: "block", color: "#0f172a" }}>{c.agencyName || "Partner Agency"}</strong>
-                    <span style={{ fontSize: "11px", color: "#94a3b8" }}>{c.contactName}</span>
-                  </td>
-                  <td style={{ padding: "14px 16px", fontFamily: "monospace", color: "#2563eb", fontWeight: 700 }}>
-                    {c.bookingRef || c.bookingId?.slice(0, 8)}
-                  </td>
-                  <td style={{ padding: "14px 16px", fontWeight: 600 }}>
-                    ₹{(c.bookingAmount || 0).toLocaleString("en-IN")}
-                  </td>
-                  <td style={{ padding: "14px 16px", color: "#64748b" }}>
-                    {c.commissionPercent || 5}%
-                  </td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <strong style={{ color: "#059669" }}>
-                      ₹{(c.commissionAmount || 0).toLocaleString("en-IN")}
-                    </strong>
-                  </td>
-                  <td style={{ padding: "14px 18px" }}>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        padding: "3px 8px",
-                        borderRadius: "6px",
-                        background: c.status === "paid" ? "#ecfdf5" : "#eff6ff",
-                        color: c.status === "paid" ? "#047857" : "#1d4ed8",
-                        fontWeight: 700,
-                        fontSize: "11px",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {c.status}
-                    </span>
-                  </td>
-                </tr>
-              ))
+              commissions.map((c) => {
+                const s = (c.status || "pending").toLowerCase();
+                const isPaid = s === "paid";
+                const isEligible = s === "eligible" || s === "approved";
+                return (
+                  <tr key={c.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "14px 18px" }}>
+                      <strong style={{ display: "block", color: "#0f172a" }}>{c.agencyName || "Partner Agency"}</strong>
+                      <span style={{ fontSize: "11px", color: "#94a3b8" }}>{c.contactName || c.referralCode}</span>
+                    </td>
+                    <td style={{ padding: "14px 16px", fontFamily: "monospace", color: "#2563eb", fontWeight: 700 }}>
+                      {c.bookingRef || c.bookingId?.slice(0, 8)}
+                    </td>
+                    <td style={{ padding: "14px 16px", fontWeight: 600 }}>
+                      ₹{(c.bookingAmount || 0).toLocaleString("en-IN")}
+                    </td>
+                    <td style={{ padding: "14px 16px", color: "#64748b" }}>
+                      {c.commissionPercent || 5}%
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <strong style={{ color: "#059669" }}>
+                        ₹{(c.commissionAmount || 0).toLocaleString("en-IN")}
+                      </strong>
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          background: isPaid ? "#ecfdf5" : isEligible ? "#eff6ff" : "#fffbeb",
+                          color: isPaid ? "#047857" : isEligible ? "#1d4ed8" : "#b45309",
+                          border: isPaid ? "1px solid #a7f3d0" : isEligible ? "1px solid #bfdbfe" : "1px solid #fde68a",
+                          fontWeight: 700,
+                          fontSize: "11px",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {c.status}
+                      </span>
+                      {c.notes && (
+                        <div style={{ fontSize: "10px", color: "#64748b", marginTop: "2px", maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={c.notes}>
+                          {c.notes}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: "14px 18px", textAlign: "right" }}>
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
+                        {!isPaid && !isEligible && (
+                          <button
+                            type="button"
+                            onClick={() => void handleApproveCommission(c.id)}
+                            style={{
+                              padding: "5px 10px",
+                              borderRadius: "6px",
+                              border: "1px solid #bfdbfe",
+                              background: "#eff6ff",
+                              color: "#1d4ed8",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {!isPaid && (
+                          <button
+                            type="button"
+                            onClick={() => setPayoutTarget(c)}
+                            style={{
+                              padding: "5px 12px",
+                              borderRadius: "6px",
+                              border: "none",
+                              background: "#059669",
+                              color: "#ffffff",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            <DollarSign size={12} /> Pay
+                          </button>
+                        )}
+                        {isPaid && (
+                          <span style={{ fontSize: "11px", color: "#059669", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            <Check size={13} /> Settled
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Record Commission Payout Modal */}
+      {payoutTarget && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 100,
+            padding: "16px",
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPayoutTarget(null);
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              maxWidth: "480px",
+              width: "100%",
+              padding: "24px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <DollarSign size={20} color="#059669" />
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800, color: "#0f172a" }}>
+                  Record Commission Payout
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPayoutTarget(null)}
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: "#94a3b8" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ background: "#f8fafc", borderRadius: "10px", padding: "12px 14px", border: "1px solid #e2e8f0", marginBottom: "16px", fontSize: "13px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                <span style={{ color: "#64748b" }}>Partner Agency:</span>
+                <strong style={{ color: "#0f172a" }}>{payoutTarget.agencyName || "Partner"}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                <span style={{ color: "#64748b" }}>Booking Ref:</span>
+                <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#2563eb" }}>{payoutTarget.bookingRef || payoutTarget.bookingId?.slice(0, 8)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e2e8f0", paddingTop: "6px", marginTop: "6px" }}>
+                <span style={{ color: "#64748b", fontWeight: 700 }}>Payout Amount:</span>
+                <strong style={{ fontSize: "16px", color: "#059669" }}>₹{payoutTarget.commissionAmount?.toLocaleString("en-IN")}</strong>
+              </div>
+            </div>
+
+            <form onSubmit={handleExecutePayout} style={{ display: "grid", gap: "12px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#334155", marginBottom: "4px" }}>
+                  Payment Method
+                </label>
+                <select
+                  value={payoutMethod}
+                  onChange={(e) => setPayoutMethod(e.target.value)}
+                  style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                >
+                  <option value="NEFT/RTGS">NEFT / RTGS Bank Transfer</option>
+                  <option value="IMPS">IMPS Instant Transfer</option>
+                  <option value="UPI">UPI Direct</option>
+                  <option value="CHEQUE">Corporate Cheque</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#334155", marginBottom: "4px" }}>
+                  UTR / Reference Number <span style={{ color: "#dc2626" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. UTR2026100200881923"
+                  value={payoutRef}
+                  onChange={(e) => setPayoutRef(e.target.value)}
+                  style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#334155", marginBottom: "4px" }}>
+                  Internal Notes / Settlement Memo
+                </label>
+                <textarea
+                  placeholder="e.g. Settled via ICICI current account batch #49"
+                  value={payoutNotes}
+                  onChange={(e) => setPayoutNotes(e.target.value)}
+                  rows={2}
+                  style={{ width: "100%", padding: "8px 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", resize: "none" }}
+                />
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
+                <button
+                  type="button"
+                  onClick={() => setPayoutTarget(null)}
+                  style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#ffffff", fontWeight: 600, fontSize: "13px" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={payoutProcessing}
+                  style={{
+                    padding: "8px 20px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#059669",
+                    color: "#ffffff",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    cursor: payoutProcessing ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  {payoutProcessing ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />}
+                  Record Payout
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

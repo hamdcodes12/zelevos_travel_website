@@ -595,8 +595,8 @@ router.get("/admin/partners", requireRole(["admin", "finance"]), async (req, res
  * Public referral code validation endpoint (Task 9)
  * Used by checkout modal and landing page (?ref=CODE)
  */
-router.get(["/partners/validate-ref", "/partners/check-code"], async (req, res) => {
-  const code = (req.query.code || req.query.ref || "").toString().trim().toUpperCase();
+router.get(["/partners/validate-ref", "/partners/check-code", "/partners/validate-code", "/partners/validate-code/:code"], async (req, res) => {
+  const code = (req.params.code || req.query.code || req.query.ref || "").toString().trim().toUpperCase();
   if (!code) {
     res.status(400).json({ valid: false, message: "Referral code required." });
     return;
@@ -663,6 +663,8 @@ router.get("/admin/partners/ledger", requireRole(["admin", "finance"]), async (_
         commissionPercent: commissionsTable.commissionPercent,
         commissionAmount: commissionsTable.commissionAmount,
         status: commissionsTable.status,
+        paidAt: commissionsTable.paidAt,
+        notes: commissionsTable.notes,
         createdAt: commissionsTable.createdAt,
         agencyName: partnersTable.agencyName,
         contactName: partnersTable.contactName,
@@ -702,6 +704,8 @@ router.get("/partners/ledger", async (req, res) => {
           commissionPercent: commissionsTable.commissionPercent,
           commissionAmount: commissionsTable.commissionAmount,
           status: commissionsTable.status,
+          paidAt: commissionsTable.paidAt,
+          notes: commissionsTable.notes,
           createdAt: commissionsTable.createdAt,
           agencyName: partnersTable.agencyName,
           contactName: partnersTable.contactName,
@@ -737,6 +741,8 @@ router.get("/partners/ledger", async (req, res) => {
         commissionPercent: commissionsTable.commissionPercent,
         commissionAmount: commissionsTable.commissionAmount,
         status: commissionsTable.status,
+        paidAt: commissionsTable.paidAt,
+        notes: commissionsTable.notes,
         createdAt: commissionsTable.createdAt,
         agencyName: partnersTable.agencyName,
         contactName: partnersTable.contactName,
@@ -970,6 +976,133 @@ router.post(["/admin/partners/:id/approve", "/partners/:id/approve"], requireRol
     });
   } catch (error) {
     res.status(500).json({ status: "error", message: error instanceof Error ? error.message : "Failed to approve partner." });
+  }
+});
+
+/**
+ * POST /api/admin/commissions/:id/approve
+ * Approves partner commission in ledger, moving status from 'PENDING' to 'ELIGIBLE'.
+ */
+router.post(["/admin/commissions/:id/approve", "/partners/commissions/:id/approve"], requireRole(["admin", "finance"]), async (req, res) => {
+  const id = typeof req.params.id === "string" ? req.params.id : String(req.params.id || "");
+  const notes = req.body?.notes || "Approved for payout";
+  try {
+    const [commission] = await db
+      .select()
+      .from(commissionsTable)
+      .where(eq(commissionsTable.id, id))
+      .limit(1);
+
+    if (!commission) {
+      res.status(404).json({ status: "not_found", message: "Commission record not found." });
+      return;
+    }
+
+    const [updatedCommission] = await db
+      .update(commissionsTable)
+      .set({
+        status: "ELIGIBLE",
+        notes,
+        updatedAt: new Date(),
+      })
+      .where(eq(commissionsTable.id, id))
+      .returning();
+
+    await logAuditAction({
+      action: "PARTNER_COMMISSION_APPROVED",
+      resourceType: "commission",
+      resourceId: commission.id,
+      actorUserId: req.user?.id,
+      actorRole: req.user?.role || "admin",
+      previousValue: { status: commission.status },
+      newValue: { status: "ELIGIBLE", notes },
+    });
+
+    res.json({
+      status: "success",
+      commission: updatedCommission,
+      message: "Commission approved and marked eligible for payout.",
+    });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error instanceof Error ? error.message : "Failed to approve commission." });
+  }
+});
+
+/**
+ * POST /api/admin/commissions/:id/payout
+ * Processes and settles partner commission payout.
+ */
+router.post(["/admin/commissions/:id/payout", "/partners/commissions/:id/payout", "/admin/commissions/:id/pay"], requireRole(["admin", "finance"]), async (req, res) => {
+  const id = typeof req.params.id === "string" ? req.params.id : String(req.params.id || "");
+  const { payoutMethod = "NEFT/RTGS", referenceNumber = "", notes = "" } = req.body || {};
+  try {
+    const [commission] = await db
+      .select()
+      .from(commissionsTable)
+      .where(eq(commissionsTable.id, id))
+      .limit(1);
+
+    if (!commission) {
+      res.status(404).json({ status: "not_found", message: "Commission record not found." });
+      return;
+    }
+
+    const paymentNote = [
+      notes,
+      referenceNumber ? `Ref: ${referenceNumber}` : "",
+      payoutMethod ? `Method: ${payoutMethod}` : "",
+    ].filter(Boolean).join(" | ");
+
+    const [updatedCommission] = await db
+      .update(commissionsTable)
+      .set({
+        status: "PAID",
+        paidAt: new Date(),
+        notes: paymentNote || commission.notes || "Paid out to partner",
+        updatedAt: new Date(),
+      })
+      .where(eq(commissionsTable.id, id))
+      .returning();
+
+    // Increment partner totalCommissionPaid
+    const [partner] = await db
+      .select()
+      .from(partnersTable)
+      .where(eq(partnersTable.id, commission.partnerId))
+      .limit(1);
+
+    if (partner) {
+      await db
+        .update(partnersTable)
+        .set({
+          totalCommissionPaid: (partner.totalCommissionPaid || 0) + commission.commissionAmount,
+          updatedAt: new Date(),
+        })
+        .where(eq(partnersTable.id, partner.id));
+    }
+
+    await logAuditAction({
+      action: "PARTNER_COMMISSION_PAID",
+      resourceType: "commission",
+      resourceId: commission.id,
+      actorUserId: req.user?.id,
+      actorRole: req.user?.role || "admin",
+      previousValue: { status: commission.status },
+      newValue: {
+        status: "PAID",
+        commissionAmount: commission.commissionAmount,
+        payoutMethod,
+        referenceNumber,
+      },
+    });
+
+    res.json({
+      status: "success",
+      commission: updatedCommission,
+      message: `Commission of ₹${commission.commissionAmount.toLocaleString("en-IN")} paid successfully.`,
+    });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error instanceof Error ? error.message : "Failed to record commission payout." });
   }
 });
 

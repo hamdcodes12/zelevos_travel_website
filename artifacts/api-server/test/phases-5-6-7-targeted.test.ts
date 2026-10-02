@@ -341,6 +341,38 @@ describe("Phases 5, 6, 7 Targeted Features Test Suite", () => {
     assert.ok(foundComm, "Commission for partner recorded in ledger");
     const expectedCommission = Math.round((bookData.booking.totalPrice * 5) / 100);
     assert.equal(foundComm.commissionAmount, expectedCommission);
+
+    // 4. Admin approves commission
+    const approveCommRes = await fetch(`${baseUrl}/api/admin/commissions/${foundComm.id}/approve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: adminCookie },
+      body: JSON.stringify({ notes: "Approved by finance director" }),
+    });
+    assert.equal(approveCommRes.status, 200);
+    const approveCommData = await approveCommRes.json();
+    assert.equal(approveCommData.commission.status, "ELIGIBLE");
+
+    // 5. Admin processes payout for commission
+    const payoutRes = await fetch(`${baseUrl}/api/admin/commissions/${foundComm.id}/payout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: adminCookie },
+      body: JSON.stringify({
+        payoutMethod: "NEFT/RTGS",
+        referenceNumber: `UTR_${Date.now()}`,
+        notes: "Direct bank transfer settled",
+      }),
+    });
+    assert.equal(payoutRes.status, 200);
+    const payoutData = await payoutRes.json();
+    assert.equal(payoutData.commission.status, "PAID");
+    assert.ok(payoutData.commission.paidAt);
+
+    // 6. Test referral code validation endpoint with path param
+    const valRes = await fetch(`${baseUrl}/api/partners/validate-code/${testPartnerReferralCode}`);
+    assert.equal(valRes.status, 200);
+    const valData = await valRes.json();
+    assert.equal(valData.valid, true);
+    assert.equal(valData.partner.referralCode, testPartnerReferralCode);
   });
 
   // ==========================================================================

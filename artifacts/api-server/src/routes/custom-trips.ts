@@ -8,6 +8,7 @@ import {
   bookingsTable,
   usersTable,
   notificationsTable,
+  partnersTable,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/authMiddleware";
 import { requireRole } from "../middlewares/rbac";
@@ -590,15 +591,45 @@ router.post("/custom-trips/:id/accept", requireAuth, async (req, res) => {
 
       const masterBookingId = await generateMasterBookingId(tx);
 
+      // Check partner referral code / coupon
+      let partnerId: string | null = null;
+      let finalPrice = lead.proposalAmount;
+      let discountAmount = 0;
+      const refCode = (req.body?.referralCode || (req.user as any)?.referralCodeUsed || "").toString().trim().toUpperCase();
+      if (refCode) {
+        const [partner] = await tx
+          .select()
+          .from(partnersTable)
+          .where(eq(partnersTable.referralCode, refCode))
+          .limit(1);
+
+        if (partner && partner.status === "approved") {
+          partnerId = partner.id;
+          if (partner.discountEnabled) {
+            const rawVal = Number(partner.discountValue || 0);
+            if (partner.discountType === "flat") {
+              discountAmount = Math.min(rawVal, finalPrice);
+            } else {
+              discountAmount = Math.round((finalPrice * rawVal) / 100);
+              if (partner.discountMaxCap && discountAmount > partner.discountMaxCap) {
+                discountAmount = partner.discountMaxCap;
+              }
+            }
+            finalPrice = Math.max(1, finalPrice - discountAmount);
+          }
+        }
+      }
+
       const [booking] = await tx.insert(bookingsTable).values({
         bookingId: masterBookingId,
         customerId: req.user!.id,
         ownerId: req.user!.id,
         packageId: lead.proposalPackageId || undefined,
+        partnerId: partnerId || undefined,
         status: "PAYMENT_PENDING",
-        totalPrice: lead.proposalAmount,
+        totalPrice: finalPrice,
         totalBaseCost: 0,
-        totalMarkup: lead.proposalAmount,
+        totalMarkup: finalPrice,
         paymentStatus: "PENDING",
         kind: "PACKAGE",
         providerMode: "LIVE",
@@ -615,11 +646,13 @@ router.post("/custom-trips/:id/accept", requireAuth, async (req, res) => {
         },
         providerReference: lead.leadNumber,
         bookingReference: masterBookingId,
-        amount: lead.proposalAmount,
+        amount: finalPrice,
         payload: {
           leadNumber: lead.leadNumber,
           destinations: lead.destinations,
           proposalTitle: lead.proposalTitle,
+          referralCodeApplied: refCode || undefined,
+          discountAmount: discountAmount > 0 ? discountAmount : undefined,
         },
         emailStatus: "PENDING",
         timeline: [
@@ -627,7 +660,7 @@ router.post("/custom-trips/:id/accept", requireAuth, async (req, res) => {
             event: "CUSTOM_TRIP_ACCEPTED",
             timestamp: new Date().toISOString(),
             actor: lead.customerName || "Customer",
-            notes: `Lead: ${lead.leadNumber}. Awaiting payment of ₹${Number(lead.proposalAmount).toLocaleString("en-IN")}.`,
+            notes: `Lead: ${lead.leadNumber}. Awaiting payment of ₹${Number(finalPrice).toLocaleString("en-IN")}.${discountAmount > 0 ? ` (Referral discount: -₹${discountAmount})` : ""}`,
           },
         ],
       }).returning();
