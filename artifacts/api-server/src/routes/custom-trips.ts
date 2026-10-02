@@ -743,4 +743,213 @@ router.post("/custom-trips/:id/decline", requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/custom-trips/:id/cancel
+ * Traveller cancels custom trip proposal/request.
+ */
+router.post("/custom-trips/:id/cancel", requireAuth, async (req, res) => {
+  const leadId = String(req.params.id || "").trim();
+  const reason = typeof req.body?.reason === "string" ? req.body.reason.trim() : "Cancelled by traveler";
+
+  try {
+    const [lead] = await db
+      .select()
+      .from(customTripRequestsTable)
+      .where(and(
+        eq(customTripRequestsTable.id, leadId),
+        eq(customTripRequestsTable.userId, req.user!.id)
+      ))
+      .limit(1);
+
+    if (!lead) {
+      res.status(404).json({ status: "not_found", message: "Custom trip request not found." });
+      return;
+    }
+
+    if (lead.status === "CANCELLED") {
+      res.status(409).json({ status: "already_cancelled", message: "This custom trip request is already cancelled." });
+      return;
+    }
+
+    const now = new Date();
+
+    // If an unpaid booking exists, cancel it too
+    if (lead.bookingId) {
+      const [booking] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, lead.bookingId)).limit(1);
+      if (booking && booking.status !== "CANCELLED") {
+        if (booking.paymentStatus === "CAPTURED" || booking.status === "CONFIRMED") {
+          // Keep note that refund/ops action is required
+          await db.update(bookingsTable).set({
+            cancellationReason: reason,
+            cancellationRequestedAt: now,
+            updatedAt: now,
+          }).where(eq(bookingsTable.id, booking.id));
+        } else {
+          await db.update(bookingsTable).set({
+            status: "CANCELLED",
+            paymentStatus: "FAILED",
+            cancellationReason: reason,
+            cancellationRequestedAt: now,
+            updatedAt: now,
+          }).where(eq(bookingsTable.id, booking.id));
+        }
+      }
+    }
+
+    const [updated] = await db
+      .update(customTripRequestsTable)
+      .set({
+        status: "CANCELLED",
+        cancellationReason: reason,
+        cancelledAt: now,
+        cancelledBy: req.user!.fullName || req.user!.email || "Traveler",
+        updatedAt: now,
+      })
+      .where(eq(customTripRequestsTable.id, lead.id))
+      .returning();
+
+    await logAuditAction({
+      action: "CUSTOM_TRIP_CANCELLED",
+      resourceType: "custom_trip_request",
+      resourceId: lead.id,
+      actorUserId: req.user!.id,
+      actorRole: "customer",
+      previousValue: { status: lead.status },
+      newValue: { status: "CANCELLED", reason },
+    });
+
+    // In-app notification to traveler
+    try {
+      await db.insert(notificationsTable).values({
+        userId: req.user!.id,
+        recipientEmail: lead.customerEmail,
+        type: "CUSTOM_TRIP_CANCELLED",
+        category: "SYSTEM",
+        title: "Custom Trip Request Cancelled",
+        body: `Your request (${lead.leadNumber}) has been cancelled.`,
+        actionButton: "View Plans",
+        actionUrl: "/trips",
+        channel: "in_app",
+        status: "SENT",
+        metadata: { leadId: lead.id, leadNumber: lead.leadNumber, reason },
+      });
+    } catch (_) { /* non-critical */ }
+
+    res.json({ status: "success", lead: updated, message: "Custom trip request successfully cancelled." });
+  } catch (error: any) {
+    req.log?.error ? req.log.error({ err: error }, "Cancel error") : console.error(error);
+    res.status(500).json({ status: "error", message: error.message || "Failed to cancel custom trip." });
+  }
+});
+
+/**
+ * POST /api/admin/custom-trips/:id/cancel
+ * Operations team cancels custom trip proposal/request.
+ */
+router.post("/admin/custom-trips/:id/cancel", requireRole(["admin", "operations_manager", "booking_executive"]), async (req, res) => {
+  const leadId = String(req.params.id || "").trim();
+  const reason = typeof req.body?.reason === "string" ? req.body.reason.trim() : "Cancelled by operations specialist";
+
+  try {
+    const [lead] = await db
+      .select()
+      .from(customTripRequestsTable)
+      .where(eq(customTripRequestsTable.id, leadId))
+      .limit(1);
+
+    if (!lead) {
+      res.status(404).json({ status: "not_found", message: "Custom trip request not found." });
+      return;
+    }
+
+    if (lead.status === "CANCELLED") {
+      res.status(409).json({ status: "already_cancelled", message: "This custom trip request is already cancelled." });
+      return;
+    }
+
+    const now = new Date();
+    const adminActor = (req as any).admin?.adminId || (req as any).user?.fullName || "Operations";
+
+    // If an unpaid booking exists, cancel it too
+    if (lead.bookingId) {
+      const [booking] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, lead.bookingId)).limit(1);
+      if (booking && booking.status !== "CANCELLED") {
+        if (booking.paymentStatus === "CAPTURED" || booking.status === "CONFIRMED") {
+          await db.update(bookingsTable).set({
+            cancellationReason: reason,
+            cancellationRequestedAt: now,
+            updatedAt: now,
+          }).where(eq(bookingsTable.id, booking.id));
+        } else {
+          await db.update(bookingsTable).set({
+            status: "CANCELLED",
+            paymentStatus: "FAILED",
+            cancellationReason: reason,
+            cancellationRequestedAt: now,
+            updatedAt: now,
+          }).where(eq(bookingsTable.id, booking.id));
+        }
+      }
+    }
+
+    const [updated] = await db
+      .update(customTripRequestsTable)
+      .set({
+        status: "CANCELLED",
+        cancellationReason: reason,
+        cancelledAt: now,
+        cancelledBy: adminActor,
+        updatedAt: now,
+      })
+      .where(eq(customTripRequestsTable.id, lead.id))
+      .returning();
+
+    await logAuditAction({
+      action: "CUSTOM_TRIP_ADMIN_CANCELLED",
+      resourceType: "custom_trip_request",
+      resourceId: lead.id,
+      actorAdminId: (req as any).admin?.id,
+      actorRole: "admin",
+      previousValue: { status: lead.status },
+      newValue: { status: "CANCELLED", reason, cancelledBy: adminActor },
+    });
+
+    // Notify customer via in-app & email
+    if (lead.userId) {
+      try {
+        await db.insert(notificationsTable).values({
+          userId: lead.userId,
+          recipientEmail: lead.customerEmail,
+          type: "CUSTOM_TRIP_CANCELLED",
+          category: "SYSTEM",
+          title: "Custom Trip Request Update",
+          body: `Your custom trip proposal (${lead.leadNumber}) was cancelled by operations: ${reason}`,
+          actionButton: "Plan New Trip",
+          actionUrl: "/build-trip",
+          channel: "in_app",
+          status: "SENT",
+          metadata: { leadId: lead.id, leadNumber: lead.leadNumber, reason },
+        });
+      } catch (_) { /* non-critical */ }
+    }
+
+    if (lead.customerEmail) {
+      try {
+        await dispatchMultiChannelNotification({
+          type: "CANCELLATION_REFUND_UPDATE",
+          recipientEmail: lead.customerEmail,
+          customerName: lead.customerName,
+          bookingId: lead.leadNumber,
+          message: `Your custom vacation request (${lead.leadNumber}) has been cancelled by our operations team. Reason: ${reason}. Please let us know if you would like to explore alternative options.`,
+        });
+      } catch (_) { /* non-critical */ }
+    }
+
+    res.json({ status: "success", lead: updated, message: "Custom trip request cancelled." });
+  } catch (error: any) {
+    req.log?.error ? req.log.error({ err: error }, "Admin cancel error") : console.error(error);
+    res.status(500).json({ status: "error", message: error.message || "Failed to cancel custom trip." });
+  }
+});
+
 export default router;

@@ -83,6 +83,9 @@ export const customTripRequestsTable = pgTable("custom_trip_requests", {
   archivedAt: timestamp("archived_at", { withTimezone: true }),
   archivedBy: text("archived_by"),
   archiveReason: text("archive_reason"),
+  cancellationReason: text("cancellation_reason"),
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+  cancelledBy: text("cancelled_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

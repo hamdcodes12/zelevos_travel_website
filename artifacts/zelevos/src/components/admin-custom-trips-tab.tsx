@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Save, Send, Trash2, FileText, CheckCircle2, User, MapPin, Calendar, Clock, CreditCard, ExternalLink, ShieldCheck, Archive, RotateCcw } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Save, Send, Trash2, FileText, CheckCircle2, User, MapPin, Calendar, Clock, CreditCard, ExternalLink, ShieldCheck, Archive, RotateCcw, XCircle } from "lucide-react";
 
 export type ItineraryDay = {
   day: number;
@@ -42,6 +42,9 @@ export type Lead = {
   archivedAt?: string | null;
   archivedBy?: string | null;
   archiveReason?: string | null;
+  cancellationReason?: string | null;
+  cancelledAt?: string | null;
+  cancelledBy?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 };
@@ -133,6 +136,24 @@ export function AdminCustomTripsTab({ onToast }: { onToast: (message: string) =>
       await load(showArchived);
     } catch (e: any) {
       setError(e.message || "Failed to delete custom trip");
+    }
+  };
+
+  const cancelLead = async (id: string) => {
+    const reason = window.prompt("Reason for cancelling this custom trip proposal/lead:", "Customer requested cancellation") || "Cancelled by operations";
+    try {
+      const response = await fetch(`/api/admin/custom-trips/${id}/cancel`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to cancel custom trip");
+      onToast("Custom trip request cancelled.");
+      await load(showArchived);
+    } catch (e: any) {
+      setError(e.message || "Failed to cancel custom trip");
     }
   };
 
@@ -444,6 +465,28 @@ export function AdminCustomTripsTab({ onToast }: { onToast: (message: string) =>
                 >
                   <Trash2 size={14} /> Delete Lead
                 </button>
+                {selected.status !== "CANCELLED" && (
+                  <button
+                    type="button"
+                    id={`cancel-lead-${selected.id}`}
+                    onClick={() => void cancelLead(selected.id)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "7px 12px",
+                      borderRadius: "8px",
+                      background: "#fff1f2",
+                      color: "#be123c",
+                      border: "1px solid #fecdd3",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <XCircle size={14} /> Cancel Proposal
+                  </button>
+                )}
                 {selected.status === "PAID" && (
                   <>
                     <a
@@ -492,6 +535,12 @@ export function AdminCustomTripsTab({ onToast }: { onToast: (message: string) =>
             {selected.isArchived && (
               <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 14px", marginTop: "12px", color: "#991b1b", fontSize: "12px" }}>
                 <strong>Archived:</strong> This custom trip lead was archived on {selected.archivedAt ? new Date(selected.archivedAt).toLocaleString() : "recently"}{selected.archivedBy ? ` by ${selected.archivedBy}` : ""}. Reason: {selected.archiveReason || "None provided"}.
+              </div>
+            )}
+
+            {selected.status === "CANCELLED" && (
+              <div style={{ background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "8px", padding: "10px 14px", marginTop: "12px", color: "#475569", fontSize: "12px" }}>
+                <strong>Cancelled:</strong> This proposal was cancelled{selected.cancelledBy ? ` by ${selected.cancelledBy}` : ""}. Reason: {selected.cancellationReason || "No reason specified"}.
               </div>
             )}
 

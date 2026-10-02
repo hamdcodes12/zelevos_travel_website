@@ -106,6 +106,31 @@ export function CustomProposalModal({
     }
   };
 
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancelProposal = async () => {
+    const reason = window.prompt("Please let us know your reason for cancelling:", "Change of travel plans");
+    if (reason === null) return;
+    setCancelling(true);
+    setErrorMessage("");
+    try {
+      const res = await fetch(`/api/custom-trips/${request.id}/cancel`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason.trim() || "Cancelled by traveler" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to cancel proposal.");
+      setCurrentStatus("CANCELLED");
+      onToast("Custom trip request cancelled.");
+    } catch (err: any) {
+      setErrorMessage(err.message || "Could not cancel proposal.");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const handleDeclineProposal = async () => {
     if (!confirm("Are you sure you want to decline this proposal?")) return;
     setAccepting(true);
@@ -295,6 +320,14 @@ export function CustomProposalModal({
             <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs sm:text-sm flex items-center gap-2">
               <AlertCircle size={18} className="shrink-0" />
               <span>{errorMessage}</span>
+            </div>
+          )}
+
+          {/* CANCELLATION BANNER */}
+          {currentStatus === "CANCELLED" && (
+            <div className="p-4 bg-slate-100 border border-slate-300 text-slate-700 rounded-xl text-xs sm:text-sm flex items-center gap-2">
+              <AlertCircle size={18} className="text-slate-500 shrink-0" />
+              <span>This custom trip request has been cancelled.</span>
             </div>
           )}
 
@@ -508,13 +541,26 @@ export function CustomProposalModal({
 
         {/* Footer Actions */}
         <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-wrap justify-between items-center gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-white text-xs sm:text-sm font-semibold transition"
-          >
-            Close
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-white text-xs sm:text-sm font-semibold transition"
+            >
+              Close
+            </button>
+            {currentStatus !== "CANCELLED" && !isPaid && (
+              <button
+                type="button"
+                id="custom-proposal-cancel-btn"
+                disabled={cancelling || accepting || paying}
+                onClick={handleCancelProposal}
+                className="px-4 py-2.5 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs sm:text-sm font-semibold transition"
+              >
+                {cancelling ? "Cancelling..." : "Cancel Request"}
+              </button>
+            )}
+          </div>
 
           <div className="flex gap-2.5">
             {/* If PROPOSAL_SENT: can Decline or Accept */}

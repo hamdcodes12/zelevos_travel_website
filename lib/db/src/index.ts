@@ -723,6 +723,9 @@ const DDL_MIGRATIONS = `
   ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS proposal_notes TEXT;
   ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS customer_accepted_at TIMESTAMPTZ;
   ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS booking_id UUID;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS cancelled_by TEXT;
 
   CREATE TABLE IF NOT EXISTS sla_settings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
