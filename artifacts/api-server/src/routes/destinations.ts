@@ -162,12 +162,43 @@ router.get("/admin/destinations", requireRole(["admin"]), async (req, res) => {
     const results = await Promise.all(
       destinations.map(async (d: any) => {
         const pkgs = await db
-          .select({ count: sql<number>`count(*)` })
+          .select({
+            id: packagesTable.id,
+            assignedVendorIds: packagesTable.assignedVendorIds,
+          })
           .from(packagesTable)
           .where(eq(packagesTable.destinationId, d.id));
+
+        // Compute dynamic confidence score across packages for this destination
+        let totalConfidence = 0;
+        let evaluatedCount = 0;
+
+        for (const pkg of pkgs) {
+          const vIds = Array.isArray(pkg.assignedVendorIds) ? (pkg.assignedVendorIds as string[]) : [];
+          let metrics: any[] = [];
+          if (vIds.length > 0) {
+            metrics = await db
+              .select({
+                acceptanceRate: vendorsTable.acceptanceRate,
+                avgResponseMinutes: vendorsTable.avgResponseMinutes,
+                cancellationRate: vendorsTable.cancellationRate,
+              })
+              .from(vendorsTable)
+              .where(inArray(vendorsTable.id, vIds));
+          }
+          const conf = computeTripConfidenceScore(metrics);
+          totalConfidence += conf.score;
+          evaluatedCount++;
+        }
+
+        const avgScore = evaluatedCount > 0 ? Math.round(totalConfidence / evaluatedCount) : 95;
+        const confidenceLabel = avgScore >= 90 ? "High confidence" : avgScore >= 75 ? "Moderate" : "Needs review";
+
         return {
           ...d,
-          packageCount: Number(pkgs[0]?.count || 0),
+          packageCount: pkgs.length,
+          confidenceScore: avgScore,
+          confidenceLabel,
         };
       })
     );

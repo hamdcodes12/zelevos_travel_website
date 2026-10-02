@@ -17,6 +17,7 @@ import financeRouter from "./finance";
 import slaRouter from "./sla";
 import documentsRouter from "./documents";
 import adminRouter from "./admin";
+import reportsRouter from "./reports";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(customTripsRouter);
 router.use(financeRouter);
 router.use(slaRouter);
 router.use(documentsRouter);
+router.use(reportsRouter);
 
 export default router;

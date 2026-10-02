@@ -59,6 +59,8 @@ import { AdminPartnerTab } from "../components/admin-partner-tab";
 import { AdminFinanceTab } from "../components/admin-finance-tab";
 import { AdminCustomTripsTab } from "../components/admin-custom-trips-tab";
 import { AdminBroadcastsTab } from "../components/admin-broadcasts-tab";
+import { AdminDestinationsTab } from "../components/admin-destinations-tab";
+import { AdminReportsTab } from "../components/admin-reports-tab";
 import { AdminUserDossierModal } from "../components/admin-user-dossier-modal";
 import { PasswordInput } from "@/components/ui/password-input";
 
@@ -237,7 +239,7 @@ export function AdminPage() {
 
   // Dashboard active tab
   const [activeTab, setActiveTab] = useState<
-    "overview" | "broadcasts" | "customers" | "bookings" | "payments" | "audit" | "settings" | "packages" | "operations" | "suppliers" | "vendors" | "partners" | "finance" | "custom-trips"
+    "overview" | "broadcasts" | "customers" | "bookings" | "payments" | "audit" | "settings" | "packages" | "operations" | "suppliers" | "vendors" | "partners" | "finance" | "custom-trips" | "destinations" | "reports"
   >("overview");
 
   // Selected User ID for Complete Dossier Modal
@@ -252,7 +254,7 @@ export function AdminPage() {
       const searchParams = new URLSearchParams(window.location.search);
       const tabParam = searchParams.get("tab") || window.location.pathname.replace(/^\/admin\/?/, "");
       if (
-        ["packages", "operations", "suppliers", "vendors", "partners", "finance", "custom-trips", "overview", "broadcasts", "customers", "bookings", "payments", "audit", "settings"].includes(
+        ["packages", "operations", "suppliers", "vendors", "partners", "finance", "custom-trips", "overview", "broadcasts", "customers", "bookings", "payments", "audit", "settings", "destinations", "reports"].includes(
           tabParam
         )
       ) {
@@ -1263,14 +1265,14 @@ export function AdminPage() {
               { id: "admin-nav-suppliers", tab: "suppliers" as const, label: "Suppliers / Vendors", icon: Building2 },
               { id: "admin-nav-operations", tab: "operations" as const, label: "Operations", icon: Activity },
               { id: "admin-nav-packages", tab: "packages" as const, label: "Packages", icon: Package },
-              { id: "admin-nav-destinations", tab: "packages" as const, label: "Destinations", icon: MapPin },
+              { id: "admin-nav-destinations", tab: "destinations" as const, label: "Destinations", icon: MapPin },
               { id: "admin-nav-support", tab: "operations" as const, label: "Support", icon: MessageSquare },
               { id: "admin-nav-broadcasts", tab: "broadcasts" as const, label: "Broadcasts & Offers", icon: Megaphone },
               { id: "admin-nav-custom-trips", tab: "custom-trips" as const, label: "Custom Trips", icon: Calendar },
               { id: "admin-nav-flights", tab: "bookings" as const, label: "Flights", icon: PlaneTakeoff },
               { id: "admin-nav-partners", tab: "partners" as const, label: "Partners", icon: Users2 },
               { id: "admin-nav-finance", tab: "finance" as const, label: "Finance", icon: DollarSign },
-              { id: "admin-nav-reports", tab: "overview" as const, label: "Reports", icon: BarChart3 },
+              { id: "admin-nav-reports", tab: "reports" as const, label: "Reports & Analytics", icon: BarChart3 },
               { id: "admin-nav-audit", tab: "audit" as const, label: "Audit Logs", icon: Clock },
               { id: "admin-nav-settings", tab: "settings" as const, label: "Settings & Security", icon: Settings },
             ].map((item) => {
@@ -1278,7 +1280,7 @@ export function AdminPage() {
               const Icon = item.icon;
               return (
                 <button
-                  key={item.tab}
+                  key={item.id}
                   id={item.id}
                   type="button"
                   onClick={() => setActiveTab(item.tab)}
@@ -3353,6 +3355,16 @@ export function AdminPage() {
               TAB 11: FINANCE & LEDGER (Section 15 & 23)
              ================================================================ */}
           {activeTab === "finance" && <AdminFinanceTab onToast={showToast} />}
+
+          {/* ================================================================
+              TAB 12: DESTINATIONS & CONFIDENCE (Task 4)
+             ================================================================ */}
+          {activeTab === "destinations" && <AdminDestinationsTab onToast={showToast} />}
+
+          {/* ================================================================
+              TAB 13: REPORTS & ANALYTICS (Task 3)
+             ================================================================ */}
+          {activeTab === "reports" && <AdminReportsTab onToast={showToast} />}
         </div>
       </main>
 
