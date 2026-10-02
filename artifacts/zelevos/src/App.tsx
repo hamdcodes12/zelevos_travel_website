@@ -47,6 +47,7 @@ import {
   ExternalLink,
   Clock,
   Ban,
+  FileText,
 } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -2599,6 +2600,27 @@ function MyTrips({
 
                       {isPaid && bRef && (
                         <>
+                          <a
+                            href={`/api/bookings/${bRef}/itinerary`}
+                            target="_blank"
+                            rel="noreferrer"
+                            id={`view-itinerary-btn-${request.leadNumber}`}
+                            style={{
+                              padding: '7px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid #bfdbfe',
+                              background: '#eff6ff',
+                              color: '#1d4ed8',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                            }}
+                          >
+                            <FileText size={13} /> Digital Itinerary
+                          </a>
                           <a
                             href={`/api/bookings/${bRef}/receipt/download?download=true`}
                             id={`download-receipt-btn-${request.leadNumber}`}

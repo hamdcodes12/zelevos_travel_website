@@ -520,6 +520,11 @@ router.get(["/bookings/:idOrBookingId/itinerary", "/bookings/:idOrBookingId/itin
     const tasks = await db.select().from(bookingServicesTable).where(eq(bookingServicesTable.bookingId, booking.id));
     const vouchers = await db.select().from(vouchersTable).where(eq(vouchersTable.bookingId, booking.id));
 
+    const host = req.get("host") || "zelevos.travel";
+    const protocol = req.protocol || "https";
+    const itineraryUrl = `${protocol}://${host}/api/bookings/${escapeHtml(booking.bookingId)}/itinerary`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(itineraryUrl)}`;
+
     // Generate clean printable HTML / PDF itinerary
     const html = `<!DOCTYPE html>
 <html>
@@ -527,7 +532,7 @@ router.get(["/bookings/:idOrBookingId/itinerary", "/bookings/:idOrBookingId/itin
   <meta charset="utf-8">
   <title>Zelevos Itinerary - ${escapeHtml(booking.bookingId)}</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; padding: 40px; color: #0f172a; max-width: 800px; margin: 0 auto; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; padding: 40px; color: #0f172a; max-width: 800px; margin: 0 auto; background: #fff; }
     .header { border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
     .logo { font-size: 28px; font-weight: 800; color: #2563eb; letter-spacing: -0.05em; }
     .badge { background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 999px; font-size: 14px; font-weight: 700; }
@@ -536,10 +541,21 @@ router.get(["/bookings/:idOrBookingId/itinerary", "/bookings/:idOrBookingId/itin
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { text-align: left; padding: 8px; font-size: 14px; border-bottom: 1px solid #e2e8f0; }
     th { font-weight: 700; color: #64748b; }
+    .qr-banner { display: flex; justify-content: space-between; align-items: center; gap: 20px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
     .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+    .btn-print { background: #2563eb; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
+    @media print {
+      .no-print { display: none !important; }
+      body { padding: 0; }
+      .card { border: 1px solid #ddd; }
+    }
   </style>
 </head>
 <body>
+  <div class="no-print" style="margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+    <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+
   <div class="header">
     <div>
       <div class="logo">ZELEVOS</div>
@@ -549,6 +565,14 @@ router.get(["/bookings/:idOrBookingId/itinerary", "/bookings/:idOrBookingId/itin
       <div class="badge">${escapeHtml(booking.status)}</div>
       <div style="font-weight: 700; margin-top: 4px;">ID: ${escapeHtml(booking.bookingId)}</div>
     </div>
+  </div>
+
+  <div class="qr-banner">
+    <div>
+      <h3 style="margin: 0 0 4px; font-size: 16px; color: #1e3a8a;">Official Digital Travel Dossier</h3>
+      <p style="margin: 0; font-size: 12px; color: #475569;">Verified by Zelevos Operations Concierge Desk. Scan QR code to authenticate live status.</p>
+    </div>
+    <img src="${qrCodeUrl}" style="width: 80px; height: 80px; border-radius: 6px; border: 1px solid #bfdbfe; background: #fff; padding: 3px;" alt="QR Code" />
   </div>
 
   <div class="card">
@@ -586,10 +610,15 @@ router.get(["/bookings/:idOrBookingId/itinerary", "/bookings/:idOrBookingId/itin
     <h2>Issued Vouchers</h2>
     <table>
       <thead>
-        <tr><th>Code</th><th>Title</th><th>Valid Date</th></tr>
+        <tr><th>Code</th><th>Title</th><th>Valid Date</th><th>Digital Access</th></tr>
       </thead>
       <tbody>
-        ${vouchers.map((v: any) => `<tr><td><code>${escapeHtml(v.voucherCode)}</code></td><td>${escapeHtml(v.title)}</td><td>${escapeHtml(v.validFrom || "N/A")}</td></tr>`).join("")}
+        ${vouchers.map((v: any) => `<tr>
+          <td><code>${escapeHtml(v.voucherCode)}</code></td>
+          <td>${escapeHtml(v.title)}</td>
+          <td>${escapeHtml(v.validFrom || "N/A")}</td>
+          <td><a href="/api/vouchers/${escapeHtml(v.voucherCode)}" target="_blank" style="color: #2563eb; font-weight: 700; text-decoration: none;">View Voucher ↗</a></td>
+        </tr>`).join("")}
       </tbody>
     </table>
   </div>` : ""}
@@ -615,6 +644,106 @@ router.get(["/bookings/:idOrBookingId/itinerary", "/bookings/:idOrBookingId/itin
     res.send(html);
   } catch (error) {
     res.status(500).send("Failed to generate digital itinerary.");
+  }
+});
+
+/**
+ * GET /api/bookings/:idOrBookingId/milestones
+ * Live booking milestone track (Section 23).
+ */
+router.get("/bookings/:idOrBookingId/milestones", requireAuthOrAdmin, async (req, res) => {
+  const idOrBookingId = typeof req.params.idOrBookingId === "string" ? req.params.idOrBookingId : String(req.params.idOrBookingId || "");
+
+  try {
+    const isStaff = Boolean(req.admin) || req.user?.role === "admin" || req.user?.role === "operations_manager";
+    const queryConditions = [
+      isUuid(idOrBookingId) ? eq(bookingsTable.id, idOrBookingId) : eq(bookingsTable.bookingId, idOrBookingId),
+    ];
+    if (!isStaff) {
+      queryConditions.push(or(eq(bookingsTable.ownerId, req.user!.id), eq(bookingsTable.customerId, req.user!.id))!);
+    }
+
+    const [booking] = await db.select().from(bookingsTable).where(and(...queryConditions)).limit(1);
+    if (!booking) {
+      res.status(404).json({ status: "not_found", message: "Booking not found." });
+      return;
+    }
+
+    const tasks = await db.select().from(bookingServicesTable).where(eq(bookingServicesTable.bookingId, booking.id));
+    const vouchers = await db.select().from(vouchersTable).where(eq(vouchersTable.bookingId, booking.id));
+
+    const isPaid = booking.paymentStatus === "CAPTURED" || booking.paymentStatus === "SUCCESSFUL" || (booking.status !== "PAYMENT_PENDING" && booking.status !== "CANCELLED");
+    const verifiedTasksCount = tasks.filter((t: any) => t.customerFacingVerified && (t.status === "VERIFIED" || t.status === "CONFIRMED")).length;
+    const allServicesVerified = tasks.length > 0 && verifiedTasksCount === tasks.length;
+    const vouchersIssued = vouchers.length > 0;
+
+    const milestones = [
+      {
+        step: 1,
+        id: "BOOKING_RECEIVED",
+        label: "Booking Created",
+        description: `Order ${booking.bookingId} registered in Zelevos travel network`,
+        status: "COMPLETED",
+        timestamp: booking.createdAt,
+      },
+      {
+        step: 2,
+        id: "PAYMENT_CONFIRMED",
+        label: "Payment Verified",
+        description: isPaid ? `₹${Number(booking.totalPrice || 0).toLocaleString("en-IN")} secured via Razorpay` : "Awaiting secure online transaction",
+        status: isPaid ? "COMPLETED" : "CURRENT",
+        timestamp: isPaid ? booking.updatedAt : null,
+      },
+      {
+        step: 3,
+        id: "SUPPLIER_COORDINATION",
+        label: "Supplier Assignment",
+        description: tasks.length > 0 ? `${tasks.length} local inventory tasks assigned with SLA deadlines` : "Dispatching fulfillment requests to local partners",
+        status: isPaid ? (tasks.length > 0 ? "COMPLETED" : "CURRENT") : "UPCOMING",
+        timestamp: null,
+      },
+      {
+        step: 4,
+        id: "FLIGHT_TICKETED",
+        label: "Flight PNR & Ticketing",
+        description: !booking.flightRequired ? "Self-arranged travel / Not required" : booking.flightPnr ? `Airline PNR: ${booking.flightPnr}` : "Awaiting airline ticketing desk",
+        status: !booking.flightRequired ? "NOT_REQUIRED" : booking.flightPnr ? "COMPLETED" : isPaid ? "CURRENT" : "UPCOMING",
+        timestamp: null,
+      },
+      {
+        step: 5,
+        id: "SERVICES_CONFIRMED",
+        label: "Hotel & Activity Verification",
+        description: allServicesVerified ? "All suppliers confirmed & verified by operations desk" : `${verifiedTasksCount} of ${tasks.length} supplier services verified`,
+        status: allServicesVerified ? "COMPLETED" : isPaid ? "CURRENT" : "UPCOMING",
+        timestamp: null,
+      },
+      {
+        step: 6,
+        id: "VOUCHERS_ISSUED",
+        label: "Digital Vouchers Ready",
+        description: vouchersIssued ? `${vouchers.length} digital vouchers generated with QR check-in codes` : "Vouchers being assembled for instant check-in",
+        status: vouchersIssued ? "COMPLETED" : allServicesVerified ? "CURRENT" : "UPCOMING",
+        timestamp: null,
+      },
+      {
+        step: 7,
+        id: "TRIP_READY",
+        label: "Consolidated Itinerary Finalized",
+        description: (booking.status === "CONFIRMED" || vouchersIssued) ? "Full trip dossier & 24/7 concierge available" : "Final dossier will be ready upon complete confirmation",
+        status: (booking.status === "CONFIRMED" || vouchersIssued) ? "COMPLETED" : "UPCOMING",
+        timestamp: null,
+      },
+    ];
+
+    res.json({
+      status: "success",
+      bookingId: booking.bookingId,
+      bookingStatus: booking.status,
+      milestones,
+    });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message || "Failed to load booking milestones." });
   }
 });
 

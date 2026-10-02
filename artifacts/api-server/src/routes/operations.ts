@@ -17,7 +17,9 @@ import {
   adminNotificationReadsTable,
   notificationsTable,
   usersTable,
+  vouchersTable,
 } from "@workspace/db";
+import { isUuid } from "../lib/ids";
 import { requireRole } from "../middlewares/rbac";
 import { requireAuth, requireAuthOrAdmin, requireAdmin } from "../middlewares/authMiddleware";
 import { supportTicketRateLimiter } from "../middlewares/rate-limiter";
@@ -305,11 +307,40 @@ router.post("/operations/tasks/:taskId/verify", requireOps, async (req, res) => 
       .where(eq(bookingServicesTable.id, taskId))
       .returning();
 
+    // Generate or link voucher for verified service
+    let issuedVoucher = null;
+    const [existingVoucher] = await db
+      .select()
+      .from(vouchersTable)
+      .where(eq(vouchersTable.bookingServiceId, task.id))
+      .limit(1);
+
+    if (!existingVoucher) {
+      const cleanType = String(task.serviceType || "SVC").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4);
+      const voucherCode = `VCH-${cleanType}-${Date.now().toString().slice(-6)}`;
+      const [newVoucher] = await db
+        .insert(vouchersTable)
+        .values({
+          bookingId: task.bookingId,
+          bookingServiceId: task.id,
+          voucherCode,
+          title: task.title,
+          serviceType: task.serviceType,
+          vendorName: confirmationRef ? `Confirmed (Ref: ${confirmationRef})` : "Zelevos Verified Partner",
+          documentUrl: voucherUrl || task.voucherUrl || null,
+          status: "ISSUED",
+        })
+        .returning();
+      issuedVoucher = newVoucher;
+    } else {
+      issuedVoucher = existingVoucher;
+    }
+
     await logAuditAction({
       action: "TASK_VERIFIED_BY_OPERATIONS",
       resourceType: "booking_service",
       resourceId: taskId,
-      newValue: { status: "VERIFIED", customerFacingVerified: true, confirmationRef },
+      newValue: { status: "VERIFIED", customerFacingVerified: true, confirmationRef, voucherCode: issuedVoucher?.voucherCode },
       actorAdminId: (req as any).admin?.id,
       actorRole: "operations",
     });
@@ -320,10 +351,228 @@ router.post("/operations/tasks/:taskId/verify", requireOps, async (req, res) => 
     res.json({
       status: "success",
       task: updatedTask,
+      voucher: issuedVoucher,
       message: "Supplier confirmation verified. Customer status and vouchers updated.",
     });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Failed to verify task." });
+  }
+});
+
+/**
+ * POST /api/operations/bookings/:idOrBookingId/vouchers/generate
+ * Operations desk generates an official voucher with unique code.
+ */
+router.post("/operations/bookings/:idOrBookingId/vouchers/generate", requireOps, async (req, res) => {
+  const idOrBookingId = typeof req.params.idOrBookingId === "string" ? req.params.idOrBookingId : String(req.params.idOrBookingId || "");
+  const { serviceType, title, vendorName, validFrom, validUntil, bookingServiceId } = req.body;
+
+  if (!title || !serviceType) {
+    res.status(400).json({ status: "invalid_request", message: "Title and service type are required." });
+    return;
+  }
+
+  try {
+    const [booking] = await db
+      .select()
+      .from(bookingsTable)
+      .where(isUuid(idOrBookingId) ? eq(bookingsTable.id, idOrBookingId) : eq(bookingsTable.bookingId, idOrBookingId))
+      .limit(1);
+
+    if (!booking) {
+      res.status(404).json({ status: "not_found", message: "Booking not found." });
+      return;
+    }
+
+    const cleanType = String(serviceType).toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4);
+    const voucherCode = `VCH-${booking.bookingId.slice(-6)}-${cleanType}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const [voucher] = await db
+      .insert(vouchersTable)
+      .values({
+        bookingId: booking.id,
+        bookingServiceId: bookingServiceId || undefined,
+        voucherCode,
+        title: title.trim(),
+        serviceType: serviceType.trim(),
+        vendorName: vendorName?.trim() || "Zelevos Verified Supplier",
+        validFrom: validFrom || booking.travelDate || null,
+        validUntil: validUntil || null,
+        status: "ISSUED",
+      })
+      .returning();
+
+    const timeline = Array.isArray(booking.timeline) ? [...booking.timeline] : [];
+    timeline.push({
+      event: `Voucher Generated: ${voucherCode} (${title})`,
+      timestamp: new Date().toISOString(),
+      actor: (req as any).admin?.adminId || "Operations Desk",
+      notes: `Valid voucher issued for ${serviceType}`,
+    });
+    await db.update(bookingsTable).set({ timeline: timeline as any, updatedAt: new Date() }).where(eq(bookingsTable.id, booking.id));
+
+    if (booking.customerContact?.email) {
+      try {
+        await dispatchMultiChannelNotification({
+          type: "VOUCHER_AVAILABLE",
+          recipientEmail: booking.customerContact.email,
+          customerName: booking.customerContact.name,
+          bookingId: booking.bookingId,
+          message: `An official voucher (${voucherCode}) is ready for your booking ${booking.bookingId}: ${title}`,
+        });
+      } catch (_) {}
+    }
+
+    res.status(201).json({ status: "success", voucher, message: "Voucher generated successfully." });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message || "Failed to generate voucher." });
+  }
+});
+
+/**
+ * GET /api/vouchers/:voucherCode and /vouchers/:voucherCode
+ * Publicly verifiable digital voucher card with QR code.
+ */
+router.get(["/vouchers/:voucherCode", "/api/vouchers/:voucherCode"], async (req, res) => {
+  const voucherCode = typeof req.params.voucherCode === "string" ? req.params.voucherCode.trim() : "";
+
+  try {
+    const [voucher] = await db
+      .select()
+      .from(vouchersTable)
+      .where(eq(vouchersTable.voucherCode, voucherCode))
+      .limit(1);
+
+    if (!voucher) {
+      res.status(404).send(`
+        <!DOCTYPE html><html><body style="font-family: system-ui; text-align: center; padding: 60px;">
+          <h2>Voucher Not Found</h2>
+          <p>No valid Zelevos travel voucher exists for code: <code>${voucherCode}</code></p>
+        </body></html>
+      `);
+      return;
+    }
+
+    const [booking] = await db
+      .select()
+      .from(bookingsTable)
+      .where(eq(bookingsTable.id, voucher.bookingId))
+      .limit(1);
+
+    const host = req.get("host") || "zelevos.travel";
+    const protocol = req.protocol || "https";
+    const verificationUrl = `${protocol}://${host}/vouchers/${voucher.voucherCode}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(verificationUrl)}`;
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Zelevos Digital Voucher - ${voucher.voucherCode}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; margin: 0; padding: 32px 16px; color: #0f172a; }
+    .card { max-width: 680px; margin: 0 auto; background: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #ffffff; padding: 28px 32px; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 26px; font-weight: 900; letter-spacing: -0.05em; color: #ffffff; }
+    .sub { font-size: 11px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+    .status-badge { background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-weight: 800; font-size: 11px; padding: 6px 14px; border-radius: 999px; text-transform: uppercase; }
+    .body { padding: 32px; }
+    .code-box { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .code-val { font-family: monospace; font-size: 20px; font-weight: 800; color: #1e3a8a; letter-spacing: 0.05em; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .cell-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 4px; }
+    .cell-val { font-size: 15px; font-weight: 700; color: #0f172a; }
+    .qr-section { background: #eff6ff; border-radius: 14px; padding: 20px; display: flex; gap: 20px; align-items: center; border: 1px solid #bfdbfe; margin-bottom: 24px; }
+    .qr-img { width: 110px; height: 110px; border-radius: 8px; border: 1px solid #93c5fd; background: #fff; padding: 4px; }
+    .actions { display: flex; gap: 12px; }
+    .btn { flex: 1; padding: 12px 20px; border-radius: 10px; font-weight: 700; font-size: 14px; text-align: center; cursor: pointer; text-decoration: none; border: none; }
+    .btn-print { background: #2563eb; color: #fff; }
+    .btn-print:hover { background: #1d4ed8; }
+    .footer { text-align: center; padding: 18px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .card { box-shadow: none; border: 1px solid #ccc; }
+      .actions { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div>
+        <div class="logo">ZELEVOS</div>
+        <div class="sub">Official Supplier Travel Voucher</div>
+      </div>
+      <div>
+        <span class="status-badge">${voucher.status || "CONFIRMED"}</span>
+      </div>
+    </div>
+    <div class="body">
+      <div class="code-box">
+        <div>
+          <div class="cell-label">Voucher Reference Code</div>
+          <div class="code-val">${voucher.voucherCode}</div>
+        </div>
+        <div style="text-align: right;">
+          <div class="cell-label">Booking Reference</div>
+          <strong style="font-family: monospace; font-size: 14px; color: #334155;">${booking ? booking.bookingId : "N/A"}</strong>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <div class="cell-label">Service Description</div>
+          <div class="cell-val">${voucher.title}</div>
+        </div>
+        <div>
+          <div class="cell-label">Service Category</div>
+          <div class="cell-val">${String(voucher.serviceType || "Holiday Service").toUpperCase()}</div>
+        </div>
+        <div>
+          <div class="cell-label">Lead Traveler</div>
+          <div class="cell-val">${booking?.customerContact?.name || "Valued Guest"}</div>
+        </div>
+        <div>
+          <div class="cell-label">Authorized Supplier / Vendor</div>
+          <div class="cell-val">${voucher.vendorName || "Zelevos Fulfillment Desk"}</div>
+        </div>
+        <div>
+          <div class="cell-label">Travel / Valid Date</div>
+          <div class="cell-val">${voucher.validFrom || booking?.travelDate || "As per confirmed itinerary"}</div>
+        </div>
+        <div>
+          <div class="cell-label">Issued At</div>
+          <div class="cell-val">${new Date(voucher.issuedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+        </div>
+      </div>
+
+      <div class="qr-section">
+        <img class="qr-img" src="${qrCodeUrl}" alt="Voucher QR Code" />
+        <div>
+          <strong style="font-size: 13px; color: #1e3a8a; display: block; margin-bottom: 4px;">Instant QR Check-in Verification</strong>
+          <p style="margin: 0; font-size: 12px; color: #475569; line-height: 1.5;">
+            Present this digital QR code to your hotel concierge, cab chauffeur, or excursion manager upon arrival for seamless entry.
+          </p>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </div>
+    </div>
+    <div class="footer">
+      Zelevos 24/7 Ground Concierge: +91 800-ZELEVOS · direct: operations@zelevos.travel · Verified & Non-transferable
+    </div>
+  </div>
+</body>
+</html>`;
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(html);
+  } catch (error: any) {
+    res.status(500).send("Failed to display voucher: " + error.message);
   }
 });
 

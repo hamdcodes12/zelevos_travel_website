@@ -48,6 +48,7 @@ import {
   Archive,
   RotateCcw,
   Trash2,
+  FileText,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { AdminPackagesTab } from "../components/admin-packages-tab";
@@ -3686,6 +3687,77 @@ export function AdminPage() {
                         <span style={{ display: "block", color: "#64748b", fontSize: "11px" }}>
                           Type: {p.type} · DOB: {p.dateOfBirth || "N/A"} · Gender: {p.gender || "N/A"}
                         </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Actions: Digital Itinerary & Tax Invoice */}
+              <div style={{ display: "flex", gap: "8px", marginTop: "16px", flexWrap: "wrap" }}>
+                <a
+                  href={`/api/bookings/${selectedBookingDetail.bookingId || selectedBookingDetail.bookingReference || selectedBookingDetail.id}/itinerary`}
+                  target="_blank"
+                  rel="noreferrer"
+                  id={`admin-booking-itinerary-btn-${selectedBookingDetail.id}`}
+                  style={{
+                    padding: "7px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #bfdbfe",
+                    background: "#eff6ff",
+                    color: "#1d4ed8",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <FileText size={13} /> Digital Itinerary (HTML/PDF) ↗
+                </a>
+                <a
+                  href={`/api/bookings/${selectedBookingDetail.bookingId || selectedBookingDetail.bookingReference || selectedBookingDetail.id}/receipt`}
+                  target="_blank"
+                  rel="noreferrer"
+                  id={`admin-booking-receipt-btn-${selectedBookingDetail.id}`}
+                  style={{
+                    padding: "7px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #a7f3d0",
+                    background: "#f0fdf4",
+                    color: "#15803d",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <ShieldCheck size={13} /> Official Receipt & Tax Invoice ↗
+                </a>
+              </div>
+
+              {/* Live Timeline & Milestones */}
+              {Array.isArray(selectedBookingDetail.timeline) && selectedBookingDetail.timeline.length > 0 && (
+                <div style={{ marginTop: "20px" }}>
+                  <strong style={{ display: "block", marginBottom: "10px", color: "#0f172a", fontSize: "13px" }}>
+                    Live Booking Timeline & Milestones ({selectedBookingDetail.timeline.length} Events)
+                  </strong>
+                  <div style={{ display: "grid", gap: "8px", borderLeft: "2px solid #e2e8f0", paddingLeft: "12px", marginLeft: "6px" }}>
+                    {selectedBookingDetail.timeline.map((evt: any, idx: number) => (
+                      <div key={idx} style={{ position: "relative" }}>
+                        <div style={{ position: "absolute", left: "-17px", top: "4px", width: "8px", height: "8px", borderRadius: "50%", background: "#2563eb" }} />
+                        <strong style={{ display: "block", color: "#0f172a", fontSize: "12px" }}>
+                          {evt.event}
+                        </strong>
+                        <span style={{ display: "block", color: "#64748b", fontSize: "10px" }}>
+                          {evt.timestamp ? new Date(evt.timestamp).toLocaleString("en-IN") : "Recent"} {evt.actor ? `· By ${evt.actor}` : ""}
+                        </span>
+                        {evt.notes && (
+                          <p style={{ margin: "2px 0 0", color: "#475569", fontSize: "11px" }}>{evt.notes}</p>
+                        )}
                       </div>
                     ))}
                   </div>
