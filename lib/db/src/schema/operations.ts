@@ -3,6 +3,7 @@ import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle
 import { z } from "zod/v4";
 import { adminUsersTable, usersTable } from "./auth";
 import { bookingsTable } from "./bookings";
+import { vendorsTable } from "./vendors";
 
 export const supportTicketsTable = pgTable("support_tickets", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -120,3 +121,42 @@ export type InsertCustomTripRequest = z.infer<typeof insertCustomTripRequestSche
 export type SlaSetting = typeof slaSettingsTable.$inferSelect;
 export type InsertSlaSetting = z.infer<typeof insertSlaSettingSchema>;
 
+export const tripFulfillmentsTable = pgTable("trip_fulfillments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  bookingId: uuid("booking_id").notNull().references(() => bookingsTable.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("DRAFT"), // 'DRAFT' | 'SENT' | 'UPDATED'
+  version: integer("version").notNull().default(1),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  sentBy: text("sent_by"),
+  pdfPath: text("pdf_path"),
+  lastEmailStatus: text("last_email_status"), // 'SENT' | 'FAILED'
+  lastEmailError: text("last_email_error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const tripFulfillmentItemsTable = pgTable("trip_fulfillment_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  fulfillmentId: uuid("fulfillment_id").notNull().references(() => tripFulfillmentsTable.id, { onDelete: "cascade" }),
+  componentType: text("component_type").notNull(), // 'HOTEL' | 'CAB' | 'BUS' | 'GUIDE' | 'MEALS' | 'FLIGHT' | 'OTHER'
+  vendorId: uuid("vendor_id").references(() => vendorsTable.id, { onDelete: "set null" }),
+  status: text("status").notNull().default("PENDING"), // 'PENDING' | 'ASSIGNED' | 'SUBMITTED' | 'APPROVED'
+  dayNumber: integer("day_number").notNull().default(1),
+  sequence: integer("sequence").notNull().default(1),
+  title: text("title").notNull(),
+  details: jsonb("details").$type<Record<string, any>>().notNull().default({}),
+  notes: text("notes"),
+  assignedAt: timestamp("assigned_at", { withTimezone: true }),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const insertTripFulfillmentSchema = createInsertSchema(tripFulfillmentsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTripFulfillmentItemSchema = createInsertSchema(tripFulfillmentItemsTable).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type TripFulfillment = typeof tripFulfillmentsTable.$inferSelect;
+export type InsertTripFulfillment = z.infer<typeof insertTripFulfillmentSchema>;
+export type TripFulfillmentItem = typeof tripFulfillmentItemsTable.$inferSelect;
+export type InsertTripFulfillmentItem = z.infer<typeof insertTripFulfillmentItemSchema>;

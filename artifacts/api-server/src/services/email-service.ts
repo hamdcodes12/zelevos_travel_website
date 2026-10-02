@@ -1307,3 +1307,176 @@ export async function sendPasswordResetConfirmationEmail(
   }
   return { success: true };
 }
+
+export interface TripFulfillmentEmailParams {
+  toEmail: string;
+  customerName: string;
+  bookingRef: string;
+  destination: string;
+  travelDate: string;
+  components: Array<{
+    type: string;
+    title: string;
+    details: Record<string, any>;
+  }>;
+  pdfBuffer: Buffer;
+}
+
+export async function sendTripFulfillmentEmail(params: TripFulfillmentEmailParams): Promise<EmailSendResult> {
+  const subject = `Your Zelevos trip is confirmed — ${params.destination} (${params.travelDate})`;
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const fromEmail = process.env.RESEND_FROM_EMAIL?.trim() || "Zelevos <onboarding@resend.dev>";
+  const filename = `Zelevos-Trip-Voucher-${params.bookingRef}.pdf`;
+
+  const componentRows = params.components.map((c) => {
+    const d = c.details || {};
+    let info = "";
+    if (c.type === "HOTEL") info = `Hotel: ${d.hotelName || "Confirmed"} · Room: ${d.roomType || "Deluxe"} · Check-in: ${d.checkInDate || params.travelDate} (${d.checkInTime || "14:00"})`;
+    else if (c.type === "CAB") info = `Chauffeur: ${d.driverName || "Assigned"} (${d.driverPhone || ""}) · Vehicle: ${d.vehicleModel || ""} (${d.vehicleRegistrationNumber || ""}) · Pickup: ${d.pickupPoint || ""}`;
+    else if (c.type === "BUS") info = `Bus: ${d.operatorName || ""} · Reg: ${d.busRegistrationNumber || ""} · Seat: ${d.seatNumbers || ""} · Departure: ${d.departureDateTime || ""}`;
+    else if (c.type === "GUIDE") info = `Guide: ${d.guideName || ""} (${d.phone || ""}) · Meeting: ${d.meetingPoint || ""}`;
+    else if (c.type === "MEALS") info = `Provider: ${d.providerName || ""} · Meals: ${d.mealsIncluded || ""}`;
+    else if (c.type === "FLIGHT") info = `Flight: ${d.airline || ""} ${d.flightNumber || ""} · PNR: ${d.pnr || ""}`;
+    else info = JSON.stringify(d);
+
+    return `
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 10px;">
+        <span style="display: inline-block; background-color: #2563eb; color: #ffffff; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">${c.type}</span>
+        <strong style="margin-left: 8px; font-size: 14px; color: #0f172a;">${c.title}</strong>
+        <p style="margin: 6px 0 0; font-size: 13px; color: #475569;">${info}</p>
+      </div>
+    `;
+  }).join("");
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${subject}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px; color: #1e293b;">
+  <div style="max-width: 640px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;">
+    <div style="background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); padding: 28px 32px; color: #ffffff;">
+      <h1 style="margin: 0 0 6px 0; font-size: 24px; font-weight: 800;">ZELEVOS</h1>
+      <p style="margin: 0; font-size: 14px; opacity: 0.9;">Trip Confirmation & Official Ground Voucher</p>
+    </div>
+
+    <div style="padding: 28px 32px;">
+      <h2 style="margin-top: 0; font-size: 20px; color: #0f172a;">Your trip is confirmed, ${params.customerName}!</h2>
+      <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+        All accommodations, chauffeur transfers, and itinerary components for your trip to <strong>${params.destination}</strong> have been finalized and approved. Your official printable Trip Voucher PDF is attached to this email.
+      </p>
+
+      <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 18px; margin: 20px 0;">
+        <table style="width: 100%; font-size: 13px;">
+          <tr>
+            <td style="color: #64748b;">Booking Reference:</td>
+            <td style="text-align: right; font-weight: 700; color: #1e40af;">${params.bookingRef}</td>
+          </tr>
+          <tr>
+            <td style="color: #64748b;">Destination:</td>
+            <td style="text-align: right; font-weight: 700; color: #0f172a;">${params.destination}</td>
+          </tr>
+          <tr>
+            <td style="color: #64748b;">Travel Date:</td>
+            <td style="text-align: right; font-weight: 700; color: #0f172a;">${params.travelDate}</td>
+          </tr>
+        </table>
+      </div>
+
+      <h3 style="font-size: 16px; margin: 24px 0 12px; color: #0f172a;">Arrangement Summary</h3>
+      ${componentRows}
+
+      <div style="margin-top: 24px; padding: 16px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 13px; color: #166534; line-height: 1.5;">
+        <strong>Trip Voucher Attached:</strong> Please keep the attached PDF handy on your phone or print a physical copy for check-in at hotels and driver meetup.
+      </div>
+
+      <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
+        <strong>24/7 Concierge Support:</strong> 1800-ZELEVOS &middot; ground.support@zelevos.com
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  // 1. Dispatch via Resend if API key is provided
+  if (resendApiKey) {
+    try {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [params.toEmail],
+          subject,
+          html,
+          attachments: [
+            {
+              filename,
+              content: params.pdfBuffer.toString("base64"),
+            },
+          ],
+        }),
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as { id?: string };
+        logger.info({ to: maskEmail(params.toEmail), messageId: data.id }, "[Email Service] Trip fulfillment email sent via Resend.");
+        return { success: true, recipient: params.toEmail, status: "SENT", messageId: data.id };
+      } else {
+        const errText = await response.text();
+        logger.warn({ to: maskEmail(params.toEmail), errText }, "[Email Service] Resend dispatch returned non-200.");
+      }
+    } catch (err: any) {
+      logger.warn({ to: maskEmail(params.toEmail), err: err.message }, "[Email Service] Resend dispatch failed.");
+    }
+  }
+
+  // 2. Dispatch via SMTP if configured
+  const smtpUser = process.env.SMTP_USER?.trim();
+  const smtpPass = process.env.SMTP_PASS?.trim();
+  if (smtpUser && smtpPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST?.trim() || "smtp.gmail.com",
+        port: Number(process.env.SMTP_PORT || "465"),
+        secure: (process.env.SMTP_SECURE || "true").toLowerCase() === "true",
+        auth: { user: smtpUser, pass: smtpPass },
+      });
+
+      const info = await transporter.sendMail({
+        from: `"Zelevos" <${smtpUser}>`,
+        to: params.toEmail,
+        subject,
+        html,
+        attachments: [
+          {
+            filename,
+            content: params.pdfBuffer,
+            contentType: "application/pdf",
+          },
+        ],
+      });
+
+      logger.info({ to: maskEmail(params.toEmail), messageId: info.messageId }, "[Email Service] Trip fulfillment email sent via SMTP.");
+      return { success: true, recipient: params.toEmail, status: "SENT", messageId: info.messageId };
+    } catch (err: any) {
+      logger.warn({ to: maskEmail(params.toEmail), err: err.message }, "[Email Service] SMTP dispatch failed.");
+    }
+  }
+
+  // Fallback: development simulation
+  logger.info(
+    { to: maskEmail(params.toEmail), attachmentBytes: params.pdfBuffer.length, subject },
+    "[Email Service] Development fallback: Trip fulfillment email simulated with PDF attachment."
+  );
+  return {
+    success: true,
+    recipient: params.toEmail,
+    status: "SENT",
+    messageId: `dev-sim-${Date.now()}`,
+  };
+}

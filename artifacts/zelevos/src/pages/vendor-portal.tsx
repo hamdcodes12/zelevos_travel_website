@@ -38,6 +38,12 @@ import {
   CalendarDays,
   TrendingUp,
   ChevronDown,
+  Car,
+  Hotel,
+  Phone,
+  Compass,
+  Utensils,
+  Bus,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -118,6 +124,15 @@ export function VendorPortalPage() {
   });
   const [savingInvoice, setSavingInvoice] = useState(false);
 
+  // Fulfillment Tasks State
+  const [fulfillmentTasks, setFulfillmentTasks] = useState<any[]>([]);
+  const [arrangingTask, setArrangingTask] = useState<any | null>(null);
+  const [arrangementForm, setArrangementForm] = useState<Record<string, any>>({});
+  const [arrangementErrors, setArrangementErrors] = useState<Record<string, string>>({});
+  const [submittingArrangement, setSubmittingArrangement] = useState(false);
+  const [acceptingFulfillmentId, setAcceptingFulfillmentId] = useState<string | null>(null);
+  const [decliningFulfillmentId, setDecliningFulfillmentId] = useState<string | null>(null);
+
   // Toast / feedback message
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const showToast = (msg: string) => {
@@ -131,7 +146,7 @@ export function VendorPortalPage() {
   }, []);
 
   // Modal Escape and scroll-lock management
-  const isAnyModalOpen = Boolean(rejectingTask || changingTask || voucherTask || showAddService || showAddDoc || showAddInvoice);
+  const isAnyModalOpen = Boolean(rejectingTask || changingTask || voucherTask || showAddService || showAddDoc || showAddInvoice || arrangingTask);
   useEffect(() => {
     if (!isAnyModalOpen) return;
     const orig = document.body.style.overflow;
@@ -150,6 +165,8 @@ export function VendorPortalPage() {
           if ((!docTitle.trim() && !docFile) || window.confirm("Discard changes?")) setShowAddDoc(false);
         } else if (showAddInvoice) {
           if ((!newInvoice.invoiceNumber.trim() && !newInvoice.notes.trim()) || window.confirm("Discard changes?")) setShowAddInvoice(false);
+        } else if (arrangingTask) {
+          if (window.confirm("Discard arrangement changes?")) setArrangingTask(null);
         }
       }
     };
@@ -158,7 +175,7 @@ export function VendorPortalPage() {
       document.body.style.overflow = orig;
       window.removeEventListener("keydown", onKey);
     };
-  }, [isAnyModalOpen, rejectingTask, changingTask, voucherTask, showAddService, showAddDoc, showAddInvoice, rejectReason, changeNotes, voucherRef, voucherFile, newService, docTitle, docFile, newInvoice]);
+  }, [isAnyModalOpen, rejectingTask, changingTask, voucherTask, showAddService, showAddDoc, showAddInvoice, arrangingTask, rejectReason, changeNotes, voucherRef, voucherFile, newService, docTitle, docFile, newInvoice]);
 
   const checkVendorSession = async () => {
     setAuthLoading(true);
@@ -230,12 +247,13 @@ export function VendorPortalPage() {
   const loadPortalData = async () => {
     setLoading(true);
     try {
-      const [dashRes, reqsRes, svcsRes, docsRes, invsRes] = await Promise.all([
+      const [dashRes, reqsRes, svcsRes, docsRes, invsRes, fulfillRes] = await Promise.all([
         fetch("/api/vendor/portal/dashboard", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)),
         fetch("/api/vendor/portal/requests", { credentials: "include" }).then((r) => (r.ok ? r.json() : { requests: [] })),
         fetch("/api/vendor/portal/services", { credentials: "include" }).then((r) => (r.ok ? r.json() : { services: [] })),
         fetch("/api/vendor/portal/documents", { credentials: "include" }).then((r) => (r.ok ? r.json() : { documents: [] })),
         fetch("/api/vendor/portal/invoices", { credentials: "include" }).then((r) => (r.ok ? r.json() : { invoices: [] })),
+        fetch("/api/vendor/portal/fulfillment-tasks", { credentials: "include" }).then((r) => (r.ok ? r.json() : { tasks: [] })),
       ]);
 
       if (dashRes) {
@@ -246,10 +264,138 @@ export function VendorPortalPage() {
       setServices(Array.isArray(svcsRes?.services) ? svcsRes.services : []);
       setDocuments(Array.isArray(docsRes?.documents) ? docsRes.documents : []);
       setInvoices(Array.isArray(invsRes?.invoices) ? invsRes.invoices : []);
+      setFulfillmentTasks(Array.isArray(fulfillRes?.tasks) ? fulfillRes.tasks : []);
     } catch (err: any) {
       showToast(err.message || "Failed to load portal records.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Indian Phone and Vehicle Regex
+  const INDIAN_PHONE_REGEX = /^(?:\+91|91|0)?[6-9]\d{9}$/;
+  const INDIAN_VEHICLE_REG_REGEX = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/i;
+
+  // Accept Fulfillment Task
+  const handleAcceptFulfillmentTask = async (taskId: string) => {
+    if (isSuspended) {
+      showToast("Your supplier account is suspended and cannot accept tasks.");
+      return;
+    }
+    setAcceptingFulfillmentId(taskId);
+    try {
+      const res = await fetch(`/api/vendor/portal/fulfillment-tasks/${taskId}/accept`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to accept task.");
+      showToast("Task accepted! Please fill arrangement details.");
+      const updated = fulfillmentTasks.find((t) => t.id === taskId);
+      if (updated) {
+        setArrangingTask(updated);
+        setArrangementForm(updated.details || {});
+        setArrangementErrors({});
+      }
+      loadPortalData();
+    } catch (err: any) {
+      showToast(err.message || "Failed to accept task.");
+    } finally {
+      setAcceptingFulfillmentId(null);
+    }
+  };
+
+  // Decline Fulfillment Task
+  const handleDeclineFulfillmentTask = async (taskId: string) => {
+    const reason = window.prompt("Please provide a reason for declining this fulfillment task:");
+    if (reason === null) return;
+    setDecliningFulfillmentId(taskId);
+    try {
+      const res = await fetch(`/api/vendor/portal/fulfillment-tasks/${taskId}/decline`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ reason: reason.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to decline task.");
+      showToast("Task declined. Operations Desk notified for reassignment.");
+      loadPortalData();
+    } catch (err: any) {
+      showToast(err.message || "Failed to decline task.");
+    } finally {
+      setDecliningFulfillmentId(null);
+    }
+  };
+
+  // Submit Arrangement Form
+  const handleSubmitArrangement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!arrangingTask) return;
+    const errors: Record<string, string> = {};
+    const type = (arrangingTask.componentType || "").toUpperCase();
+
+    if (type === "HOTEL") {
+      if (!arrangementForm.hotelName?.trim()) {
+        errors.hotelName = "Hotel name is required.";
+      }
+      if (!arrangementForm.fullAddress?.trim()) {
+        errors.fullAddress = "Hotel full address is required.";
+      }
+      if (arrangementForm.hotelPhone && !INDIAN_PHONE_REGEX.test(arrangementForm.hotelPhone.replace(/\s+/g, ""))) {
+        errors.hotelPhone = "Enter a valid 10-digit Indian mobile or landline number (e.g. 9876543210).";
+      }
+    } else if (type === "CAB") {
+      if (!arrangementForm.driverName?.trim()) {
+        errors.driverName = "Chauffeur / Driver name is required.";
+      }
+      if (!arrangementForm.driverPhone?.trim() || !INDIAN_PHONE_REGEX.test(arrangementForm.driverPhone.replace(/\s+/g, ""))) {
+        errors.driverPhone = "Valid 10-digit Indian driver mobile number is required (e.g. 9876543210 or +919876543210).";
+      }
+      if (!arrangementForm.vehicleRegistrationNumber?.trim() || !INDIAN_VEHICLE_REG_REGEX.test(arrangementForm.vehicleRegistrationNumber.replace(/\s+/g, ""))) {
+        errors.vehicleRegistrationNumber = "Valid Indian vehicle registration number is required (e.g. JK01AB1234 or DL1CAB1234).";
+      }
+    } else if (type === "BUS") {
+      if (!arrangementForm.operatorName?.trim()) {
+        errors.operatorName = "Bus operator name is required.";
+      }
+      if (arrangementForm.busRegistrationNumber && !INDIAN_VEHICLE_REG_REGEX.test(arrangementForm.busRegistrationNumber.replace(/\s+/g, ""))) {
+        errors.busRegistrationNumber = "Valid Indian vehicle registration number is required.";
+      }
+    } else if (type === "GUIDE") {
+      if (!arrangementForm.guideName?.trim()) {
+        errors.guideName = "Tour guide name is required.";
+      }
+      if (arrangementForm.phone && !INDIAN_PHONE_REGEX.test(arrangementForm.phone.replace(/\s+/g, ""))) {
+        errors.phone = "Valid Indian phone number is required.";
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setArrangementErrors(errors);
+      return;
+    }
+
+    setSubmittingArrangement(true);
+    try {
+      const res = await fetch(`/api/vendor/portal/fulfillment-tasks/${arrangingTask.id}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ details: arrangementForm }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to submit arrangement details.");
+
+      showToast("Arrangement details submitted to Operations Desk!");
+      setArrangingTask(null);
+      setArrangementForm({});
+      setArrangementErrors({});
+      loadPortalData();
+    } catch (err: any) {
+      showToast(err.message || "Failed to submit arrangement.");
+    } finally {
+      setSubmittingArrangement(false);
     }
   };
 
@@ -1720,7 +1866,7 @@ export function VendorPortalPage() {
         <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid #e2e8f0", paddingBottom: "12px", flexWrap: "wrap" }}>
           {[
             { id: "dashboard", label: "Overview & Metrics", icon: Layers },
-            { id: "requests", label: `Booking Tasks (${requests.length})`, icon: Clock },
+            { id: "requests", label: `Booking Tasks (${requests.length + fulfillmentTasks.length})`, icon: Clock },
             { id: "services", label: `My Services (${services.length})`, icon: Building2 },
             { id: "documents", label: `KYC & Documents (${documents.length})`, icon: FileText },
             { id: "invoices", label: `Invoices & Payables (${invoices.length})`, icon: DollarSign },
@@ -1827,15 +1973,242 @@ export function VendorPortalPage() {
 
         {/* 2. TAB: BOOKING REQUESTS & FULFILLMENT */}
         {activeTab === "requests" && (
-          <div style={{ display: "grid", gap: "16px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 4px" }}>Assigned Booking Tasks</h2>
-                <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
-                  Real service requests assigned by Zelevos Operations Desk. Accept to confirm inventory, or upload vouchers.
-                </p>
+          <div style={{ display: "grid", gap: "24px" }}>
+            {/* Trip Fulfillment Tasks (Workflow Engine) */}
+            <div style={{ display: "grid", gap: "14px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <h2 style={{ fontSize: "18px", fontWeight: 800, margin: 0 }}>Trip Fulfillment Tasks</h2>
+                    <span style={{ background: "#eff6ff", color: "#2563eb", padding: "2px 8px", borderRadius: "9999px", fontSize: "11px", fontWeight: 700, border: "1px solid #bfdbfe" }}>
+                      Direct Booking Dispatch ({fulfillmentTasks.length})
+                    </span>
+                  </div>
+                  <p style={{ fontSize: "13px", color: "#64748b", margin: "4px 0 0" }}>
+                    Fulfill confirmed customer bookings assigned by Zelevos Operations Desk. Accept tasks, enter confirmed details, and submit for verification.
+                  </p>
+                </div>
               </div>
+
+              {fulfillmentTasks.length === 0 ? (
+                <div style={{ background: "#ffffff", padding: "32px", borderRadius: "14px", border: "1px solid #e2e8f0", textAlign: "center", color: "#64748b" }}>
+                  <Clock size={32} style={{ margin: "0 auto 10px", color: "#cbd5e1" }} />
+                  <strong style={{ fontSize: "14px", display: "block", color: "#0f172a" }}>No pending fulfillment tasks</strong>
+                  <p style={{ fontSize: "12px", margin: "4px 0 0" }}>When Zelevos Operations assigns a hotel, cab, or tour task to your account, it will appear here.</p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gap: "12px" }}>
+                  {fulfillmentTasks.map((task) => {
+                    const type = (task.componentType || "").toUpperCase();
+                    const d = task.details || {};
+                    const isApproved = task.status === "APPROVED";
+                    const isSubmitted = task.status === "SUBMITTED";
+                    const isPending = task.status === "PENDING";
+
+                    return (
+                      <div
+                        key={task.id}
+                        id={`vendor-fulfillment-task-${task.id}`}
+                        style={{
+                          background: "#ffffff",
+                          borderRadius: "14px",
+                          padding: "20px",
+                          border: isApproved ? "1.5px solid #a7f3d0" : isSubmitted ? "1.5px solid #fde68a" : "1px solid #e2e8f0",
+                          display: "grid",
+                          gap: "14px",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+                        }}
+                      >
+                        {/* Task Top Row */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <div
+                              style={{
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "10px",
+                                background: type === "HOTEL" ? "#eff6ff" : type === "CAB" ? "#fef3c7" : type === "GUIDE" ? "#f5f3ff" : "#f1f5f9",
+                                color: type === "HOTEL" ? "#2563eb" : type === "CAB" ? "#d97706" : type === "GUIDE" ? "#7c3aed" : "#475569",
+                                display: "grid",
+                                placeItems: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {type === "HOTEL" ? <Hotel size={18} /> : type === "CAB" ? <Car size={18} /> : type === "GUIDE" ? <Compass size={18} /> : type === "BUS" ? <Bus size={18} /> : <Briefcase size={18} />}
+                            </div>
+                            <div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <span style={{ background: "#f1f5f9", color: "#334155", padding: "2px 8px", borderRadius: "6px", fontSize: "11px", fontWeight: 800 }}>
+                                  {type}
+                                </span>
+                                <strong style={{ fontSize: "15px", color: "#0f172a" }}>{task.title}</strong>
+                              </div>
+                              <span style={{ fontSize: "12px", color: "#64748b", marginTop: "2px", display: "block" }}>
+                                Booking Ref: <strong>{task.bookingRef || "Direct Assignment"}</strong> • Destination: <strong>{task.destination || "Kashmir"}</strong>
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Status Badge */}
+                          <span
+                            style={{
+                              background: isApproved ? "#ecfdf5" : isSubmitted ? "#fffbeb" : "#eff6ff",
+                              color: isApproved ? "#059669" : isSubmitted ? "#d97706" : "#2563eb",
+                              padding: "4px 12px",
+                              borderRadius: "9999px",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              border: `1px solid ${isApproved ? "#a7f3d0" : isSubmitted ? "#fde68a" : "#bfdbfe"}`,
+                            }}
+                          >
+                            {isApproved ? "Approved by Admin" : isSubmitted ? "Submitted (Under Admin Review)" : "Pending Action"}
+                          </span>
+                        </div>
+
+                        {/* Booking Context (NO customer email / phone) */}
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px", fontSize: "12px", background: "#f8fafc", padding: "12px 14px", borderRadius: "8px", border: "1px solid #f1f5f9" }}>
+                          <div>
+                            <span style={{ color: "#64748b", fontSize: "11px", display: "block" }}>TRAVEL DATE</span>
+                            <strong style={{ color: "#1e293b" }}>{task.travelDate || "Flexible"}</strong>
+                          </div>
+                          <div>
+                            <span style={{ color: "#64748b", fontSize: "11px", display: "block" }}>PARTY SIZE</span>
+                            <strong style={{ color: "#1e293b" }}>{task.totalTravellers} Guests ({task.adultsCount || 1} Adults, {task.childrenCount || 0} Children)</strong>
+                          </div>
+                          <div>
+                            <span style={{ color: "#64748b", fontSize: "11px", display: "block" }}>SPECIAL REQUIREMENTS</span>
+                            <span style={{ color: "#334155" }}>{task.tripRequirements || "Standard tour package inclusions"}</span>
+                          </div>
+                        </div>
+
+                        {/* Privacy Banner */}
+                        <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "8px", padding: "8px 12px", fontSize: "11px", color: "#166534", display: "flex", alignItems: "center", gap: "8px" }}>
+                          <ShieldCheck size={15} color="#16a34a" style={{ flexShrink: 0 }} />
+                          <span><strong>Confidential Dispatch:</strong> Customer phone number and email are handled exclusively by Zelevos Operations Desk.</span>
+                        </div>
+
+                        {/* Current Arrangement Summary (if already filled) */}
+                        {(d.hotelName || d.driverName || d.vehicleRegistrationNumber || d.guideName) && (
+                          <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "10px 14px", fontSize: "12px" }}>
+                            <span style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", display: "block", marginBottom: "4px" }}>
+                              CURRENT ARRANGEMENT DETAILS:
+                            </span>
+                            {type === "HOTEL" && (
+                              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", color: "#1e293b" }}>
+                                <span>Hotel: <strong>{d.hotelName}</strong></span>
+                                {d.roomType && <span>Room: <strong>{d.roomType}</strong></span>}
+                                {d.confirmationNumber && <span>Conf Ref: <strong>{d.confirmationNumber}</strong></span>}
+                                {d.hotelPhone && <span>Phone: <strong>{d.hotelPhone}</strong></span>}
+                              </div>
+                            )}
+                            {type === "CAB" && (
+                              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", color: "#1e293b" }}>
+                                <span>Driver: <strong>{d.driverName}</strong></span>
+                                <span>Driver Phone: <strong>{d.driverPhone}</strong></span>
+                                <span>Vehicle: <strong>{d.vehicleModel || "Sedan/SUV"}</strong></span>
+                                <span>Reg No: <strong>{d.vehicleRegistrationNumber}</strong></span>
+                              </div>
+                            )}
+                            {type === "GUIDE" && (
+                              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", color: "#1e293b" }}>
+                                <span>Guide: <strong>{d.guideName}</strong></span>
+                                {d.phone && <span>Phone: <strong>{d.phone}</strong></span>}
+                                {d.meetingPoint && <span>Meeting: <strong>{d.meetingPoint}</strong></span>}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", borderTop: "1px solid #f1f5f9", paddingTop: "12px" }}>
+                          {isPending && (
+                            <>
+                              <button
+                                type="button"
+                                id={`accept-fulfillment-task-btn-${task.id}`}
+                                onClick={() => handleAcceptFulfillmentTask(task.id)}
+                                disabled={isSuspended || acceptingFulfillmentId === task.id}
+                                style={{
+                                  background: "#059669",
+                                  color: "#ffffff",
+                                  border: "none",
+                                  padding: "8px 16px",
+                                  borderRadius: "6px",
+                                  fontSize: "13px",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                }}
+                              >
+                                <Check size={14} />
+                                <span>{acceptingFulfillmentId === task.id ? "Accepting..." : "Accept Task"}</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                id={`decline-fulfillment-task-btn-${task.id}`}
+                                onClick={() => handleDeclineFulfillmentTask(task.id)}
+                                disabled={isSuspended || decliningFulfillmentId === task.id}
+                                style={{
+                                  background: "#ffffff",
+                                  color: "#dc2626",
+                                  border: "1px solid #fecaca",
+                                  padding: "8px 14px",
+                                  borderRadius: "6px",
+                                  fontSize: "13px",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                }}
+                              >
+                                Decline
+                              </button>
+                            </>
+                          )}
+
+                          {/* Fill / Edit Arrangement Details */}
+                          <button
+                            type="button"
+                            id={`fill-arrangement-details-btn-${task.id}`}
+                            onClick={() => {
+                              setArrangingTask(task);
+                              setArrangementForm(task.details || {});
+                              setArrangementErrors({});
+                            }}
+                            style={{
+                              background: isApproved ? "#f1f5f9" : "#0f172a",
+                              color: isApproved ? "#334155" : "#ffffff",
+                              border: "none",
+                              padding: "8px 16px",
+                              borderRadius: "6px",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                            }}
+                          >
+                            <FileText size={14} />
+                            <span>{isApproved ? "View Arrangement Details" : isSubmitted ? "Edit Arrangement Details" : "Fill Arrangement Details"}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
+            {/* General Service Allocation Requests (Existing) */}
+            <div style={{ display: "grid", gap: "14px", marginTop: "12px", borderTop: "1px solid #e2e8f0", paddingTop: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, margin: "0 0 2px" }}>Other Service Requests</h3>
+                  <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>General inventory allocations and ad-hoc supplier tasks.</p>
+                </div>
+              </div>
 
             {requests.length === 0 ? (
               <div style={{ background: "#ffffff", padding: "48px", borderRadius: "16px", border: "1px solid #e2e8f0", textAlign: "center", color: "#64748b" }}>
@@ -1985,6 +2358,7 @@ export function VendorPortalPage() {
                 ))}
               </div>
             )}
+            </div>
           </div>
         )}
 
@@ -2707,6 +3081,464 @@ export function VendorPortalPage() {
                 </button>
                 <button type="submit" disabled={savingInvoice} style={{ background: "#0f172a", color: "#ffffff", border: "none", padding: "8px 18px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
                   {savingInvoice ? "Submitting..." : "Submit Invoice"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Trip Fulfillment Arrangement Modal */}
+      {arrangingTask && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              if (window.confirm("Discard changes to arrangement details?")) setArrangingTask(null);
+            }
+          }}
+          style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.65)", backdropFilter: "blur(4px)", display: "grid", placeItems: "center", zIndex: 110, padding: "20px" }}
+        >
+          <div
+            id="vendor-arrangement-modal"
+            style={{
+              background: "#ffffff",
+              borderRadius: "18px",
+              maxWidth: "680px",
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              padding: "26px",
+              position: "relative",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "14px", marginBottom: "18px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#0f172a", color: "#ffffff", display: "grid", placeItems: "center" }}>
+                  {(arrangingTask.componentType || "").toUpperCase() === "HOTEL" ? <Hotel size={18} /> : (arrangingTask.componentType || "").toUpperCase() === "CAB" ? <Car size={18} /> : <FileText size={18} />}
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 800 }}>
+                    Fill Arrangement Details — {arrangingTask.componentType}
+                  </h3>
+                  <span style={{ fontSize: "12px", color: "#64748b" }}>
+                    Booking Ref: {arrangingTask.bookingRef || "—"} • {arrangingTask.destination || "Kashmir"}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                aria-label="Close modal"
+                onClick={() => {
+                  if (window.confirm("Discard changes to arrangement details?")) setArrangingTask(null);
+                }}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "6px", borderRadius: "50%", color: "#64748b" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Confidential Dispatch Context Banner */}
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "12px 14px", marginBottom: "18px", fontSize: "12px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "8px" }}>
+                <div><span style={{ color: "#64748b" }}>Travel Date:</span> <strong>{arrangingTask.travelDate || "Scheduled Date"}</strong></div>
+                <div><span style={{ color: "#64748b" }}>Guests:</span> <strong>{arrangingTask.totalTravellers} Travellers ({arrangingTask.adultsCount || 1} Adults, {arrangingTask.childrenCount || 0} Children)</strong></div>
+              </div>
+              {arrangingTask.tripRequirements && (
+                <div style={{ color: "#475569", marginBottom: "6px" }}>
+                  <strong>Trip Requirements:</strong> {arrangingTask.tripRequirements}
+                </div>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#166534", background: "#f0fdf4", padding: "6px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: 600 }}>
+                <ShieldCheck size={14} color="#16a34a" />
+                <span>Confidential Dispatch: Customer contact details are handled exclusively by Zelevos Operations.</span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmitArrangement} style={{ display: "grid", gap: "14px" }}>
+              {/* 1. HOTEL FORM */}
+              {(arrangingTask.componentType || "").toUpperCase() === "HOTEL" && (
+                <>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                      Hotel / Resort Name *
+                    </label>
+                    <input
+                      type="text"
+                      id="vendor-hotel-name-input"
+                      required
+                      placeholder="e.g. The Grand Dragon Hotel & Suites"
+                      value={arrangementForm.hotelName || ""}
+                      onChange={(e) => {
+                        setArrangementForm({ ...arrangementForm, hotelName: e.target.value });
+                        if (arrangementErrors.hotelName) setArrangementErrors({ ...arrangementErrors, hotelName: "" });
+                      }}
+                      style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: `1px solid ${arrangementErrors.hotelName ? "#dc2626" : "#cbd5e1"}`, fontSize: "13px" }}
+                    />
+                    {arrangementErrors.hotelName && <span style={{ color: "#dc2626", fontSize: "11px", marginTop: "2px", display: "block" }}>{arrangementErrors.hotelName}</span>}
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                      Full Property Address * (Used for Google Maps & Voucher)
+                    </label>
+                    <input
+                      type="text"
+                      id="vendor-hotel-address-input"
+                      required
+                      placeholder="e.g. Boulevard Road, Opposite Ghat No. 7, Dal Lake, Srinagar, Kashmir 190001"
+                      value={arrangementForm.fullAddress || ""}
+                      onChange={(e) => {
+                        setArrangementForm({ ...arrangementForm, fullAddress: e.target.value });
+                        if (arrangementErrors.fullAddress) setArrangementErrors({ ...arrangementErrors, fullAddress: "" });
+                      }}
+                      style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: `1px solid ${arrangementErrors.fullAddress ? "#dc2626" : "#cbd5e1"}`, fontSize: "13px" }}
+                    />
+                    {arrangementErrors.fullAddress && <span style={{ color: "#dc2626", fontSize: "11px", marginTop: "2px", display: "block" }}>{arrangementErrors.fullAddress}</span>}
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Hotel Front Desk Phone
+                      </label>
+                      <input
+                        type="text"
+                        id="vendor-hotel-phone-input"
+                        placeholder="e.g. +91 98765 43210 or 01942456789"
+                        value={arrangementForm.hotelPhone || ""}
+                        onChange={(e) => {
+                          setArrangementForm({ ...arrangementForm, hotelPhone: e.target.value });
+                          if (arrangementErrors.hotelPhone) setArrangementErrors({ ...arrangementErrors, hotelPhone: "" });
+                        }}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: `1px solid ${arrangementErrors.hotelPhone ? "#dc2626" : "#cbd5e1"}`, fontSize: "13px" }}
+                      />
+                      {arrangementErrors.hotelPhone && <span style={{ color: "#dc2626", fontSize: "11px", marginTop: "2px", display: "block" }}>{arrangementErrors.hotelPhone}</span>}
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Room Category / Type
+                      </label>
+                      <input
+                        type="text"
+                        id="vendor-hotel-room-type-input"
+                        placeholder="e.g. Deluxe Valley View Room"
+                        value={arrangementForm.roomType || ""}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, roomType: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Number of Rooms
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={arrangementForm.numberOfRooms || 1}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, numberOfRooms: Number(e.target.value) })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Check-in Time
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="14:00"
+                        value={arrangementForm.checkInTime || "14:00"}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, checkInTime: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Check-out Time
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="11:00"
+                        value={arrangementForm.checkOutTime || "11:00"}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, checkOutTime: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Meal Plan
+                      </label>
+                      <select
+                        value={arrangementForm.mealPlan || "CP (Breakfast Included)"}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, mealPlan: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", background: "#ffffff" }}
+                      >
+                        <option value="CP (Breakfast Included)">CP (Breakfast Included)</option>
+                        <option value="MAP (Breakfast + Dinner)">MAP (Breakfast + Dinner)</option>
+                        <option value="AP (All Meals Included)">AP (All Meals Included)</option>
+                        <option value="EP (Room Only)">EP (Room Only)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Hotel Confirmation / Booking Ref
+                      </label>
+                      <input
+                        type="text"
+                        id="vendor-hotel-conf-input"
+                        placeholder="e.g. HTL-KSH-8821"
+                        value={arrangementForm.confirmationNumber || ""}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, confirmationNumber: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* 2. CAB / TRANSFER FORM */}
+              {(arrangingTask.componentType || "").toUpperCase() === "CAB" && (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Assigned Chauffeur / Driver Name *
+                      </label>
+                      <input
+                        type="text"
+                        id="vendor-driver-name-input"
+                        required
+                        placeholder="e.g. Tariq Ahmad Bhat"
+                        value={arrangementForm.driverName || ""}
+                        onChange={(e) => {
+                          setArrangementForm({ ...arrangementForm, driverName: e.target.value });
+                          if (arrangementErrors.driverName) setArrangementErrors({ ...arrangementErrors, driverName: "" });
+                        }}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: `1px solid ${arrangementErrors.driverName ? "#dc2626" : "#cbd5e1"}`, fontSize: "13px" }}
+                      />
+                      {arrangementErrors.driverName && <span style={{ color: "#dc2626", fontSize: "11px", marginTop: "2px", display: "block" }}>{arrangementErrors.driverName}</span>}
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Driver Mobile Phone Number * (10-digit Indian Number)
+                      </label>
+                      <input
+                        type="text"
+                        id="vendor-driver-phone-input"
+                        required
+                        placeholder="e.g. 9876543210 or +919876543210"
+                        value={arrangementForm.driverPhone || ""}
+                        onChange={(e) => {
+                          setArrangementForm({ ...arrangementForm, driverPhone: e.target.value });
+                          if (arrangementErrors.driverPhone) setArrangementErrors({ ...arrangementErrors, driverPhone: "" });
+                        }}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: `1px solid ${arrangementErrors.driverPhone ? "#dc2626" : "#cbd5e1"}`, fontSize: "13px" }}
+                      />
+                      {arrangementErrors.driverPhone && <span style={{ color: "#dc2626", fontSize: "11px", marginTop: "2px", display: "block" }}>{arrangementErrors.driverPhone}</span>}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Vehicle Model / Make
+                      </label>
+                      <input
+                        type="text"
+                        id="vendor-vehicle-model-input"
+                        placeholder="e.g. Toyota Innova Crysta / Ertiga"
+                        value={arrangementForm.vehicleModel || "Toyota Innova Crysta"}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, vehicleModel: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Vehicle Registration Number * (e.g. JK01AB1234)
+                      </label>
+                      <input
+                        type="text"
+                        id="vendor-vehicle-reg-input"
+                        required
+                        placeholder="e.g. JK01AB1234"
+                        value={arrangementForm.vehicleRegistrationNumber || ""}
+                        onChange={(e) => {
+                          setArrangementForm({ ...arrangementForm, vehicleRegistrationNumber: e.target.value.toUpperCase() });
+                          if (arrangementErrors.vehicleRegistrationNumber) setArrangementErrors({ ...arrangementErrors, vehicleRegistrationNumber: "" });
+                        }}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: `1px solid ${arrangementErrors.vehicleRegistrationNumber ? "#dc2626" : "#cbd5e1"}`, fontSize: "13px", fontFamily: "monospace", fontWeight: 700 }}
+                      />
+                      {arrangementErrors.vehicleRegistrationNumber && <span style={{ color: "#dc2626", fontSize: "11px", marginTop: "2px", display: "block" }}>{arrangementErrors.vehicleRegistrationNumber}</span>}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Pickup Point
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Srinagar Airport (SXR)"
+                        value={arrangementForm.pickupPoint || "Srinagar Airport (SXR)"}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, pickupPoint: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Pickup Date & Time
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Arrival Day 10:00 AM"
+                        value={arrangementForm.pickupDateTime || ""}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, pickupDateTime: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                      Drop Point / Tour Circuit Covered
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Full Circuit (Srinagar - Gulmarg - Pahalgam - Airport Drop)"
+                      value={arrangementForm.dropPoint || "Full Circuit (Srinagar - Gulmarg - Pahalgam - Airport Drop)"}
+                      onChange={(e) => setArrangementForm({ ...arrangementForm, dropPoint: e.target.value })}
+                      style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* 3. GUIDE / TOUR FORM */}
+              {(arrangingTask.componentType || "").toUpperCase() === "GUIDE" && (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Tour Guide Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Bilal Ahmad Lone"
+                        value={arrangementForm.guideName || ""}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, guideName: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Guide Contact Phone
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 9876543210"
+                        value={arrangementForm.phone || ""}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, phone: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Languages Spoken
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. English, Hindi, Kashmiri"
+                        value={arrangementForm.languages || "English, Hindi"}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, languages: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                        Meeting Point & Time
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Hotel Lobby 09:30 AM"
+                        value={arrangementForm.meetingPoint || "Hotel Lobby 09:30 AM"}
+                        onChange={(e) => setArrangementForm({ ...arrangementForm, meetingPoint: e.target.value })}
+                        style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* 4. GENERIC / OTHER FORMS */}
+              {["HOTEL", "CAB", "GUIDE"].indexOf((arrangingTask.componentType || "").toUpperCase()) === -1 && (
+                <div>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                    Arrangement Details & Confirmation Notes
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Enter confirmed supplier details, contacts, locations..."
+                    value={JSON.stringify(arrangementForm, null, 2)}
+                    onChange={(e) => {
+                      try {
+                        setArrangementForm(JSON.parse(e.target.value));
+                      } catch {
+                        // ignore parse err while typing
+                      }
+                    }}
+                    style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "12px", fontFamily: "monospace" }}
+                  />
+                </div>
+              )}
+
+              {/* Modal Buttons */}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "14px" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm("Discard changes to arrangement details?")) setArrangingTask(null);
+                  }}
+                  style={{ background: "#f1f5f9", border: "none", padding: "9px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer", color: "#475569" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  id="vendor-submit-arrangement-btn"
+                  disabled={submittingArrangement}
+                  style={{
+                    background: "#0f172a",
+                    color: "#ffffff",
+                    border: "none",
+                    padding: "9px 22px",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    cursor: submittingArrangement ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  {submittingArrangement ? "Submitting to Admin..." : "Submit Arrangement to Operations"}
                 </button>
               </div>
             </form>

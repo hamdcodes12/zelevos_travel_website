@@ -62,6 +62,7 @@ import { AdminBroadcastsTab } from "../components/admin-broadcasts-tab";
 import { AdminDestinationsTab } from "../components/admin-destinations-tab";
 import { AdminReportsTab } from "../components/admin-reports-tab";
 import { AdminUserDossierModal } from "../components/admin-user-dossier-modal";
+import { AdminTripFulfillment } from "../components/admin-trip-fulfillment";
 import { PasswordInput } from "@/components/ui/password-input";
 
 type AdminProfile = {
@@ -3750,6 +3751,21 @@ export function AdminPage() {
                   <ShieldCheck size={13} /> Official Receipt & Tax Invoice ↗
                 </a>
               </div>
+
+              {/* Trip Fulfillment Section (Phase 11) */}
+              <AdminTripFulfillment
+                bookingId={selectedBookingDetail.id}
+                bookingRef={selectedBookingDetail.bookingId || selectedBookingDetail.bookingReference || "ZL-TRIP"}
+                destination={selectedBookingDetail.locations?.[0] || selectedBookingDetail.specialRequests || "Kashmir"}
+                isPaid={
+                  selectedBookingDetail.paymentStatus === "CAPTURED" ||
+                  selectedBookingDetail.paymentStatus === "SUCCESSFUL" ||
+                  selectedBookingDetail.paymentStatus === "PAID" ||
+                  selectedBookingDetail.status === "CONFIRMED" ||
+                  selectedBookingDetail.status === "PAID"
+                }
+                onToast={showToast}
+              />
 
               {/* Live Timeline & Milestones */}
               {Array.isArray(selectedBookingDetail.timeline) && selectedBookingDetail.timeline.length > 0 && (

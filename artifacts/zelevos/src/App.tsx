@@ -72,6 +72,7 @@ import { GlobalSearchModal } from '@/components/global-search-modal';
 import { PartnerPortalPage } from '@/pages/partner-portal';
 import { BecomeSupplierPage } from '@/pages/become-supplier';
 import { VendorPortalPage } from '@/pages/vendor-portal';
+import { CustomerTripDetails } from '@/components/customer-trip-details';
 import { PasswordInput } from '@/components/ui/password-input';
 
 const queryClient = new QueryClient();
@@ -2841,6 +2842,9 @@ function MyTrips({
                     <strong>Cancellation & Refund Policy:</strong> Free cancellation within 24 hours of booking, or up to 7 days before departure. Refund requests processed within 48 hours.
                   </div>
                 </div>
+
+                {/* Confirmed Trip Fulfillment Arrangements */}
+                <CustomerTripDetails bookingId={selectedPackageTrip.bookingId || selectedPackageTrip.id} />
 
                 <div className="saved-trip-actions" style={{ marginTop: '16px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   <a

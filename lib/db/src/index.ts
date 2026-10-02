@@ -1000,6 +1000,46 @@ const DDL_MIGRATIONS = `
       counter := counter + 1;
     END LOOP;
   END $$;
+
+  -- Trip Fulfillment Tables (Phase 11)
+  CREATE TABLE IF NOT EXISTS trip_fulfillments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'DRAFT',
+    version INTEGER NOT NULL DEFAULT 1,
+    sent_at TIMESTAMPTZ,
+    sent_by TEXT,
+    pdf_path TEXT,
+    last_email_status TEXT,
+    last_email_error TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE INDEX IF NOT EXISTS trip_fulfillments_booking_id_idx ON trip_fulfillments(booking_id);
+  CREATE INDEX IF NOT EXISTS trip_fulfillments_status_idx ON trip_fulfillments(status);
+
+  CREATE TABLE IF NOT EXISTS trip_fulfillment_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fulfillment_id UUID NOT NULL REFERENCES trip_fulfillments(id) ON DELETE CASCADE,
+    component_type TEXT NOT NULL,
+    vendor_id UUID REFERENCES vendors(id) ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    day_number INTEGER NOT NULL DEFAULT 1,
+    sequence INTEGER NOT NULL DEFAULT 1,
+    title TEXT NOT NULL,
+    details JSONB NOT NULL DEFAULT '{}',
+    notes TEXT,
+    assigned_at TIMESTAMPTZ,
+    submitted_at TIMESTAMPTZ,
+    approved_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE INDEX IF NOT EXISTS trip_fulfillment_items_fulfillment_id_idx ON trip_fulfillment_items(fulfillment_id);
+  CREATE INDEX IF NOT EXISTS trip_fulfillment_items_vendor_id_idx ON trip_fulfillment_items(vendor_id);
+  CREATE INDEX IF NOT EXISTS trip_fulfillment_items_status_idx ON trip_fulfillment_items(status);
 `;
 
 /**
@@ -1071,24 +1111,62 @@ async function seedPlatformDefaults(execSql: (sql: string, params?: any[]) => Pr
     }
   }
 
-  // 3. Seed Vendors with Performance Metrics (Section 9)
+  // 3. Seed Vendors with Performance Metrics (Section 9 & Phase 11)
+  const defaultVendorPasswordHash = hashSeedPassword("Vendor@123");
   const sampleVendors = [
     { id: "VND-HIMALAYAN", name: "Himalayan Stays & Luxury Resorts", contact: "Tariq Ahmad", email: "vendor.himalayan@zelevos.partner", phone: "+91 98765 43210", cats: '["hotel"]', locs: '["Kashmir"]', acc: 98, resp: 25, canc: 1 },
-    { id: "VND-VALLEYCABS", name: "Valley Fleet & Transfers", contact: "Farooq Dar", email: "vendor.valleycabs@zelevos.partner", phone: "+91 98765 43211", cats: '["transfer"]', locs: '["Kashmir"]', acc: 95, resp: 35, canc: 2 },
-    { id: "VND-SHIKARA", name: "Dal Lake Heritage Guild", contact: "Bilal Lone", email: "vendor.shikara@zelevos.partner", phone: "+91 98765 43212", cats: '["activity"]', locs: '["Kashmir"]', acc: 99, resp: 15, canc: 0 },
-    { id: "VND-LADAKHEXP", name: "High Passes Expedition Co.", contact: "Tenzin Norbu", email: "vendor.ladakh@zelevos.partner", phone: "+91 98765 43213", cats: '["hotel","activity","transfer"]', locs: '["Ladakh"]', acc: 92, resp: 45, canc: 3 },
-    { id: "VND-RAJASTHAN", name: "Royal Rajputana Tours & Desert Safaris", contact: "Rathore Singh", email: "vendor.rajasthan@zelevos.partner", phone: "+91 98765 43214", cats: '["hotel","activity","transfer"]', locs: '["Rajasthan"]', acc: 96, resp: 35, canc: 1 },
+    { id: "VND-VALLEYCABS", name: "Valley Fleet & Transfers", contact: "Farooq Dar", email: "vendor.valleycabs@zelevos.partner", phone: "+91 98765 43211", cats: '["cab","transfer"]', locs: '["Kashmir"]', acc: 95, resp: 35, canc: 2 },
+    { id: "VND-SHIKARA", name: "Dal Lake Heritage Guild", contact: "Bilal Lone", email: "vendor.shikara@zelevos.partner", phone: "+91 98765 43212", cats: '["guide","activity"]', locs: '["Kashmir"]', acc: 99, resp: 15, canc: 0 },
+    { id: "VND-LADAKHEXP", name: "High Passes Expedition Co.", contact: "Tenzin Norbu", email: "vendor.ladakh@zelevos.partner", phone: "+91 98765 43213", cats: '["hotel","activity","cab","transfer"]', locs: '["Ladakh"]', acc: 92, resp: 45, canc: 3 },
+    { id: "VND-RAJASTHAN", name: "Royal Rajputana Tours & Desert Safaris", contact: "Rathore Singh", email: "vendor.rajasthan@zelevos.partner", phone: "+91 98765 43214", cats: '["hotel","activity","cab","transfer"]', locs: '["Rajasthan"]', acc: 96, resp: 35, canc: 1 },
   ];
 
   for (const v of sampleVendors) {
-    const existing = await execSql("SELECT id FROM vendors WHERE vendor_id = $1 LIMIT 1", [v.id]);
+    const existing = await execSql("SELECT id, temporary_password FROM vendors WHERE vendor_id = $1 LIMIT 1", [v.id]);
     const rows = existing?.rows || existing || [];
     if (rows.length === 0) {
       await execSql(
-        `INSERT INTO vendors (vendor_id, business_name, contact_name, email, phone, service_categories, operating_locations, approval_status, kyc_status, acceptance_rate, avg_response_minutes, cancellation_rate)
-         VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, 'approved', 'verified', $8, $9, $10)`,
-        [v.id, v.name, v.contact, v.email, v.phone, v.cats, v.locs, v.acc, v.resp, v.canc]
+        `INSERT INTO vendors (vendor_id, business_name, contact_name, email, phone, service_categories, operating_locations, approval_status, status, kyc_status, temporary_password, acceptance_rate, avg_response_minutes, cancellation_rate)
+         VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, 'approved', 'APPROVED', 'verified', $8, $9, $10, $11)`,
+        [v.id, v.name, v.contact, v.email, v.phone, v.cats, v.locs, defaultVendorPasswordHash, v.acc, v.resp, v.canc]
       );
+    } else {
+      await execSql(
+        `UPDATE vendors SET service_categories = $1::jsonb, operating_locations = $2::jsonb, approval_status = 'approved', status = 'APPROVED', temporary_password = COALESCE(temporary_password, $3)
+         WHERE vendor_id = $4`,
+        [v.cats, v.locs, defaultVendorPasswordHash, v.id]
+      );
+    }
+  }
+
+  // 3b. Seed Vendor Services Catalog (Phase 11 Trip Fulfillment)
+  const sampleServices = [
+    { vendorId: "VND-HIMALAYAN", type: "hotel", title: "Grand Himalayan Pine & Spa Luxury Suite", loc: "Kashmir", rate: 6500 },
+    { vendorId: "VND-VALLEYCABS", type: "cab", title: "Private Chauffeur Sedan & Airport Transfer", loc: "Kashmir", rate: 3500 },
+    { vendorId: "VND-SHIKARA", type: "guide", title: "Heritage Dal Lake & Mughal Gardens Guide Tour", loc: "Kashmir", rate: 1800 },
+    { vendorId: "VND-LADAKHEXP", type: "hotel", title: "Nubra Dunes Luxury Glamping", loc: "Ladakh", rate: 5500 },
+    { vendorId: "VND-LADAKHEXP", type: "cab", title: "High Mountain Pass 4x4 SUV", loc: "Ladakh", rate: 4500 },
+    { vendorId: "VND-RAJASTHAN", type: "hotel", title: "Heritage Haveli Palace Stay", loc: "Rajasthan", rate: 4800 },
+    { vendorId: "VND-RAJASTHAN", type: "cab", title: "Royal Chauffeur AC SUV", loc: "Rajasthan", rate: 3200 },
+  ];
+
+  for (const svc of sampleServices) {
+    const vRes = await execSql("SELECT id FROM vendors WHERE vendor_id = $1 LIMIT 1", [svc.vendorId]);
+    const vRows = vRes?.rows || vRes || [];
+    const vendorUuid = vRows[0]?.id;
+    if (vendorUuid) {
+      const existingSvc = await execSql(
+        "SELECT id FROM vendor_services WHERE vendor_id = $1 AND service_type = $2 AND title = $3 LIMIT 1",
+        [vendorUuid, svc.type, svc.title]
+      );
+      const svcRows = existingSvc?.rows || existingSvc || [];
+      if (svcRows.length === 0) {
+        await execSql(
+          `INSERT INTO vendor_services (vendor_id, service_type, title, location, rate, capacity, availability, status)
+           VALUES ($1, $2, $3, $4, $5, 2, 'Available', 'active')`,
+          [vendorUuid, svc.type, svc.title, svc.loc, svc.rate]
+        );
+      }
     }
   }
 
