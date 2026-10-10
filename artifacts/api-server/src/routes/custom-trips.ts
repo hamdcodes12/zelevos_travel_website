@@ -1,4 +1,8 @@
 import { Router, type IRouter } from "express";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import multer from "multer";
 import { z } from "zod/v4";
 import { and, eq, desc, or } from "drizzle-orm";
 import {
@@ -10,7 +14,7 @@ import {
   notificationsTable,
   partnersTable,
 } from "@workspace/db";
-import { requireAuth } from "../middlewares/authMiddleware";
+import { requireAuth, requireAuthOrAdmin } from "../middlewares/authMiddleware";
 import { requireRole } from "../middlewares/rbac";
 import { logAuditAction } from "../services/booking-engine";
 import { dispatchMultiChannelNotification } from "../services/email-service";
@@ -18,27 +22,299 @@ import { generateMasterBookingId } from "../services/booking-engine";
 
 const router: IRouter = Router();
 
+// Dedicated secure storage directory for custom trip attachments
+const UPLOAD_DIR = path.resolve(process.cwd(), "artifacts", "api-server", "uploads", "custom-trips");
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
+/**
+ * Sniffs magic bytes to verify file format authenticity (prevents disguised files)
+ */
+function sniffDocumentType(buf: Buffer): string | null {
+  if (!buf || buf.length < 4) return null;
+  // PDF: %PDF (0x25 0x50 0x44 0x46)
+  if (buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) {
+    return "application/pdf";
+  }
+  // JPEG: FF D8 FF
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+    return "image/jpeg";
+  }
+  // PNG: 89 50 4E 47
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+    return "image/png";
+  }
+  // WEBP: RIFF....WEBP
+  if (
+    buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 &&
+    buf.length >= 12 &&
+    buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50
+  ) {
+    return "image/webp";
+  }
+  // DOCX / ZIP: PK.. (0x50 0x4B 0x03 0x04)
+  if (buf[0] === 0x50 && buf[1] === 0x4b && (buf[2] === 0x03 || buf[2] === 0x05) && (buf[3] === 0x04 || buf[3] === 0x06)) {
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
+  return null;
+}
+
+const customTripUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+});
+
+/**
+ * POST /api/custom-trips/upload-document
+ * Authenticated customer or operations staff uploads an attachment.
+ * Validates file size (max 10MB) and file magic bytes.
+ */
+router.post("/custom-trips/upload-document", requireAuthOrAdmin, customTripUpload.single("file"), async (req, res): Promise<void> => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ status: "invalid_request", message: "No document file was provided for upload." });
+      return;
+    }
+
+    const buffer = req.file.buffer;
+    const detectedMime = sniffDocumentType(buffer);
+    if (!detectedMime) {
+      res.status(400).json({
+        status: "invalid_file_type",
+        message: "Invalid or corrupt file signature. Allowed formats are PDF, PNG, JPG, WEBP, and DOCX.",
+      });
+      return;
+    }
+    const finalMime = detectedMime;
+
+    const docId = crypto.randomUUID();
+    let ext = "bin";
+    if (finalMime === "application/pdf") ext = "pdf";
+    else if (finalMime === "image/jpeg") ext = "jpg";
+    else if (finalMime === "image/png") ext = "png";
+    else if (finalMime === "image/webp") ext = "webp";
+    else if (finalMime.includes("wordprocessingml") || finalMime.includes("msword")) ext = "docx";
+
+    const diskFileName = `${docId}.${ext}`;
+    const diskFilePath = path.join(UPLOAD_DIR, diskFileName);
+    fs.writeFileSync(diskFilePath, buffer);
+
+    const metadata = {
+      id: docId,
+      fileName: req.file.originalname,
+      diskFileName,
+      fileType: finalMime,
+      fileSize: req.file.size,
+      fileUrl: `/api/custom-trips/documents/${docId}/view`,
+      uploadedAt: new Date().toISOString(),
+      userId: req.user?.id || (req as any).admin?.id || null,
+    };
+
+    const metaFilePath = path.join(UPLOAD_DIR, `${docId}.meta.json`);
+    fs.writeFileSync(metaFilePath, JSON.stringify(metadata, null, 2), "utf8");
+
+    res.status(201).json({
+      status: "success",
+      message: "Document uploaded successfully.",
+      document: {
+        id: docId,
+        fileName: req.file.originalname,
+        fileType: finalMime,
+        fileSize: req.file.size,
+        fileUrl: `/api/custom-trips/documents/${docId}/view`,
+        uploadedAt: metadata.uploadedAt,
+      },
+    });
+  } catch (error: any) {
+    req.log?.error ? req.log.error({ err: error }, "Document upload failed") : console.error(error);
+    res.status(500).json({ status: "error", message: "Failed to upload document. Please try again." });
+  }
+});
+
+/**
+ * GET /api/custom-trips/documents/:docId/view
+ * GET /api/custom-trips/documents/:docId/download
+ * GET /api/custom-trips/documents/file/:docId
+ * Secure access: Staff (admin/operations) or Owner of the document can view/download.
+ * Unauthorized access is strictly denied (IDOR protection).
+ */
+router.get(
+  ["/custom-trips/documents/:docId/view", "/custom-trips/documents/:docId/download", "/custom-trips/documents/file/:docId"],
+  requireAuthOrAdmin,
+  async (req, res): Promise<void> => {
+    const docId = String(req.params.docId || "").replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!docId) {
+      res.status(400).json({ status: "invalid_request", message: "Document ID required." });
+      return;
+    }
+
+    const isStaff = Boolean((req as any).admin) || req.user?.role === "admin" || req.user?.role === "operations_manager" || req.user?.role === "booking_executive";
+    const userId = req.user?.id;
+
+    // Find metadata
+    const metaFilePath = path.join(UPLOAD_DIR, `${docId}.meta.json`);
+    let meta: any = null;
+    if (fs.existsSync(metaFilePath)) {
+      try {
+        meta = JSON.parse(fs.readFileSync(metaFilePath, "utf8"));
+      } catch {
+        meta = null;
+      }
+    }
+
+    // If not staff, verify ownership
+    if (!isStaff) {
+      let authorized = false;
+      if (meta && userId && meta.userId === userId) {
+        authorized = true;
+      } else if (userId) {
+        // Search custom trip requests owned by this user
+        const userRequests = await db
+          .select({ documents: customTripRequestsTable.documents })
+          .from(customTripRequestsTable)
+          .where(eq(customTripRequestsTable.userId, userId));
+
+        for (const r of userRequests) {
+          const docs = Array.isArray(r.documents) ? r.documents : [];
+          if (docs.some((d: any) => d.id === docId)) {
+            authorized = true;
+            break;
+          }
+        }
+      }
+
+      if (!authorized) {
+        res.status(403).json({ status: "forbidden", message: "You are not authorized to view this document." });
+        return;
+      }
+    }
+
+    // Find the actual file on disk
+    const extMatch = ["pdf", "jpg", "png", "webp", "docx", "bin"];
+    let foundFile: string | null = null;
+    for (const ext of extMatch) {
+      const p = path.join(UPLOAD_DIR, `${docId}.${ext}`);
+      if (fs.existsSync(p)) {
+        foundFile = p;
+        break;
+      }
+    }
+
+    if (!foundFile) {
+      res.status(404).json({ status: "not_found", message: "Document file not found." });
+      return;
+    }
+
+    const mimeType = meta?.fileType || "application/octet-stream";
+    const originalName = meta?.fileName || `document-${docId}`;
+    const isDownload = req.url.includes("/download") || req.query.download === "true";
+
+    res.setHeader("Content-Type", mimeType);
+    res.setHeader(
+      "Content-Disposition",
+      `${isDownload ? "attachment" : "inline"}; filename="${encodeURIComponent(originalName)}"`
+    );
+    res.setHeader("Cache-Control", "private, no-cache, no-store, must-revalidate");
+
+    const stream = fs.createReadStream(foundFile);
+    stream.pipe(res);
+  }
+);
+
 /**
  * POST /api/custom-trips
  * Customer submits "Build My Trip" custom vacation request (Section 21).
  * Security: Customer ID / User ID is strictly derived from the authenticated session.
+ * Fully supports all 40 travel requirement fields with smart defaults & persistence.
  */
 router.post("/custom-trips", requireAuth, async (req, res) => {
   const schema = z.object({
     customerName: z.string().trim().min(2, "Name is required"),
     customerEmail: z.string().trim().email("Valid email required"),
     customerPhone: z.string().trim().min(8, "Phone number required"),
-    destinations: z.array(z.string().trim()).min(1, "Select at least one destination"),
+    startingLocation: z.string().trim().optional(),
+    destination: z.string().trim().optional(),
+    destinations: z.union([z.array(z.string().trim()), z.string().trim()]).transform((val) => {
+      if (Array.isArray(val)) return val.filter(Boolean);
+      return val ? [val] : [];
+    }).default([]),
     datesFlexible: z.boolean().default(false),
     startDate: z.string().optional(),
+    travelDate: z.string().optional(),
     endDate: z.string().optional(),
+    returnDate: z.string().optional(),
     durationDays: z.number().int().positive().optional(),
     travellersCount: z.number().int().positive().default(2),
+    adultsCount: z.number().int().nonnegative().optional(),
+    childrenCount: z.number().int().nonnegative().optional(),
+    infantsCount: z.number().int().nonnegative().optional(),
+    budget: z.number().int().positive().optional(),
+    budgetRange: z.string().trim().optional(),
     budgetPerPerson: z.number().int().positive().optional(),
-    hotelPreference: z.string().default("4 Star / Boutique"),
-    transportPreference: z.string().default("Private Cab"),
-    activitiesInterests: z.array(z.string()).default([]),
+    stayPreference: z.string().trim().optional(),
+    hotelPreference: z.string().trim().default("4 Star / Boutique"),
+    hotelCategory: z.string().trim().optional(),
+    roomType: z.string().trim().optional(),
+    roomsCount: z.number().int().positive().default(1),
+    transportPreference: z.string().trim().default("Private Cab"),
+    transportTypes: z.array(z.string().trim()).default([]),
+    flightPreference: z.object({
+      required: z.boolean().optional(),
+      class: z.string().optional(),
+      preferredAirline: z.string().optional(),
+      departureAirport: z.string().optional(),
+      arrivalAirport: z.string().optional(),
+      notes: z.string().optional(),
+    }).optional(),
+    cabPreference: z.object({
+      required: z.boolean().optional(),
+      vehicleType: z.string().optional(),
+      airportPickup: z.boolean().optional(),
+      airportDrop: z.boolean().optional(),
+      localSightseeing: z.boolean().optional(),
+      daysNeeded: z.number().optional(),
+      notes: z.string().optional(),
+    }).optional(),
+    busPreference: z.object({
+      required: z.boolean().optional(),
+      seatingType: z.string().optional(),
+      notes: z.string().optional(),
+    }).optional(),
+    mealPreferences: z.object({
+      plans: z.array(z.string()).optional(),
+      dietType: z.string().optional(),
+      dietaryRestrictions: z.string().optional(),
+      foodAllergies: z.string().optional(),
+      breakfast: z.boolean().optional(),
+      lunch: z.boolean().optional(),
+      dinner: z.boolean().optional(),
+      allMeals: z.boolean().optional(),
+    }).optional(),
+    activitiesInterests: z.array(z.string().trim()).default([]),
+    accessibility: z.object({
+      required: z.boolean().optional(),
+      wheelchairAssistance: z.boolean().optional(),
+      details: z.string().optional(),
+    }).optional(),
+    travelInsurancePreference: z.boolean().default(false),
+    emergencyContact: z.object({
+      name: z.string().optional(),
+      relationship: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+    }).optional(),
     specialRequests: z.string().optional(),
+    documents: z.array(z.object({
+      id: z.string(),
+      fileName: z.string(),
+      fileType: z.string(),
+      fileSize: z.number(),
+      fileUrl: z.string(),
+      uploadedAt: z.string(),
+    })).default([]),
+    isTemplate: z.boolean().default(false),
+    templateName: z.string().optional(),
   });
 
   const parsed = schema.safeParse(req.body);
@@ -47,14 +323,34 @@ router.post("/custom-trips", requireAuth, async (req, res) => {
     return;
   }
 
+  const data = parsed.data;
   const now = new Date();
   const yy = String(now.getFullYear()).slice(-2);
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
   const leadNumber = `LEAD-${yy}${mm}${dd}-${Math.floor(100 + Math.random() * 900)}`;
 
-  const totalBudget = parsed.data.budgetPerPerson
-    ? parsed.data.budgetPerPerson * parsed.data.travellersCount
+  // Normalize destination array & primary destination string
+  let finalDestinations = data.destinations;
+  if (finalDestinations.length === 0 && data.destination) {
+    finalDestinations = [data.destination];
+  }
+  const primaryDestination = data.destination || finalDestinations[0] || "Custom Vacation";
+  if (finalDestinations.length === 0) {
+    finalDestinations = [primaryDestination];
+  }
+
+  const effectiveStartDate = data.startDate || data.travelDate || null;
+  const effectiveReturnDate = data.returnDate || data.endDate || null;
+  const effectiveAdultsCount = data.adultsCount !== undefined ? data.adultsCount : data.travellersCount;
+  const effectiveChildrenCount = data.childrenCount ?? 0;
+  const effectiveInfantsCount = data.infantsCount ?? 0;
+  const totalTravellers = effectiveAdultsCount + effectiveChildrenCount + effectiveInfantsCount || data.travellersCount;
+
+  const totalBudget = data.budget
+    ? data.budget
+    : data.budgetPerPerson
+    ? data.budgetPerPerson * totalTravellers
     : undefined;
 
   try {
@@ -71,21 +367,44 @@ router.post("/custom-trips", requireAuth, async (req, res) => {
         leadNumber,
         userId: req.user!.id,
         customerId,
-        customerName: parsed.data.customerName,
-        customerEmail: parsed.data.customerEmail,
-        customerPhone: parsed.data.customerPhone,
-        destinations: parsed.data.destinations,
-        datesFlexible: parsed.data.datesFlexible,
-        startDate: parsed.data.startDate,
-        endDate: parsed.data.endDate,
-        durationDays: parsed.data.durationDays,
-        travellersCount: parsed.data.travellersCount,
-        budgetPerPerson: parsed.data.budgetPerPerson,
+        customerName: data.customerName,
+        customerEmail: data.customerEmail,
+        customerPhone: data.customerPhone,
+        startingLocation: data.startingLocation || null,
+        destination: primaryDestination,
+        destinations: finalDestinations,
+        datesFlexible: data.datesFlexible,
+        startDate: effectiveStartDate,
+        endDate: effectiveReturnDate,
+        returnDate: effectiveReturnDate,
+        durationDays: data.durationDays,
+        travellersCount: totalTravellers,
+        adultsCount: effectiveAdultsCount,
+        childrenCount: effectiveChildrenCount,
+        infantsCount: effectiveInfantsCount,
+        budget: totalBudget,
+        budgetRange: data.budgetRange || null,
+        budgetPerPerson: data.budgetPerPerson,
         totalBudget,
-        hotelPreference: parsed.data.hotelPreference,
-        transportPreference: parsed.data.transportPreference,
-        activitiesInterests: parsed.data.activitiesInterests,
-        specialRequests: parsed.data.specialRequests,
+        stayPreference: data.stayPreference || null,
+        hotelPreference: data.hotelPreference,
+        hotelCategory: data.hotelCategory || data.hotelPreference || null,
+        roomType: data.roomType || null,
+        roomsCount: data.roomsCount,
+        transportPreference: data.transportPreference,
+        transportTypes: data.transportTypes,
+        flightPreference: data.flightPreference || null,
+        cabPreference: data.cabPreference || null,
+        busPreference: data.busPreference || null,
+        mealPreferences: data.mealPreferences || null,
+        activitiesInterests: data.activitiesInterests,
+        accessibility: data.accessibility || null,
+        travelInsurancePreference: data.travelInsurancePreference,
+        emergencyContact: data.emergencyContact || null,
+        specialRequests: data.specialRequests,
+        documents: data.documents,
+        isTemplate: data.isTemplate,
+        templateName: data.templateName || null,
         status: "NEW",
       })
       .returning();
@@ -95,34 +414,34 @@ router.post("/custom-trips", requireAuth, async (req, res) => {
       resourceType: "custom_trip_request",
       resourceId: request.id,
       actorUserId: req.user?.id,
-      actorName: parsed.data.customerName,
-      newValue: { leadNumber, customerId, destinations: parsed.data.destinations, totalBudget },
+      actorName: data.customerName,
+      newValue: { leadNumber, customerId, destinations: finalDestinations, totalBudget, documentsCount: data.documents.length },
     });
 
     // In-app notification for the customer
     try {
       await db.insert(notificationsTable).values({
         userId: req.user!.id,
-        recipientEmail: parsed.data.customerEmail,
+        recipientEmail: data.customerEmail,
         type: "BOOKING_RECEIVED",
         category: "BOOKING",
         title: "Custom Trip Request Received",
-        body: `We received your custom vacation request for ${parsed.data.destinations.join(", ")}. Reference: ${leadNumber}. A dedicated Zelevos specialist will curate a handcrafted proposal for you within 24 hours.`,
+        body: `We received your custom vacation request for ${finalDestinations.join(", ")}. Reference: ${leadNumber}. A dedicated Zelevos specialist will curate a handcrafted proposal for you within 24 hours.`,
         actionButton: "View Requests",
         actionUrl: "/trips",
         channel: "in_app",
         status: "SENT",
-        metadata: { leadNumber, destinations: parsed.data.destinations },
+        metadata: { leadNumber, destinations: finalDestinations },
       });
     } catch (_) { /* non-critical */ }
 
     // Multi-channel email notification
     await dispatchMultiChannelNotification({
       type: "BOOKING_RECEIVED",
-      recipientEmail: parsed.data.customerEmail,
-      customerName: parsed.data.customerName,
+      recipientEmail: data.customerEmail,
+      customerName: data.customerName,
       bookingId: leadNumber,
-      message: `We received your custom vacation request for ${parsed.data.destinations.join(", ")}. A dedicated Zelevos destination specialist will curate a handcrafted proposal for you within 24 hours.`,
+      message: `We received your custom vacation request for ${finalDestinations.join(", ")}. A dedicated Zelevos destination specialist will curate a handcrafted proposal for you within 24 hours.`,
     });
 
     res.status(201).json({
@@ -293,6 +612,115 @@ router.get("/admin/custom-trips", requireRole(["admin", "operations_manager", "b
     res.json({ status: "success", count: leads.length, leads });
   } catch (error) {
     res.status(500).json({ status: "error", message: error instanceof Error ? error.message : "Failed to load custom trip leads." });
+  }
+});
+
+/**
+ * PATCH /api/admin/custom-trips/:id/status
+ * PATCH /api/admin/custom-trips/:id
+ * Operations & Admin team updates status, assigns personnel, and logs internal notes.
+ * RBAC protected. Dispatches customer notification when key milestones are updated.
+ */
+router.patch(["/admin/custom-trips/:id/status", "/admin/custom-trips/:id"], requireRole(["admin", "operations_manager", "booking_executive"]), async (req, res): Promise<void> => {
+  const id = typeof req.params.id === "string" ? req.params.id : String(req.params.id || "");
+  const statusSchema = z.object({
+    status: z.enum([
+      "NEW",
+      "REVIEWING",
+      "CONTACTED",
+      "PLANNING",
+      "QUOTATION_SENT",
+      "CONFIRMED",
+      "IN_PROGRESS",
+      "COMPLETED",
+      "CANCELLED",
+    ]).optional(),
+    assignedTo: z.string().trim().optional(),
+    internalNotes: z.string().trim().optional(),
+  });
+
+  const parsed = statusSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ status: "invalid_request", message: "Invalid status parameters.", errors: parsed.error.issues });
+    return;
+  }
+
+  try {
+    const [existing] = await db.select().from(customTripRequestsTable).where(eq(customTripRequestsTable.id, id)).limit(1);
+    if (!existing) {
+      res.status(404).json({ status: "not_found", message: "Custom trip request not found." });
+      return;
+    }
+
+    const now = new Date();
+    const adminActor = (req as any).admin?.adminId || (req as any).user?.fullName || "Operations Specialist";
+    const updateData: any = { updatedAt: now };
+
+    if (parsed.data.status !== undefined) {
+      updateData.status = parsed.data.status;
+    }
+    if (parsed.data.assignedTo !== undefined) {
+      updateData.assignedTo = parsed.data.assignedTo;
+    }
+    if (parsed.data.internalNotes !== undefined) {
+      const noteLine = `[${now.toLocaleDateString("en-IN")} ${now.toLocaleTimeString("en-IN")}] ${adminActor}: ${parsed.data.internalNotes}`;
+      updateData.internalNotes = existing.internalNotes ? `${existing.internalNotes}\n${noteLine}` : noteLine;
+    }
+
+    const [updated] = await db
+      .update(customTripRequestsTable)
+      .set(updateData)
+      .where(eq(customTripRequestsTable.id, id))
+      .returning();
+
+    await logAuditAction({
+      action: "CUSTOM_TRIP_STATUS_UPDATED",
+      resourceType: "custom_trip_request",
+      resourceId: existing.id,
+      actorAdminId: (req as any).admin?.id,
+      actorRole: "admin",
+      previousValue: { status: existing.status, assignedTo: existing.assignedTo },
+      newValue: updateData,
+    });
+
+    if (parsed.data.status && existing.userId && parsed.data.status !== existing.status) {
+      try {
+        const statusLabels: Record<string, string> = {
+          REVIEWING: "Your custom trip request is being reviewed by our destinations desk.",
+          PLANNING: "Our travel designers are curating your custom itinerary proposal.",
+          QUOTATION_SENT: "Your custom trip itinerary & quotation is ready for review!",
+          CONFIRMED: "Your custom vacation itinerary has been confirmed!",
+          IN_PROGRESS: "Your custom journey is now in progress! Bon Voyage!",
+          COMPLETED: "Hope you had a wonderful journey! Your trip is now completed.",
+        };
+
+        if (statusLabels[parsed.data.status]) {
+          await db.insert(notificationsTable).values({
+            userId: existing.userId,
+            recipientEmail: existing.customerEmail,
+            type: "CUSTOM_TRIP_STATUS_UPDATE",
+            category: "SYSTEM",
+            title: `Trip Request: ${parsed.data.status.replace("_", " ")}`,
+            body: statusLabels[parsed.data.status],
+            actionButton: "View Itinerary",
+            actionUrl: `/trips`,
+            channel: "in_app",
+            status: "SENT",
+            metadata: { leadId: existing.id, status: parsed.data.status },
+          });
+        }
+      } catch (_) { /* non-critical */ }
+    }
+
+    res.json({
+      status: "success",
+      message: "Custom trip request updated successfully.",
+      lead: updated,
+      request: updated,
+    });
+  } catch (error: any) {
+    req.log?.error ? req.log.error({ err: error }, "Failed to update custom trip status") : console.error(error);
+    res.status(500).json({ status: "error", message: error.message || "Failed to update custom trip." });
   }
 });
 

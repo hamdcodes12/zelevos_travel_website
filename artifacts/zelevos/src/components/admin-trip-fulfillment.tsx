@@ -83,11 +83,13 @@ export function AdminTripFulfillment({
       if (res.ok && data.status === "success") {
         setFulfillment(data.fulfillment);
         setItems(data.items || []);
-        if (data.fulfillment?.lastEmailStatus === "FAILED") {
+        const isFailed = data.fulfillment?.emailStatus === "FAILED" || data.fulfillment?.lastEmailStatus === "FAILED";
+        if (isFailed) {
           setEmailFailedState(true);
-          setEmailErrorText(data.fulfillment?.lastEmailError || "Previous email delivery failed");
+          setEmailErrorText(data.fulfillment?.emailError || data.fulfillment?.lastEmailError || "Previous email delivery failed");
         } else {
           setEmailFailedState(false);
+          setEmailErrorText("");
         }
       }
     } catch (err: any) {
@@ -247,13 +249,15 @@ export function AdminTripFulfillment({
       });
       const data = await res.json();
       if (res.ok) {
-        if (data.emailFailed) {
+        if (data.emailFailed || data.fulfillment?.emailStatus === "FAILED") {
           setEmailFailedState(true);
-          setEmailErrorText(data.error || "Email delivery failed");
-          onToast("Saved, but email failed — Retry email");
+          const err = data.error || data.fulfillment?.emailError || "Email delivery failed";
+          setEmailErrorText(err);
+          onToast(`Saved, but email failed: ${err}`);
         } else {
           setEmailFailedState(false);
-          onToast(data.message || "Trip fulfillment sent to customer!");
+          setEmailErrorText("");
+          onToast(data.message || `Trip fulfillment sent to ${data.fulfillment?.emailSentTo || "customer"}!`);
         }
         loadFulfillment();
       } else {
@@ -274,12 +278,17 @@ export function AdminTripFulfillment({
         credentials: "include",
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.status === "success") {
         setEmailFailedState(false);
+        setEmailErrorText("");
         onToast(data.message || "Email delivered successfully.");
         loadFulfillment();
       } else {
-        onToast(data.message || "Retry email failed.");
+        setEmailFailedState(true);
+        const err = data.message || data.error || "Retry failed.";
+        setEmailErrorText(err);
+        onToast(`Email failed: ${err}`);
+        loadFulfillment();
       }
     } catch {
       onToast("Network error while retrying email.");
@@ -423,7 +432,61 @@ export function AdminTripFulfillment({
         </div>
       )}
 
-      {emailFailedState && (
+      {/* Green Email Sent Banner */}
+      {!emailFailedState && (fulfillment?.emailStatus === "SENT" || fulfillment?.lastEmailStatus === "SENT") && (
+        <div
+          id="fulfillment-email-sent-banner"
+          style={{
+            background: "#ecfdf5",
+            border: "1px solid #a7f3d0",
+            borderRadius: "10px",
+            padding: "12px 16px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "16px",
+            color: "#065f46",
+            fontSize: "13px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0" />
+            <span>
+              <strong>Email sent to {fulfillment?.emailSentTo || fulfillment?.email_sent_to || "customer"}</strong>
+              {fulfillment?.emailSentAt && (
+                <span style={{ fontSize: "12px", color: "#047857", marginLeft: "8px" }}>
+                  ({new Date(fulfillment.emailSentAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })})
+                </span>
+              )}
+            </span>
+          </div>
+          <button
+            type="button"
+            id="admin-resend-email-btn"
+            onClick={handleRetryEmail}
+            disabled={retryingEmail}
+            style={{
+              background: "#059669",
+              color: "#ffffff",
+              border: "none",
+              padding: "6px 14px",
+              borderRadius: "6px",
+              fontSize: "12px",
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <RefreshCw size={13} className={retryingEmail ? "animate-spin" : ""} />
+            {retryingEmail ? "Resending..." : "Resend Email"}
+          </button>
+        </div>
+      )}
+
+      {/* Red Email Failed Banner */}
+      {(emailFailedState || fulfillment?.emailStatus === "FAILED" || (!fulfillment?.emailStatus && fulfillment?.lastEmailStatus === "FAILED")) && (
         <div
           id="fulfillment-email-failed-banner"
           style={{
@@ -440,9 +503,9 @@ export function AdminTripFulfillment({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <AlertTriangle size={18} />
+            <AlertTriangle size={18} className="flex-shrink-0" />
             <span>
-              <strong>Saved, but email failed:</strong> {emailErrorText}
+              <strong>Email failed:</strong> {fulfillment?.emailError || emailErrorText || "Delivery error"}
             </span>
           </div>
           <button
@@ -459,9 +522,13 @@ export function AdminTripFulfillment({
               fontSize: "12px",
               fontWeight: 700,
               cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
             }}
           >
-            {retryingEmail ? "Retrying..." : "Retry Email"}
+            <RefreshCw size={13} className={retryingEmail ? "animate-spin" : ""} />
+            {retryingEmail ? "Resending..." : "Resend Email"}
           </button>
         </div>
       )}

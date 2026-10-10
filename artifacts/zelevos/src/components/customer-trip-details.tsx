@@ -19,7 +19,10 @@ import {
   Utensils,
   Plane,
   Sparkles,
+  Radio,
+  Shield,
 } from 'lucide-react';
+import { LiveTripSafetyModal } from './live-trip-safety-modal';
 
 interface CustomerTripDetailsProps {
   bookingId: string;
@@ -30,6 +33,8 @@ export function CustomerTripDetails({ bookingId }: CustomerTripDetailsProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [liveTripModalOpen, setLiveTripModalOpen] = useState(false);
+  const [trackingSession, setTrackingSession] = useState<any | null>(null);
 
   const loadFulfillment = async () => {
     setLoading(true);
@@ -42,6 +47,17 @@ export function CustomerTripDetails({ bookingId }: CustomerTripDetailsProps) {
       }
       const json = await res.json();
       setData(json);
+
+      // Check for active or ready tracking session
+      try {
+        const trackRes = await fetch(`/api/tracking/my-trip/${bookingId}`, { credentials: 'include' });
+        if (trackRes.ok) {
+          const trackData = await trackRes.json();
+          if (trackData.session) {
+            setTrackingSession(trackData.session);
+          }
+        }
+      } catch {}
     } catch (err: any) {
       setError(err.message || 'Failed to load trip details.');
     } finally {
@@ -77,7 +93,7 @@ export function CustomerTripDetails({ bookingId }: CustomerTripDetailsProps) {
 
   const isConfirmed = data.status === 'confirmed';
   const isArranging = data.status === 'arranging';
-  const components: any[] = data.components || [];
+  const components: any[] = data.components || data.items || [];
 
   return (
     <div style={{ marginTop: '16px', display: 'grid', gap: '14px' }}>
@@ -162,29 +178,55 @@ export function CustomerTripDetails({ bookingId }: CustomerTripDetailsProps) {
             </div>
           </div>
 
-          <a
-            id="download-voucher-pdf-btn"
-            href={`/api/bookings/${bookingId}/trip-voucher`}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              background: '#059669',
-              color: '#ffffff',
-              padding: '9px 18px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              textDecoration: 'none',
-              boxShadow: '0 3px 10px rgba(5, 150, 105, 0.25)',
-              transition: 'transform 0.15s ease',
-            }}
-          >
-            <Download size={15} />
-            <span>Download Voucher (PDF)</span>
-          </a>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              id="view-live-trip-header-btn"
+              onClick={() => setLiveTripModalOpen(true)}
+              style={{
+                background: '#2563eb',
+                color: '#ffffff',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 800,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 3px 10px rgba(37, 99, 235, 0.25)',
+                transition: 'transform 0.15s ease',
+              }}
+            >
+              <Radio size={15} className="animate-pulse" />
+              <span>VIEW LIVE TRIP</span>
+            </button>
+
+            <a
+              id="download-voucher-pdf-btn"
+              href={`/api/bookings/${bookingId}/trip-voucher`}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                background: '#059669',
+                color: '#ffffff',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                textDecoration: 'none',
+                boxShadow: '0 3px 10px rgba(5, 150, 105, 0.25)',
+                transition: 'transform 0.15s ease',
+              }}
+            >
+              <Download size={15} />
+              <span>Download Voucher (PDF)</span>
+            </a>
+          </div>
         </div>
       )}
 
@@ -367,6 +409,103 @@ export function CustomerTripDetails({ bookingId }: CustomerTripDetailsProps) {
                         <strong style={{ color: '#1e293b' }}>{d.dropPoint}</strong>
                       </div>
                     )}
+                  </div>
+
+                  {/* CAB Safety Action Bar */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', paddingTop: '6px', borderTop: '1px solid #f1f5f9' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {trackingSession ? (
+                        <button
+                          type="button"
+                          id={`view-live-trip-cab-btn-${comp.id}`}
+                          onClick={() => setLiveTripModalOpen(true)}
+                          style={{
+                            background: '#2563eb',
+                            color: '#ffffff',
+                            padding: '7px 14px',
+                            borderRadius: '7px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            border: 'none',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Radio size={14} className="animate-pulse" />
+                          <span>VIEW LIVE TRIP</span>
+                        </button>
+                      ) : (
+                        <a
+                          id={`view-trip-map-cab-btn-${comp.id}`}
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.dropPoint || d.pickupPoint || 'Srinagar Kashmir')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            background: '#f8fafc',
+                            color: '#2563eb',
+                            border: '1px solid #cbd5e1',
+                            padding: '7px 14px',
+                            borderRadius: '7px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <MapPin size={14} />
+                          <span>VIEW TRIP MAP</span>
+                        </a>
+                      )}
+
+                      {d.driverPhone && (
+                        <a
+                          href={`tel:${d.driverPhone}`}
+                          id={`call-driver-cab-btn-${comp.id}`}
+                          style={{
+                            background: '#ecfdf5',
+                            color: '#059669',
+                            border: '1px solid #a7f3d0',
+                            padding: '7px 12px',
+                            borderRadius: '7px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <Phone size={13} />
+                          <span>CALL DRIVER</span>
+                        </a>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      id={`safety-sos-cab-btn-${comp.id}`}
+                      onClick={() => setLiveTripModalOpen(true)}
+                      style={{
+                        background: '#fee2e2',
+                        color: '#dc2626',
+                        border: '1px solid #fecaca',
+                        padding: '7px 12px',
+                        borderRadius: '7px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Shield size={13} />
+                      <span>SAFETY & SOS</span>
+                    </button>
                   </div>
                 </div>
               );
@@ -588,6 +727,13 @@ export function CustomerTripDetails({ bookingId }: CustomerTripDetailsProps) {
           Call Now
         </a>
       </div>
+
+      {liveTripModalOpen && (
+        <LiveTripSafetyModal
+          bookingId={bookingId}
+          onClose={() => setLiveTripModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

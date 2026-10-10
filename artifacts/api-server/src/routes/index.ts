@@ -19,6 +19,7 @@ import documentsRouter from "./documents";
 import adminRouter from "./admin";
 import reportsRouter from "./reports";
 import fulfillmentRouter from "./fulfillment";
+import trackingRouter from "./tracking";
 
 const router: IRouter = Router();
 
@@ -42,5 +43,6 @@ router.use(slaRouter);
 router.use(documentsRouter);
 router.use(reportsRouter);
 router.use(fulfillmentRouter);
+router.use(trackingRouter);
 
 export default router;

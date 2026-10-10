@@ -879,18 +879,36 @@ router.post("/admin/bookings/:bookingId/fulfillment/send", requireRole(["admin",
     }
 
     // Resolve customer contact
-    const contact = (booking.customerContact || {}) as { name?: string; email?: string; phone?: string };
-    let customerName = contact.name || "Valued Traveller";
-    let customerEmail = contact.email || booking.clientEmail || "";
-    let customerPhone = contact.phone || "";
+    // REQUIREMENT #1: Fresh dynamic lookup: booking -> booking's customer (user) -> that user's email
+    let customerEmail = "";
+    let customerName = "Valued Traveller";
+    let customerPhone = "";
 
-    if ((!customerEmail || !customerName) && booking.customerId) {
-      const [user] = await db.select().from(usersTable).where(eq(usersTable.id, booking.customerId)).limit(1);
-      if (user) {
-        customerName = customerName || user.fullName || "Traveller";
-        customerEmail = customerEmail || user.email;
-        customerPhone = customerPhone || user.phone || "";
+    const customerUserId = booking.customerId || booking.ownerId;
+    if (customerUserId) {
+      const [customerUser] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, customerUserId))
+        .limit(1);
+
+      if (customerUser) {
+        customerEmail = (customerUser.email || "").trim().toLowerCase();
+        customerName = customerUser.fullName || customerUser.name || "Valued Traveller";
+        customerPhone = customerUser.phone || "";
       }
+    }
+
+    // Fallbacks if user account lookup didn't yield an email (e.g. guest checkout)
+    const contact = (booking.customerContact || {}) as { name?: string; email?: string; phone?: string };
+    if (!customerEmail) {
+      customerEmail = (contact.email || booking.clientEmail || "").trim().toLowerCase();
+    }
+    if (!customerName || customerName === "Valued Traveller") {
+      customerName = contact.name || customerName;
+    }
+    if (!customerPhone) {
+      customerPhone = contact.phone || "";
     }
 
     // b) Generate server-side PDF Trip Voucher
@@ -926,25 +944,13 @@ router.post("/admin/bookings/:bookingId/fulfillment/send", requireRole(["admin",
     const fullPdfPath = path.join(uploadsDir, safePdfFileName);
     fs.writeFileSync(fullPdfPath, pdfBuffer);
 
-    // Update fulfillment record
-    const [updatedFulfillment] = await db
-      .update(tripFulfillmentsTable)
-      .set({
-        status: nextStatus,
-        version: nextVersion,
-        sentAt: new Date(),
-        sentBy: req.admin?.adminId || "admin",
-        pdfPath: `/uploads/vouchers/${safePdfFileName}`,
-        lastEmailStatus: "SENT",
-        lastEmailError: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(tripFulfillmentsTable.id, fulfillment.id))
-      .returning();
+    // d) Email customer with PDF attached (Real Resend dispatch)
+    let emailStatus: "SENT" | "FAILED" = "FAILED";
+    let emailSentTo = customerEmail;
+    let emailMessageId: string | null = null;
+    let emailErrorMsg: string | null = null;
+    let emailSentAt: Date | null = null;
 
-    // d) Email customer with PDF attached
-    let emailFailed = false;
-    let emailErrorMsg = "";
     if (customerEmail && customerEmail.includes("@")) {
       try {
         const emailRes = await sendTripFulfillmentEmail({
@@ -961,22 +967,43 @@ router.post("/admin/bookings/:bookingId/fulfillment/send", requireRole(["admin",
           pdfBuffer,
         });
 
-        if (!emailRes.success) {
-          emailFailed = true;
+        if (emailRes.success) {
+          emailStatus = "SENT";
+          emailMessageId = emailRes.messageId || null;
+          emailSentAt = new Date();
+        } else {
+          emailStatus = "FAILED";
           emailErrorMsg = emailRes.error || "Email delivery unsuccessful";
         }
       } catch (err: any) {
-        emailFailed = true;
+        emailStatus = "FAILED";
         emailErrorMsg = err.message || "Failed to dispatch email";
       }
+    } else {
+      emailStatus = "FAILED";
+      emailErrorMsg = `Invalid or missing recipient email address: "${customerEmail}"`;
     }
 
-    if (emailFailed) {
-      await db
-        .update(tripFulfillmentsTable)
-        .set({ lastEmailStatus: "FAILED", lastEmailError: emailErrorMsg })
-        .where(eq(tripFulfillmentsTable.id, fulfillment.id));
-    }
+    // Update fulfillment record with additive status columns
+    const [updatedFulfillment] = await db
+      .update(tripFulfillmentsTable)
+      .set({
+        status: nextStatus,
+        version: nextVersion,
+        sentAt: new Date(),
+        sentBy: req.admin?.adminId || "admin",
+        pdfPath: `/uploads/vouchers/${safePdfFileName}`,
+        lastEmailStatus: emailStatus,
+        lastEmailError: emailErrorMsg,
+        emailStatus,
+        emailSentTo,
+        emailMessageId,
+        emailError: emailErrorMsg,
+        emailSentAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(tripFulfillmentsTable.id, fulfillment.id))
+      .returning();
 
     // e) Create in-app TRIP_DETAILS notification in customer's bell panel
     const targetUserId = booking.customerId || booking.ownerId;
@@ -1006,19 +1033,21 @@ router.post("/admin/bookings/:bookingId/fulfillment/send", requireRole(["admin",
         status: nextStatus,
         customerEmail,
         componentsCount: items.length,
-        emailFailed,
+        emailStatus,
+        emailError: emailErrorMsg,
       },
       actorName: req.admin?.adminId || "Admin",
       actorRole: "admin",
     });
 
+    const emailFailed = emailStatus === "FAILED";
     res.json({
       status: "success",
       fulfillment: updatedFulfillment,
       emailFailed,
       error: emailFailed ? emailErrorMsg : undefined,
       message: emailFailed
-        ? "Saved, but email failed — Retry email"
+        ? `Saved, but email failed: ${emailErrorMsg}`
         : `Trip fulfillment successfully sent to ${customerEmail || "customer"}. Version: v${nextVersion}.`,
     });
   } catch (error: any) {
@@ -1056,25 +1085,90 @@ router.post("/admin/bookings/:bookingId/fulfillment/retry-email", requireRole(["
       return;
     }
 
-    const contact = (booking.customerContact || {}) as { name?: string; email?: string };
-    const customerEmail = contact.email || booking.clientEmail || "";
-    const customerName = contact.name || "Valued Guest";
+    // Fresh dynamic lookup: booking -> booking's customer (user) -> that user's email
+    let customerEmail = "";
+    let customerName = "Valued Traveller";
+    let customerPhone = "";
 
-    const emailRes = await sendTripFulfillmentEmail({
-      toEmail: customerEmail,
-      customerName,
-      bookingRef: booking.bookingId || "ZL-TRIP",
-      destination: "Kashmir",
-      travelDate: booking.travelDate || "Confirmed",
-      components: items.map((i: any) => ({ type: i.componentType, title: i.title, details: i.details || {} })),
-      pdfBuffer,
-    });
+    const customerUserId = booking.customerId || booking.ownerId;
+    if (customerUserId) {
+      const [customerUser] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, customerUserId))
+        .limit(1);
 
-    if (emailRes.success) {
-      await db.update(tripFulfillmentsTable).set({ lastEmailStatus: "SENT", lastEmailError: null }).where(eq(tripFulfillmentsTable.id, fulfillment.id));
-      res.json({ status: "success", message: `Email delivered to ${customerEmail}.` });
+      if (customerUser) {
+        customerEmail = (customerUser.email || "").trim().toLowerCase();
+        customerName = customerUser.fullName || customerUser.name || "Valued Traveller";
+        customerPhone = customerUser.phone || "";
+      }
+    }
+
+    const contact = (booking.customerContact || {}) as { name?: string; email?: string; phone?: string };
+    if (!customerEmail) {
+      customerEmail = (contact.email || booking.clientEmail || "").trim().toLowerCase();
+    }
+    if (!customerName || customerName === "Valued Traveller") {
+      customerName = contact.name || customerName;
+    }
+
+    let emailStatus: "SENT" | "FAILED" = "FAILED";
+    let emailMessageId: string | null = null;
+    let emailErrorMsg: string | null = null;
+    let emailSentAt: Date | null = null;
+
+    if (customerEmail && customerEmail.includes("@")) {
+      const emailRes = await sendTripFulfillmentEmail({
+        toEmail: customerEmail,
+        customerName,
+        bookingRef: booking.bookingId || "ZL-TRIP",
+        destination: "Kashmir",
+        travelDate: booking.travelDate || "Confirmed",
+        components: items.map((i: any) => ({ type: i.componentType, title: i.title, details: i.details || {} })),
+        pdfBuffer,
+      });
+
+      if (emailRes.success) {
+        emailStatus = "SENT";
+        emailMessageId = emailRes.messageId || null;
+        emailSentAt = new Date();
+      } else {
+        emailStatus = "FAILED";
+        emailErrorMsg = emailRes.error || "Retry failed.";
+      }
     } else {
-      res.status(500).json({ status: "error", message: emailRes.error || "Retry failed." });
+      emailStatus = "FAILED";
+      emailErrorMsg = `Invalid or missing recipient email address: "${customerEmail}"`;
+    }
+
+    const [updatedFulfillment] = await db
+      .update(tripFulfillmentsTable)
+      .set({
+        lastEmailStatus: emailStatus,
+        lastEmailError: emailErrorMsg,
+        emailStatus,
+        emailSentTo: customerEmail,
+        emailMessageId,
+        emailError: emailErrorMsg,
+        emailSentAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(tripFulfillmentsTable.id, fulfillment.id))
+      .returning();
+
+    if (emailStatus === "SENT") {
+      res.json({
+        status: "success",
+        fulfillment: updatedFulfillment,
+        message: `Email delivered to ${customerEmail}.`,
+      });
+    } else {
+      res.status(500).json({
+        status: "error",
+        fulfillment: updatedFulfillment,
+        message: emailErrorMsg || "Retry failed.",
+      });
     }
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message || "Failed to retry email." });
@@ -1139,6 +1233,16 @@ router.get("/bookings/:idOrBookingId/fulfillment", requireAuthOrAdmin, async (re
       .where(eq(tripFulfillmentItemsTable.fulfillmentId, fulfillment.id))
       .orderBy(tripFulfillmentItemsTable.dayNumber, tripFulfillmentItemsTable.sequence);
 
+    const mappedItems = items.map((i: any) => ({
+      id: i.id,
+      componentType: i.componentType,
+      title: i.title,
+      dayNumber: i.dayNumber,
+      status: i.status,
+      details: i.details || {},
+      notes: i.notes,
+    }));
+
     res.json({
       status: "confirmed",
       confirmationMessage: "Your booking is fully confirmed from A to Z — you're all set to travel.",
@@ -1149,15 +1253,8 @@ router.get("/bookings/:idOrBookingId/fulfillment", requireAuthOrAdmin, async (re
         sentAt: fulfillment.sentAt,
         hasVoucher: Boolean(fulfillment.pdfPath),
       },
-      items: items.map((i: any) => ({
-        id: i.id,
-        componentType: i.componentType,
-        title: i.title,
-        dayNumber: i.dayNumber,
-        status: i.status,
-        details: i.details || {},
-        notes: i.notes,
-      })),
+      items: mappedItems,
+      components: mappedItems,
     });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message || "Failed to fetch fulfillment details." });

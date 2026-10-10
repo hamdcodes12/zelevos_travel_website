@@ -184,7 +184,7 @@ router.get("/admin/destinations", requireRole(["admin"]), async (req, res) => {
                 cancellationRate: vendorsTable.cancellationRate,
               })
               .from(vendorsTable)
-              .where(inArray(vendorsTable.id, vIds));
+              .where(inArray(vendorsTable.vendorId, vIds));
           }
           const conf = computeTripConfidenceScore(metrics);
           totalConfidence += conf.score;

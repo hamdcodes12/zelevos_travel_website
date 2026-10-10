@@ -23,10 +23,10 @@ export function securityHeadersMiddleware(req: Request, res: Response, next: Nex
   // 4. Referrer Policy
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 
-  // 5. Restrict dangerous browser features
+  // 5. Restrict dangerous browser features (allow geolocation on self for customer & driver trip safety)
   res.setHeader(
     "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=(), payment=(self \"https://checkout.razorpay.com\")"
+    "camera=(), microphone=(), geolocation=(self), payment=(self \"https://checkout.razorpay.com\")"
   );
 
   // 6. Strict Transport Security (HSTS)
@@ -35,13 +35,13 @@ export function securityHeadersMiddleware(req: Request, res: Response, next: Nex
   }
 
   // 7. Content-Security-Policy in Report-Only mode
-  // Allows Razorpay, Supabase, Google Fonts, Unsplash, and application assets
+  // Allows Razorpay, Supabase, Google Fonts, OpenStreetMap tiles, Unsplash, and application assets
   const cspDirectives = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://*.razorpay.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: blob: https://images.unsplash.com https://*.unsplash.com https://*.supabase.co https://*.razorpay.com https://placehold.co",
+    "img-src 'self' data: blob: https://images.unsplash.com https://*.unsplash.com https://*.supabase.co https://*.razorpay.com https://placehold.co https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
     "connect-src 'self' https://api.razorpay.com https://*.razorpay.com https://*.supabase.co https://api.resend.com",
     "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
     "frame-ancestors 'self'",

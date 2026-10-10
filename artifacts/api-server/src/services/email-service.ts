@@ -1,3 +1,4 @@
+import "../lib/env";
 function maskEmail(email: string): string {
   const [local, domain] = email.split("@");
   if (!domain) return "***";
@@ -920,12 +921,6 @@ export async function sendVerificationOtpEmail(
 
       if (!res.ok) {
         logger.error({ email: maskEmail(toEmail), status: res.status, error: data }, "[Resend API Error]");
-        if (process.env.NODE_ENV !== "production") {
-          return {
-            success: true,
-            messageId: `dev-resend-fallback-${Date.now()}`,
-          };
-        }
         return {
           success: false,
           error: USER_FRIENDLY_EMAIL_ERROR,
@@ -939,12 +934,6 @@ export async function sendVerificationOtpEmail(
       };
     } catch (err: any) {
       logger.error({ err: err instanceof Error ? err.message : err, email: maskEmail(toEmail) }, "[Resend Network Error]");
-      if (process.env.NODE_ENV !== "production") {
-        return {
-          success: true,
-          messageId: `dev-network-fallback-${Date.now()}`,
-        };
-      }
       return {
         success: false,
         error: USER_FRIENDLY_EMAIL_ERROR,
@@ -1325,7 +1314,7 @@ export interface TripFulfillmentEmailParams {
 export async function sendTripFulfillmentEmail(params: TripFulfillmentEmailParams): Promise<EmailSendResult> {
   const subject = `Your Zelevos trip is confirmed — ${params.destination} (${params.travelDate})`;
   const resendApiKey = process.env.RESEND_API_KEY?.trim();
-  const fromEmail = process.env.RESEND_FROM_EMAIL?.trim() || "Zelevos <onboarding@resend.dev>";
+  const fromEmail = getEmailFromAddress("resend");
   const filename = `Zelevos-Trip-Voucher-${params.bookingRef}.pdf`;
 
   const componentRows = params.components.map((c) => {
@@ -1428,10 +1417,27 @@ export async function sendTripFulfillmentEmail(params: TripFulfillmentEmailParam
         return { success: true, recipient: params.toEmail, status: "SENT", messageId: data.id };
       } else {
         const errText = await response.text();
-        logger.warn({ to: maskEmail(params.toEmail), errText }, "[Email Service] Resend dispatch returned non-200.");
+        let errMsg = errText;
+        try {
+          const parsed = JSON.parse(errText);
+          errMsg = parsed.message || parsed.error?.message || errText;
+        } catch {}
+        logger.error({ to: maskEmail(params.toEmail), status: response.status, error: errMsg }, "[Email Service] Resend API error sending trip fulfillment.");
+        return {
+          success: false,
+          recipient: params.toEmail,
+          status: "FAILED",
+          error: `Resend error (${response.status}): ${errMsg}`,
+        };
       }
     } catch (err: any) {
-      logger.warn({ to: maskEmail(params.toEmail), err: err.message }, "[Email Service] Resend dispatch failed.");
+      logger.error({ to: maskEmail(params.toEmail), err: err.message }, "[Email Service] Resend network error.");
+      return {
+        success: false,
+        recipient: params.toEmail,
+        status: "FAILED",
+        error: `Network error: ${err.message || "Failed to reach Resend API"}`,
+      };
     }
   }
 
@@ -1464,19 +1470,25 @@ export async function sendTripFulfillmentEmail(params: TripFulfillmentEmailParam
       logger.info({ to: maskEmail(params.toEmail), messageId: info.messageId }, "[Email Service] Trip fulfillment email sent via SMTP.");
       return { success: true, recipient: params.toEmail, status: "SENT", messageId: info.messageId };
     } catch (err: any) {
-      logger.warn({ to: maskEmail(params.toEmail), err: err.message }, "[Email Service] SMTP dispatch failed.");
+      logger.error({ to: maskEmail(params.toEmail), err: err.message }, "[Email Service] SMTP dispatch failed.");
+      return {
+        success: false,
+        recipient: params.toEmail,
+        status: "FAILED",
+        error: `SMTP error: ${err.message}`,
+      };
     }
   }
 
-  // Fallback: development simulation
-  logger.info(
-    { to: maskEmail(params.toEmail), attachmentBytes: params.pdfBuffer.length, subject },
-    "[Email Service] Development fallback: Trip fulfillment email simulated with PDF attachment."
+  // No provider configured
+  logger.error(
+    { to: maskEmail(params.toEmail) },
+    "[Email Service] Outbound email failed: Neither RESEND_API_KEY nor SMTP credentials configured."
   );
   return {
-    success: true,
+    success: false,
     recipient: params.toEmail,
-    status: "SENT",
-    messageId: `dev-sim-${Date.now()}`,
+    status: "FAILED",
+    error: "No email provider configured. RESEND_API_KEY is missing.",
   };
 }

@@ -50,18 +50,78 @@ export const customTripRequestsTable = pgTable("custom_trip_requests", {
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone").notNull(),
+  startingLocation: text("starting_location"),
+  destination: text("destination"),
   destinations: jsonb("destinations").$type<string[]>().notNull().default([]), // ['Kashmir', 'Ladakh']
   datesFlexible: boolean("dates_flexible").notNull().default(false),
   startDate: text("start_date"),
   endDate: text("end_date"),
+  returnDate: text("return_date"),
   durationDays: integer("duration_days"),
   travellersCount: integer("travellers_count").notNull().default(2),
+  adultsCount: integer("adults_count").notNull().default(2),
+  childrenCount: integer("children_count").notNull().default(0),
+  infantsCount: integer("infants_count").notNull().default(0),
+  budget: integer("budget"),
+  budgetRange: text("budget_range"),
   budgetPerPerson: integer("budget_per_person"),
   totalBudget: integer("total_budget"),
+  stayPreference: text("stay_preference"),
   hotelPreference: text("hotel_preference").default("4 Star / Boutique"),
+  hotelCategory: text("hotel_category"),
+  roomType: text("room_type"),
+  roomsCount: integer("rooms_count").notNull().default(1),
   transportPreference: text("transport_preference").default("Private Cab"),
+  transportTypes: jsonb("transport_types").$type<string[]>().notNull().default([]),
+  flightPreference: jsonb("flight_preference").$type<{
+    required?: boolean;
+    class?: string;
+    preferredAirline?: string;
+    departureAirport?: string;
+    arrivalAirport?: string;
+  }>(),
+  cabPreference: jsonb("cab_preference").$type<{
+    required?: boolean;
+    vehicleType?: string;
+    airportPickup?: boolean;
+    airportDrop?: boolean;
+    localSightseeing?: boolean;
+  }>(),
+  busPreference: jsonb("bus_preference").$type<{
+    required?: boolean;
+    seatingType?: string;
+  }>(),
+  mealPreferences: jsonb("meal_preferences").$type<{
+    plans?: string[];
+    dietType?: string;
+    dietaryRestrictions?: string;
+    foodAllergies?: string;
+  }>(),
   activitiesInterests: jsonb("activities_interests").$type<string[]>().notNull().default([]),
+  accessibility: jsonb("accessibility").$type<{
+    required?: boolean;
+    wheelchairAssistance?: boolean;
+    details?: string;
+  }>(),
+  travelInsurancePreference: boolean("travel_insurance_preference").notNull().default(false),
+  emergencyContact: jsonb("emergency_contact").$type<{
+    name?: string;
+    relationship?: string;
+    phone?: string;
+    email?: string;
+  }>(),
   specialRequests: text("special_requests"),
+  documents: jsonb("documents").$type<Array<{
+    id: string;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+    fileUrl: string;
+    uploadedAt: string;
+  }>>().notNull().default([]),
+  isTemplate: boolean("is_template").notNull().default(false),
+  templateName: text("template_name"),
+  internalNotes: text("internal_notes"),
   // Proposal generation (Section 21 ops workflow)
   proposalPackageId: uuid("proposal_package_id"),
   proposalTitle: text("proposal_title"),
@@ -78,7 +138,7 @@ export const customTripRequestsTable = pgTable("custom_trip_requests", {
   proposalNotes: text("proposal_notes"),
   customerAcceptedAt: timestamp("customer_accepted_at", { withTimezone: true }),
   bookingId: uuid("booking_id").references(() => bookingsTable.id, { onDelete: "set null" }),
-  status: text("status").notNull().default("NEW"), // NEW, IN_REVIEW, PROPOSAL_SENT, BOOKED, LOST
+  status: text("status").notNull().default("NEW"), // NEW, REVIEWING, CONTACTED, PLANNING, QUOTATION_SENT, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED
   assignedTo: text("assigned_to"),
   isArchived: boolean("is_archived").notNull().default(false),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
@@ -131,6 +191,11 @@ export const tripFulfillmentsTable = pgTable("trip_fulfillments", {
   pdfPath: text("pdf_path"),
   lastEmailStatus: text("last_email_status"), // 'SENT' | 'FAILED'
   lastEmailError: text("last_email_error"),
+  emailStatus: text("email_status").default("PENDING"), // 'SENT' | 'FAILED' | 'PENDING'
+  emailSentTo: text("email_sent_to"),
+  emailMessageId: text("email_message_id"),
+  emailError: text("email_error"),
+  emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

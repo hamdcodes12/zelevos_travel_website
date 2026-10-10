@@ -44,6 +44,9 @@ import {
   Compass,
   Utensils,
   Bus,
+  Radio,
+  Play,
+  Square,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -113,6 +116,184 @@ export function VendorPortalPage() {
   const [docType, setDocType] = useState("business_registration");
   const [docFile, setDocFile] = useState<File | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+
+  // Driver Live GPS Tracking State (Requirement 7)
+  const [driverTrackingState, setDriverTrackingState] = useState<Record<string, {
+    sessionId: string;
+    watchId: number | null;
+    status: "ACTIVE" | "STOPPED" | "ERROR" | "CONNECTING";
+    errorMsg?: string;
+    lastLatitude?: number;
+    lastLongitude?: number;
+    lastAccuracy?: number;
+    lastSentAt?: string;
+    updatesCount: number;
+  }>>({});
+
+  const handleDriverStartTrip = async (taskId: string) => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser. Please use a device/browser with GPS support.");
+      return;
+    }
+
+    try {
+      setDriverTrackingState((prev) => ({
+        ...prev,
+        [taskId]: {
+          sessionId: "",
+          watchId: null,
+          status: "CONNECTING",
+          updatesCount: 0,
+        },
+      }));
+
+      // 1. Fetch or initialize tracking session for this task
+      const res = await fetch(`/api/vendor/portal/fulfillment-tasks/${taskId}/tracking`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.session) {
+        throw new Error(data.message || "Failed to initialize tracking session.");
+      }
+
+      const sessionId = data.session.id;
+
+      // 2. Start driver tracking on backend
+      const startRes = await fetch(`/api/tracking/${sessionId}/driver/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const startData = await startRes.json();
+      if (!startRes.ok && startData.status !== "invalid_state") {
+        throw new Error(startData.message || "Could not activate driver tracking.");
+      }
+
+      // 3. Request real GPS watchPosition
+      const watchId = navigator.geolocation.watchPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+          const heading = position.coords.heading ?? undefined;
+          const speed = position.coords.speed ?? undefined;
+
+          setDriverTrackingState((prev) => ({
+            ...prev,
+            [taskId]: {
+              sessionId,
+              watchId,
+              status: "ACTIVE",
+              lastLatitude: lat,
+              lastLongitude: lng,
+              lastAccuracy: accuracy,
+              lastSentAt: new Date().toLocaleTimeString(),
+              updatesCount: (prev[taskId]?.updatesCount || 0) + 1,
+            },
+          }));
+
+          // Send real GPS to backend
+          try {
+            await fetch(`/api/tracking/${sessionId}/location`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                latitude: lat,
+                longitude: lng,
+                accuracy,
+                heading: heading !== null && !isNaN(heading as number) ? heading : undefined,
+                speed: speed !== null && !isNaN(speed as number) ? speed : undefined,
+                recordedAt: new Date(position.timestamp).toISOString(),
+              }),
+            });
+          } catch (err) {
+            console.error("Failed to transmit GPS update:", err);
+          }
+        },
+        (error) => {
+          let msg = "GPS unavailable.";
+          if (error.code === error.PERMISSION_DENIED) {
+            msg = "Location permission denied. Please allow device location to start live chauffeur tracking.";
+          } else if (error.code === error.TIMEOUT) {
+            msg = "GPS signal timeout. Trying to acquire satellite lock...";
+          }
+          setDriverTrackingState((prev) => ({
+            ...prev,
+            [taskId]: {
+              ...(prev[taskId] || { sessionId, watchId: null, updatesCount: 0 }),
+              status: "ERROR",
+              errorMsg: msg,
+            },
+          }));
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 5000,
+          timeout: 20000,
+        }
+      );
+
+      setDriverTrackingState((prev) => ({
+        ...prev,
+        [taskId]: {
+          sessionId,
+          watchId,
+          status: "ACTIVE",
+          updatesCount: 0,
+        },
+      }));
+    } catch (err: any) {
+      setDriverTrackingState((prev) => ({
+        ...prev,
+        [taskId]: {
+          sessionId: "",
+          watchId: null,
+          status: "ERROR",
+          errorMsg: err.message || "Failed to start trip.",
+          updatesCount: 0,
+        },
+      }));
+    }
+  };
+
+  const handleDriverEndTrip = async (taskId: string) => {
+    const tracking = driverTrackingState[taskId];
+    if (tracking?.watchId !== null && tracking?.watchId !== undefined) {
+      navigator.geolocation.clearWatch(tracking.watchId);
+    }
+
+    if (tracking?.sessionId) {
+      try {
+        await fetch(`/api/tracking/${tracking.sessionId}/driver/stop`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
+      } catch (e) {
+        console.error("Failed to end driver tracking session:", e);
+      }
+    }
+
+    setDriverTrackingState((prev) => ({
+      ...prev,
+      [taskId]: {
+        ...(prev[taskId] || { sessionId: "", watchId: null, updatesCount: 0 }),
+        status: "STOPPED",
+        watchId: null,
+      },
+    }));
+  };
+
+  useEffect(() => {
+    return () => {
+      Object.values(driverTrackingState).forEach((trk) => {
+        if (trk.watchId !== null) {
+          navigator.geolocation.clearWatch(trk.watchId);
+        }
+      });
+    };
+  }, [driverTrackingState]);
 
   // Add Invoice Modal
   const [showAddInvoice, setShowAddInvoice] = useState(false);
@@ -2114,6 +2295,133 @@ export function VendorPortalPage() {
                                 <span>Guide: <strong>{d.guideName}</strong></span>
                                 {d.phone && <span>Phone: <strong>{d.phone}</strong></span>}
                                 {d.meetingPoint && <span>Meeting: <strong>{d.meetingPoint}</strong></span>}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Chauffeur Live GPS Tracking (CAB Component Requirement 7) */}
+                        {type === "CAB" && (
+                          <div
+                            id={`chauffeur-gps-box-${task.id}`}
+                            style={{
+                              background: driverTrackingState[task.id]?.status === "ACTIVE" ? "#f0fdf4" : "#f8fafc",
+                              border: `1.5px solid ${driverTrackingState[task.id]?.status === "ACTIVE" ? "#86efac" : "#e2e8f0"}`,
+                              borderRadius: "10px",
+                              padding: "14px",
+                            }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <Radio
+                                  size={16}
+                                  color={driverTrackingState[task.id]?.status === "ACTIVE" ? "#16a34a" : "#64748b"}
+                                  style={{ animation: driverTrackingState[task.id]?.status === "ACTIVE" ? "pulse 1.5s infinite" : "none" }}
+                                />
+                                <div>
+                                  <strong style={{ fontSize: "13px", color: driverTrackingState[task.id]?.status === "ACTIVE" ? "#166534" : "#1e293b" }}>
+                                    CHAUFFEUR LIVE TRIP GPS TELEMETRY
+                                  </strong>
+                                  <span style={{ fontSize: "11px", color: "#64748b", display: "block" }}>
+                                    Stream real vehicle coordinates to customer Live Trip view and Zelevos Ops Desk
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                {driverTrackingState[task.id]?.status === "ACTIVE" ? (
+                                  <button
+                                    type="button"
+                                    id={`end-driver-trip-btn-${task.id}`}
+                                    onClick={() => handleDriverEndTrip(task.id)}
+                                    style={{
+                                      background: "#dc2626",
+                                      color: "#ffffff",
+                                      border: "none",
+                                      padding: "8px 16px",
+                                      borderRadius: "6px",
+                                      fontSize: "12px",
+                                      fontWeight: 800,
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "6px",
+                                      boxShadow: "0 2px 6px rgba(220, 38, 38, 0.25)",
+                                    }}
+                                  >
+                                    <Square size={13} fill="#ffffff" />
+                                    <span>END TRIP</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    id={`start-driver-trip-btn-${task.id}`}
+                                    onClick={() => handleDriverStartTrip(task.id)}
+                                    disabled={driverTrackingState[task.id]?.status === "CONNECTING"}
+                                    style={{
+                                      background: "#16a34a",
+                                      color: "#ffffff",
+                                      border: "none",
+                                      padding: "8px 16px",
+                                      borderRadius: "6px",
+                                      fontSize: "12px",
+                                      fontWeight: 800,
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "6px",
+                                      boxShadow: "0 2px 6px rgba(22, 163, 74, 0.25)",
+                                    }}
+                                  >
+                                    <Play size={13} fill="#ffffff" />
+                                    <span>{driverTrackingState[task.id]?.status === "CONNECTING" ? "Acquiring GPS..." : "START TRIP"}</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {driverTrackingState[task.id]?.status === "ACTIVE" && (
+                              <div
+                                style={{
+                                  marginTop: "10px",
+                                  padding: "8px 12px",
+                                  background: "#ffffff",
+                                  border: "1px solid #bbf7d0",
+                                  borderRadius: "6px",
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: "14px",
+                                  fontSize: "12px",
+                                  color: "#166534",
+                                }}
+                              >
+                                <span>Status: <strong style={{ color: "#16a34a" }}>● LIVE (Broadcasting)</strong></span>
+                                <span>Real Coords: <strong>{driverTrackingState[task.id].lastLatitude?.toFixed(5)}, {driverTrackingState[task.id].lastLongitude?.toFixed(5)}</strong></span>
+                                <span>Accuracy: <strong>±{Math.round(driverTrackingState[task.id].lastAccuracy || 0)}m</strong></span>
+                                <span>Transmitted Updates: <strong>{driverTrackingState[task.id].updatesCount}</strong></span>
+                                <span>Last Sent: <strong>{driverTrackingState[task.id].lastSentAt}</strong></span>
+                              </div>
+                            )}
+
+                            {driverTrackingState[task.id]?.status === "ERROR" && (
+                              <div
+                                style={{
+                                  marginTop: "10px",
+                                  padding: "8px 12px",
+                                  background: "#fef2f2",
+                                  border: "1px solid #fecaca",
+                                  borderRadius: "6px",
+                                  fontSize: "12px",
+                                  color: "#dc2626",
+                                }}
+                              >
+                                ⚠ {driverTrackingState[task.id].errorMsg}
+                              </div>
+                            )}
+
+                            {driverTrackingState[task.id]?.status === "STOPPED" && (
+                              <div style={{ marginTop: "8px", fontSize: "12px", color: "#64748b" }}>
+                                ✓ Trip concluded. Real GPS transmission is stopped.
                               </div>
                             )}
                           </div>

@@ -24,6 +24,20 @@ export interface VoucherTripDetails {
   }>;
 }
 
+export function cleanPdfText(str: any): string {
+  if (str === null || str === undefined) return "";
+  let text = String(str);
+  // Replace Indian Rupee symbol with 'Rs. ' so standard Helvetica encodes without crashing or corrupting
+  text = text.replace(/₹/g, "Rs. ");
+  text = text.replace(/\u20B9/g, "Rs. ");
+  text = text.replace(/[\u2018\u2019]/g, "'");
+  text = text.replace(/[\u201C\u201D]/g, '"');
+  text = text.replace(/[\u2013\u2014]/g, "-");
+  text = text.replace(/\u2026/g, "...");
+  // Strip any remaining characters outside standard WinAnsi / ASCII
+  return text.replace(/[^\x20-\x7E\xA0-\xFF]/g, " ");
+}
+
 export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<Buffer> {
   const pdfDoc = await PDFDocument.create();
   let page = pdfDoc.addPage([595.28, 841.89]); // A4 size in points
@@ -44,19 +58,23 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
 
   let currentY = height - 40;
 
+  const drawSafeText = (text: string, options: any) => {
+    page.drawText(cleanPdfText(text), options);
+  };
+
   const checkPageOverflow = (neededHeight: number) => {
     if (currentY - neededHeight < 50) {
       page = pdfDoc.addPage([595.28, 841.89]);
       currentY = height - 40;
       // Repeat simple header on continuation page
-      page.drawText("ZELEVOS TRIP VOUCHER (Continuation)", {
+      drawSafeText("ZELEVOS TRIP VOUCHER (Continuation)", {
         x: 40,
         y: currentY,
         size: 10,
         font: fontBold,
         color: slateGray,
       });
-      page.drawText(`Booking Ref: ${data.bookingRef}`, {
+      drawSafeText(`Booking Ref: ${data.bookingRef}`, {
         x: width - 180,
         y: currentY,
         size: 10,
@@ -77,7 +95,7 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
 
   });
 
-  page.drawText("ZELEVOS", {
+  drawSafeText("ZELEVOS", {
     x: 56,
     y: currentY - 24,
     size: 22,
@@ -85,7 +103,7 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
     color: white,
   });
 
-  page.drawText("OFFICIAL CONFIRMED TRIP VOUCHER", {
+  drawSafeText("OFFICIAL CONFIRMED TRIP VOUCHER", {
     x: 56,
     y: currentY - 42,
     size: 10,
@@ -93,7 +111,7 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
     color: rgb(0.85, 0.92, 1),
   });
 
-  page.drawText(`VOUCHER REF: ${data.bookingRef}`, {
+  drawSafeText(`VOUCHER REF: ${data.bookingRef}`, {
     x: width - 240,
     y: currentY - 24,
     size: 11,
@@ -101,7 +119,7 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
     color: white,
   });
 
-  page.drawText(`STATUS: CONFIRMED (v${data.version})`, {
+  drawSafeText(`STATUS: CONFIRMED (v${data.version})`, {
     x: width - 240,
     y: currentY - 42,
     size: 9,
@@ -125,24 +143,24 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
   const totalPax = (data.adultsCount || 1) + (data.childrenCount || 0);
 
   // Column 1: Customer info
-  page.drawText("PRIMARY TRAVELLER", { x: 56, y: currentY - 18, size: 8, font: fontBold, color: slateGray });
-  page.drawText(data.customerName || "Valued Guest", { x: 56, y: currentY - 32, size: 12, font: fontBold, color: darkNavy });
-  page.drawText(data.customerPhone || data.customerEmail || "Confirmed via Zelevos", { x: 56, y: currentY - 46, size: 9, font: fontRegular, color: slateGray });
+  drawSafeText("PRIMARY TRAVELLER", { x: 56, y: currentY - 18, size: 8, font: fontBold, color: slateGray });
+  drawSafeText(data.customerName || "Valued Guest", { x: 56, y: currentY - 32, size: 12, font: fontBold, color: darkNavy });
+  drawSafeText(data.customerPhone || data.customerEmail || "Confirmed via Zelevos", { x: 56, y: currentY - 46, size: 9, font: fontRegular, color: slateGray });
 
   // Column 2: Destination & Dates
-  page.drawText("DESTINATION & TRAVEL DATES", { x: 230, y: currentY - 18, size: 8, font: fontBold, color: slateGray });
-  page.drawText(data.destination || "Holiday Destination", { x: 230, y: currentY - 32, size: 12, font: fontBold, color: darkNavy });
-  page.drawText(`Travel Date: ${data.travelDate || "Scheduled"}`, { x: 230, y: currentY - 46, size: 9, font: fontRegular, color: slateGray });
+  drawSafeText("DESTINATION & TRAVEL DATES", { x: 230, y: currentY - 18, size: 8, font: fontBold, color: slateGray });
+  drawSafeText(data.destination || "Holiday Destination", { x: 230, y: currentY - 32, size: 12, font: fontBold, color: darkNavy });
+  drawSafeText(`Travel Date: ${data.travelDate || "Scheduled"}`, { x: 230, y: currentY - 46, size: 9, font: fontRegular, color: slateGray });
 
   // Column 3: Party size & issuance
-  page.drawText("TRAVELLERS", { x: 420, y: currentY - 18, size: 8, font: fontBold, color: slateGray });
-  page.drawText(`${totalPax} Person${totalPax > 1 ? "s" : ""} (${data.adultsCount || 1}A${data.childrenCount ? `, ${data.childrenCount}C` : ""})`, { x: 420, y: currentY - 32, size: 11, font: fontBold, color: darkNavy });
-  page.drawText(`Issued: ${new Date(data.sentAt || Date.now()).toLocaleDateString("en-IN")}`, { x: 420, y: currentY - 46, size: 9, font: fontRegular, color: emeraldGreen });
+  drawSafeText("TRAVELLERS", { x: 420, y: currentY - 18, size: 8, font: fontBold, color: slateGray });
+  drawSafeText(`${totalPax} Person${totalPax > 1 ? "s" : ""} (${data.adultsCount || 1}A${data.childrenCount ? `, ${data.childrenCount}C` : ""})`, { x: 420, y: currentY - 32, size: 11, font: fontBold, color: darkNavy });
+  drawSafeText(`Issued: ${new Date(data.sentAt || Date.now()).toLocaleDateString("en-IN")}`, { x: 420, y: currentY - 46, size: 9, font: fontRegular, color: emeraldGreen });
 
   currentY -= 90;
 
   // Section Title: Day-wise & Component Fulfillment Details
-  page.drawText("CONFIRMED ITINERARY & GROUND ARRANGEMENTS", {
+  drawSafeText("CONFIRMED ITINERARY & GROUND ARRANGEMENTS", {
     x: 40,
     y: currentY,
     size: 12,
@@ -206,7 +224,7 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
       color: badgeColor,
     });
 
-    page.drawText(typeUpper, {
+    drawSafeText(typeUpper, {
       x: 56,
       y: currentY - 16,
       size: 8,
@@ -215,7 +233,7 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
     });
 
     // Title / Header
-    page.drawText(comp.title || `${typeUpper} Arrangement`, {
+    drawSafeText(comp.title || `${typeUpper} Arrangement`, {
       x: 130,
       y: currentY - 16,
       size: 11,
@@ -224,7 +242,7 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
     });
 
     if (comp.dayNumber) {
-      page.drawText(`Day ${comp.dayNumber}`, {
+      drawSafeText(`Day ${comp.dayNumber}`, {
         x: width - 100,
         y: currentY - 16,
         size: 9,
@@ -237,38 +255,38 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
     const textStartY = currentY - 34;
 
     if (typeUpper === "HOTEL") {
-      page.drawText(`Hotel: ${details.hotelName || "Confirmed Partner Hotel"}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
-      page.drawText(`Room: ${details.roomType || "Standard Deluxe"} (${details.numberOfRooms || 1} Room${(details.numberOfRooms || 1) > 1 ? "s" : ""}) · Plan: ${details.mealPlan || "CP (Breakfast)"}`, { x: 52, y: textStartY - 12, size: 8.5, font: fontRegular, color: slateGray });
-      page.drawText(`Address: ${details.fullAddress || "City Center"}`, { x: 52, y: textStartY - 24, size: 8.5, font: fontRegular, color: slateGray });
-      page.drawText(`Check-in: ${details.checkInDate || data.travelDate} (${details.checkInTime || "14:00"}) · Check-out: ${details.checkOutDate || "Flexible"} (${details.checkOutTime || "11:00"})`, { x: 52, y: textStartY - 36, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Hotel: ${details.hotelName || "Confirmed Partner Hotel"}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
+      drawSafeText(`Room: ${details.roomType || "Standard Deluxe"} (${details.numberOfRooms || 1} Room${(details.numberOfRooms || 1) > 1 ? "s" : ""}) · Plan: ${details.mealPlan || "CP (Breakfast)"}`, { x: 52, y: textStartY - 12, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Address: ${details.fullAddress || "City Center"}`, { x: 52, y: textStartY - 24, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Check-in: ${details.checkInDate || data.travelDate} (${details.checkInTime || "14:00"}) · Check-out: ${details.checkOutDate || "Flexible"} (${details.checkOutTime || "11:00"})`, { x: 52, y: textStartY - 36, size: 8.5, font: fontRegular, color: slateGray });
       if (details.hotelPhone || details.confirmationNumber) {
-        page.drawText(`Hotel Phone: ${details.hotelPhone || "N/A"} · Conf #: ${details.confirmationNumber || data.bookingRef}`, { x: 52, y: textStartY - 48, size: 8.5, font: fontBold, color: brandBlue });
+        drawSafeText(`Hotel Phone: ${details.hotelPhone || "N/A"} · Conf #: ${details.confirmationNumber || data.bookingRef}`, { x: 52, y: textStartY - 48, size: 8.5, font: fontBold, color: brandBlue });
       }
     } else if (typeUpper === "CAB") {
-      page.drawText(`Chauffeur: ${details.driverName || "Assigned Chauffeur"}  ·  Phone: ${details.driverPhone || "Provided on Arrival"}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
-      page.drawText(`Vehicle: ${details.vehicleModel || "Dedicated Private Vehicle"}  ·  Reg #: ${details.vehicleRegistrationNumber || "Verified Commercial"}`, { x: 52, y: textStartY - 13, size: 8.5, font: fontBold, color: emeraldGreen });
-      page.drawText(`Pickup: ${details.pickupPoint || "Airport / Designated Station"} at ${details.pickupDateTime || "Arrival"}`, { x: 52, y: textStartY - 26, size: 8.5, font: fontRegular, color: slateGray });
-      page.drawText(`Drop: ${details.dropPoint || "Hotel / Full Circuit Tour"}`, { x: 52, y: textStartY - 38, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Chauffeur: ${details.driverName || "Assigned Chauffeur"}  ·  Phone: ${details.driverPhone || "Provided on Arrival"}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
+      drawSafeText(`Vehicle: ${details.vehicleModel || "Dedicated Private Vehicle"}  ·  Reg #: ${details.vehicleRegistrationNumber || "Verified Commercial"}`, { x: 52, y: textStartY - 13, size: 8.5, font: fontBold, color: emeraldGreen });
+      drawSafeText(`Pickup: ${details.pickupPoint || "Airport / Designated Station"} at ${details.pickupDateTime || "Arrival"}`, { x: 52, y: textStartY - 26, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Drop: ${details.dropPoint || "Hotel / Full Circuit Tour"}`, { x: 52, y: textStartY - 38, size: 8.5, font: fontRegular, color: slateGray });
     } else if (typeUpper === "BUS") {
-      page.drawText(`Operator: ${details.operatorName || "Express Line"}  ·  Bus Type: ${details.busType || "Volvo AC Multi-Axle"}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
-      page.drawText(`Bus Reg: ${details.busRegistrationNumber || "N/A"}  ·  Seat(s): ${details.seatNumbers || "Reserved"}  ·  PNR: ${details.ticketPnr || data.bookingRef}`, { x: 52, y: textStartY - 13, size: 8.5, font: fontBold, color: darkNavy });
-      page.drawText(`Boarding: ${details.boardingPoint || "Main Depot"} at ${details.departureDateTime || "Scheduled"}`, { x: 52, y: textStartY - 26, size: 8.5, font: fontRegular, color: slateGray });
-      page.drawText(`Arrival: ${details.arrivalPoint || "Destination"} at ${details.arrivalDateTime || "Scheduled"}  ·  Phone: ${details.operatorPhone || "N/A"}`, { x: 52, y: textStartY - 38, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Operator: ${details.operatorName || "Express Line"}  ·  Bus Type: ${details.busType || "Volvo AC Multi-Axle"}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
+      drawSafeText(`Bus Reg: ${details.busRegistrationNumber || "N/A"}  ·  Seat(s): ${details.seatNumbers || "Reserved"}  ·  PNR: ${details.ticketPnr || data.bookingRef}`, { x: 52, y: textStartY - 13, size: 8.5, font: fontBold, color: darkNavy });
+      drawSafeText(`Boarding: ${details.boardingPoint || "Main Depot"} at ${details.departureDateTime || "Scheduled"}`, { x: 52, y: textStartY - 26, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Arrival: ${details.arrivalPoint || "Destination"} at ${details.arrivalDateTime || "Scheduled"}  ·  Phone: ${details.operatorPhone || "N/A"}`, { x: 52, y: textStartY - 38, size: 8.5, font: fontRegular, color: slateGray });
     } else if (typeUpper === "GUIDE") {
-      page.drawText(`Certified Guide: ${details.guideName || "Local Cultural Guide"}  ·  Phone: ${details.phone || "Provided on Arrival"}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
-      page.drawText(`Meeting Point: ${details.meetingPoint || "Hotel Lobby / Monument Entrance"} at ${details.dateTime || "Morning"}`, { x: 52, y: textStartY - 13, size: 8.5, font: fontRegular, color: slateGray });
-      page.drawText(`Languages: ${details.languages || "English, Hindi"}`, { x: 52, y: textStartY - 26, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Certified Guide: ${details.guideName || "Local Cultural Guide"}  ·  Phone: ${details.phone || "Provided on Arrival"}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
+      drawSafeText(`Meeting Point: ${details.meetingPoint || "Hotel Lobby / Monument Entrance"} at ${details.dateTime || "Morning"}`, { x: 52, y: textStartY - 13, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Languages: ${details.languages || "English, Hindi"}`, { x: 52, y: textStartY - 26, size: 8.5, font: fontRegular, color: slateGray });
     } else if (typeUpper === "MEALS") {
-      page.drawText(`Dining Partner: ${details.providerName || "Curated Restaurant Partner"}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
-      page.drawText(`Address: ${details.address || "Destination Center"}  ·  Timings: ${details.timings || "Meal Hours"}`, { x: 52, y: textStartY - 13, size: 8.5, font: fontRegular, color: slateGray });
-      page.drawText(`Included: ${details.mealsIncluded || "As per package meal plan"}`, { x: 52, y: textStartY - 26, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Dining Partner: ${details.providerName || "Curated Restaurant Partner"}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
+      drawSafeText(`Address: ${details.address || "Destination Center"}  ·  Timings: ${details.timings || "Meal Hours"}`, { x: 52, y: textStartY - 13, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Included: ${details.mealsIncluded || "As per package meal plan"}`, { x: 52, y: textStartY - 26, size: 8.5, font: fontRegular, color: slateGray });
     } else if (typeUpper === "FLIGHT") {
-      page.drawText(`Airline: ${details.airline || "Scheduled Carrier"}  ·  Flight: ${details.flightNumber || "Direct"}  ·  PNR: ${details.pnr || data.bookingRef}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
-      page.drawText(`Route: ${details.fromAirport || "Origin"} ➔ ${details.toAirport || "Destination"}`, { x: 52, y: textStartY - 13, size: 9, font: fontBold, color: brandBlue });
-      page.drawText(`Departure: ${details.departureDateTime || "Scheduled"}  ·  Arrival: ${details.arrivalDateTime || "Scheduled"}`, { x: 52, y: textStartY - 26, size: 8.5, font: fontRegular, color: slateGray });
-      page.drawText(`Baggage Allowance: ${details.baggage || "15kg Check-in + 7kg Cabin"}`, { x: 52, y: textStartY - 39, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Airline: ${details.airline || "Scheduled Carrier"}  ·  Flight: ${details.flightNumber || "Direct"}  ·  PNR: ${details.pnr || data.bookingRef}`, { x: 52, y: textStartY, size: 9, font: fontBold, color: darkNavy });
+      drawSafeText(`Route: ${details.fromAirport || "Origin"} ➔ ${details.toAirport || "Destination"}`, { x: 52, y: textStartY - 13, size: 9, font: fontBold, color: brandBlue });
+      drawSafeText(`Departure: ${details.departureDateTime || "Scheduled"}  ·  Arrival: ${details.arrivalDateTime || "Scheduled"}`, { x: 52, y: textStartY - 26, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(`Baggage Allowance: ${details.baggage || "15kg Check-in + 7kg Cabin"}`, { x: 52, y: textStartY - 39, size: 8.5, font: fontRegular, color: slateGray });
     } else {
-      page.drawText(comp.notes || "Service details confirmed by Zelevos operations team.", { x: 52, y: textStartY, size: 8.5, font: fontRegular, color: slateGray });
+      drawSafeText(comp.notes || "Service details confirmed by Zelevos operations team.", { x: 52, y: textStartY, size: 8.5, font: fontRegular, color: slateGray });
     }
 
     currentY -= boxHeight + 12;
@@ -287,7 +305,7 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
     borderWidth: 1,
   });
 
-  page.drawText("ZELEVOS 24/7 TRIP CONCIERGE & EMERGENCY SUPPORT", {
+  drawSafeText("ZELEVOS 24/7 TRIP CONCIERGE & EMERGENCY SUPPORT", {
     x: 52,
     y: currentY - 18,
     size: 9,
@@ -295,7 +313,7 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
     color: brandBlue,
   });
 
-  page.drawText("National Helpline: 1800-ZELEVOS (Toll-Free)  ·  Ground Hotline: +91 98765 00000  ·  Email: support@zelevos.com", {
+  drawSafeText("National Helpline: 1800-ZELEVOS (Toll-Free)  ·  Ground Hotline: +91 98765 00000  ·  Email: support@zelevos.com", {
     x: 52,
     y: currentY - 32,
     size: 8.5,
@@ -303,7 +321,7 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
     color: darkNavy,
   });
 
-  page.drawText("Important Note: Please present this voucher along with valid government photo ID upon check-in and boarding.", {
+  drawSafeText("Important Note: Please present this voucher along with valid government photo ID upon check-in and boarding.", {
     x: 52,
     y: currentY - 45,
     size: 8,
@@ -311,7 +329,7 @@ export async function generateTripVoucherPdf(data: VoucherTripDetails): Promise<
     color: slateGray,
   });
 
-  page.drawText("All drivers, hotels and suppliers listed in this voucher have been verified and approved by Zelevos.", {
+  drawSafeText("All drivers, hotels and suppliers listed in this voucher have been verified and approved by Zelevos.", {
     x: 52,
     y: currentY - 57,
     size: 8,

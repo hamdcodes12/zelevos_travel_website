@@ -3,7 +3,7 @@ import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import pg from "pg";
 import { randomBytes, scryptSync } from "node:crypto";
-import * as schema from "./schema";
+import * as schema from "./schema/index";
 
 const { Pool } = pg;
 
@@ -719,6 +719,30 @@ const DDL_MIGRATIONS = `
   ALTER TABLE bookings ALTER COLUMN amount DROP NOT NULL;
   ALTER TABLE bookings ALTER COLUMN amount SET DEFAULT 0;
   ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS customer_id TEXT;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS starting_location TEXT;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS destination TEXT;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS return_date TEXT;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS adults_count INTEGER DEFAULT 2;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS children_count INTEGER DEFAULT 0;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS infants_count INTEGER DEFAULT 0;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS budget INTEGER;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS budget_range TEXT;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS stay_preference TEXT;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS hotel_category TEXT;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS room_type TEXT;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS rooms_count INTEGER DEFAULT 1;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS transport_types JSONB NOT NULL DEFAULT '[]';
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS flight_preference JSONB DEFAULT '{}';
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS cab_preference JSONB DEFAULT '{}';
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS bus_preference JSONB DEFAULT '{}';
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS meal_preferences JSONB DEFAULT '{}';
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS accessibility JSONB DEFAULT '{}';
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS travel_insurance_preference BOOLEAN NOT NULL DEFAULT FALSE;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS emergency_contact JSONB DEFAULT '{}';
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS documents JSONB NOT NULL DEFAULT '[]';
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS is_template BOOLEAN NOT NULL DEFAULT FALSE;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS template_name TEXT;
+  ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS internal_notes TEXT;
   ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS proposal_itinerary JSONB NOT NULL DEFAULT '[]';
   ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS proposal_notes TEXT;
   ALTER TABLE custom_trip_requests ADD COLUMN IF NOT EXISTS customer_accepted_at TIMESTAMPTZ;
@@ -1016,6 +1040,12 @@ const DDL_MIGRATIONS = `
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
 
+  ALTER TABLE trip_fulfillments ADD COLUMN IF NOT EXISTS email_status TEXT DEFAULT 'PENDING';
+  ALTER TABLE trip_fulfillments ADD COLUMN IF NOT EXISTS email_sent_to TEXT;
+  ALTER TABLE trip_fulfillments ADD COLUMN IF NOT EXISTS email_message_id TEXT;
+  ALTER TABLE trip_fulfillments ADD COLUMN IF NOT EXISTS email_error TEXT;
+  ALTER TABLE trip_fulfillments ADD COLUMN IF NOT EXISTS email_sent_at TIMESTAMPTZ;
+
   CREATE INDEX IF NOT EXISTS trip_fulfillments_booking_id_idx ON trip_fulfillments(booking_id);
   CREATE INDEX IF NOT EXISTS trip_fulfillments_status_idx ON trip_fulfillments(status);
 
@@ -1040,6 +1070,92 @@ const DDL_MIGRATIONS = `
   CREATE INDEX IF NOT EXISTS trip_fulfillment_items_fulfillment_id_idx ON trip_fulfillment_items(fulfillment_id);
   CREATE INDEX IF NOT EXISTS trip_fulfillment_items_vendor_id_idx ON trip_fulfillment_items(vendor_id);
   CREATE INDEX IF NOT EXISTS trip_fulfillment_items_status_idx ON trip_fulfillment_items(status);
+
+  CREATE TABLE IF NOT EXISTS trip_tracking_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    customer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    driver_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    vendor_id UUID REFERENCES vendors(id) ON DELETE SET NULL,
+    fulfillment_item_id UUID REFERENCES trip_fulfillment_items(id) ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'READY',
+    customer_tracking_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    driver_tracking_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    driver_name TEXT,
+    driver_phone TEXT,
+    vehicle_registration TEXT,
+    vehicle_model TEXT,
+    pickup_location TEXT,
+    destination_location TEXT,
+    last_customer_latitude DOUBLE PRECISION,
+    last_customer_longitude DOUBLE PRECISION,
+    last_customer_accuracy DOUBLE PRECISION,
+    last_customer_update_at TIMESTAMPTZ,
+    last_driver_latitude DOUBLE PRECISION,
+    last_driver_longitude DOUBLE PRECISION,
+    last_driver_accuracy DOUBLE PRECISION,
+    last_driver_heading DOUBLE PRECISION,
+    last_driver_speed DOUBLE PRECISION,
+    last_driver_update_at TIMESTAMPTZ,
+    calculated_distance_km DOUBLE PRECISION,
+    distance_updated_at TIMESTAMPTZ,
+    emergency_alert_active BOOLEAN NOT NULL DEFAULT FALSE,
+    emergency_alert_at TIMESTAMPTZ,
+    emergency_alert_resolved_at TIMESTAMPTZ,
+    emergency_alert_resolved_by TEXT,
+    emergency_alert_notes TEXT,
+    started_at TIMESTAMPTZ,
+    ended_at TIMESTAMPTZ,
+    end_reason TEXT,
+    ended_by TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_tracking_sessions_booking ON trip_tracking_sessions(booking_id);
+  CREATE INDEX IF NOT EXISTS idx_tracking_sessions_customer ON trip_tracking_sessions(customer_id);
+  CREATE INDEX IF NOT EXISTS idx_tracking_sessions_driver ON trip_tracking_sessions(driver_id);
+  CREATE INDEX IF NOT EXISTS idx_tracking_sessions_vendor ON trip_tracking_sessions(vendor_id);
+  CREATE INDEX IF NOT EXISTS idx_tracking_sessions_status ON trip_tracking_sessions(status);
+  CREATE INDEX IF NOT EXISTS idx_tracking_sessions_created ON trip_tracking_sessions(created_at);
+
+  CREATE TABLE IF NOT EXISTS trip_location_updates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tracking_session_id UUID NOT NULL REFERENCES trip_tracking_sessions(id) ON DELETE CASCADE,
+    booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    actor_type TEXT NOT NULL,
+    actor_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    accuracy DOUBLE PRECISION,
+    heading DOUBLE PRECISION,
+    speed DOUBLE PRECISION,
+    recorded_at TIMESTAMPTZ NOT NULL,
+    received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    source TEXT NOT NULL DEFAULT 'browser_geolocation'
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_location_updates_session ON trip_location_updates(tracking_session_id);
+  CREATE INDEX IF NOT EXISTS idx_location_updates_booking ON trip_location_updates(booking_id);
+  CREATE INDEX IF NOT EXISTS idx_location_updates_actor ON trip_location_updates(actor_type, actor_id);
+  CREATE INDEX IF NOT EXISTS idx_location_updates_recorded ON trip_location_updates(recorded_at);
+
+  CREATE TABLE IF NOT EXISTS trip_tracking_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tracking_session_id UUID NOT NULL REFERENCES trip_tracking_sessions(id) ON DELETE CASCADE,
+    booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    event_type TEXT NOT NULL,
+    actor_type TEXT NOT NULL DEFAULT 'SYSTEM',
+    actor_id UUID,
+    actor_name TEXT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_tracking_events_session ON trip_tracking_events(tracking_session_id);
+  CREATE INDEX IF NOT EXISTS idx_tracking_events_booking ON trip_tracking_events(booking_id);
+  CREATE INDEX IF NOT EXISTS idx_tracking_events_type ON trip_tracking_events(event_type);
+  CREATE INDEX IF NOT EXISTS idx_tracking_events_created ON trip_tracking_events(created_at);
 `;
 
 /**
@@ -1442,4 +1558,4 @@ if (hasExternalPostgres) {
 
 export const pool = poolInstance;
 export const db = dbInstance;
-export * from "./schema";
+export * from "./schema/index";

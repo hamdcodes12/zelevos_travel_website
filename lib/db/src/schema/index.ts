@@ -9,3 +9,4 @@ export * from "./operations";
 export * from "./platform";
 export * from "./traveller";
 export * from "./generated-trips";
+export * from "./tracking";

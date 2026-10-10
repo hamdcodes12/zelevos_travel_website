@@ -42,7 +42,7 @@ async function request(path: string, init: RequestInit = {}) {
 const credentials = (email: string) => ({
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ email, password: "correct horse battery staple" }),
+  body: JSON.stringify({ email, password: "correct horse battery staple 123" }),
 });
 
 const trip = {

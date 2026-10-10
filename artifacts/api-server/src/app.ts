@@ -269,13 +269,19 @@ app.use(
   couponRateLimiter
 );
 
-// Public form submissions rate limiter
+// Public form submissions rate limiter (only throttles new form POSTs, not GETs or document streams)
 app.use(
   [
     "/api/custom-trips",
     "/api/support",
   ],
-  publicFormRateLimiter
+  (req, res, next) => {
+    if (req.method !== "POST") return next();
+    if (req.path.includes("/documents") || req.path.includes("/upload-document") || req.path.includes("/status")) {
+      return next();
+    }
+    return publicFormRateLimiter(req, res, next);
+  }
 );
 
 // Never let credential material (hashes, TOTP secrets, temporary passwords) leave in a JSON response

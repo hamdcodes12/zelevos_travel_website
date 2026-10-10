@@ -14,6 +14,8 @@ import {
   ArrowRight,
   TrendingUp,
   Lock,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 
 export interface PackageDetail {
@@ -86,23 +88,90 @@ export function PackageDetailModal({
   const [pkg, setPkg] = useState<PackageDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [errorType, setErrorType] = useState<"not_found" | "unavailable" | "auth_required" | "network_error" | "">("");
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Hook: Escape key and body scroll lock - placed at TOP LEVEL before any conditional returns
+  useEffect(() => {
+    const orig = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = orig;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
 
   useEffect(() => {
+    let isCancelled = false;
     setLoading(true);
+    setError("");
+    setErrorType("");
+
     const url = isPreview ? `/api/packages/${packageIdOrSlug}?preview=true` : `/api/packages/${packageIdOrSlug}`;
     fetch(url)
-      .then((res) => {
-        if (!res.ok) throw new Error("Could not load package details.");
-        return res.json();
+      .then(async (res) => {
+        let data: any = null;
+        try {
+          data = await res.json();
+        } catch {
+          // not json
+        }
+
+        if (isCancelled) return;
+
+        if (res.status === 404) {
+          setErrorType("not_found");
+          setError("Package not found");
+          return;
+        }
+
+        if (res.status === 403) {
+          setErrorType("unavailable");
+          setError("This package is currently unavailable.");
+          return;
+        }
+
+        if (res.status === 401) {
+          setErrorType("auth_required");
+          setError("Please log in to view this package.");
+          return;
+        }
+
+        if (!res.ok) {
+          setErrorType("network_error");
+          setError(data?.message || "Something went wrong while loading this package.");
+          return;
+        }
+
+        if (data?.package) {
+          if (data.package.status && !["active", "published"].includes(data.package.status) && !isPreview) {
+            setErrorType("unavailable");
+            setError("This package is currently unavailable.");
+            return;
+          }
+          setPkg(data.package);
+        } else {
+          setErrorType("not_found");
+          setError("Package not found");
+        }
       })
-      .then((data) => {
-        setPkg(data.package);
+      .catch(() => {
+        if (isCancelled) return;
+        setErrorType("network_error");
+        setError("Unable to connect to service. Please check your internet connection.");
       })
-      .catch((err) => {
-        setError(err.message || "Failed to load package.");
-      })
-      .finally(() => setLoading(false));
-  }, [packageIdOrSlug, isPreview]);
+      .finally(() => {
+        if (!isCancelled) setLoading(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [packageIdOrSlug, isPreview, retryCount]);
 
   if (loading) {
     return (
@@ -117,15 +186,70 @@ export function PackageDetailModal({
 
   if (error || !pkg) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
-          <p className="text-rose-600 font-semibold mb-4">{error || "Package not found"}</p>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-slate-800 text-white rounded-xl font-medium"
-          >
-            Close
-          </button>
+      <div
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      >
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl border border-slate-200">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
+            errorType === "not_found"
+              ? "bg-slate-100 text-slate-600"
+              : errorType === "unavailable"
+              ? "bg-amber-100 text-amber-700"
+              : errorType === "auth_required"
+              ? "bg-blue-100 text-blue-600"
+              : "bg-rose-100 text-rose-600"
+          }`}>
+            <AlertCircle size={24} />
+          </div>
+
+          <h3 className="text-lg font-bold text-slate-900 mb-2">
+            {error || "Package not found"}
+          </h3>
+
+          <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+            {errorType === "not_found" && "The holiday package you're looking for does not exist or may have been archived."}
+            {errorType === "unavailable" && "This holiday package is currently unavailable."}
+            {errorType === "auth_required" && "You need to log in to your Zelevos account to view exclusive package details."}
+            {errorType === "network_error" && "We could not reach the server to load this package. You can retry without leaving this page."}
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+            {errorType === "auth_required" ? (
+              <button
+                type="button"
+                id="package-login-retry-btn"
+                onClick={() => {
+                  if (onOpenAuth) onOpenAuth();
+                }}
+                className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-xs shadow-md transition"
+              >
+                Log In to View
+              </button>
+            ) : errorType === "network_error" || !["not_found", "unavailable"].includes(errorType) ? (
+              <button
+                type="button"
+                id="package-retry-btn"
+                onClick={() => {
+                  setRetryCount((c) => c + 1);
+                }}
+                className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-xs shadow-md flex items-center justify-center gap-1.5 transition"
+              >
+                <RefreshCw size={14} /> Retry
+              </button>
+            ) : null}
+
+            <button
+              type="button"
+              id="package-close-error-btn"
+              onClick={onClose}
+              className="w-full sm:w-auto px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition"
+            >
+              {errorType === "not_found" || errorType === "unavailable" ? "Browse Other Packages" : "Close"}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -133,19 +257,6 @@ export function PackageDetailModal({
 
   const score = pkg.tripConfidenceScore?.score ?? 96;
   const scoreLabel = pkg.tripConfidenceScore?.label ?? "High confidence";
-
-  useEffect(() => {
-    const orig = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = orig;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
 
   return (
     <div
@@ -293,7 +404,7 @@ export function PackageDetailModal({
               </span>
               <div className="flex items-baseline gap-2 mt-0.5">
                 <span className="text-3xl font-extrabold text-slate-900">
-                  ₹{pkg.sellingPrice.toLocaleString("en-IN")}
+                  ₹{(pkg.sellingPrice ?? 0).toLocaleString("en-IN")}
                 </span>
                 <span className="text-xs text-slate-500">per person (inclusive of taxes)</span>
               </div>
@@ -349,7 +460,7 @@ export function PackageDetailModal({
                 <Check size={16} className="text-emerald-600" /> What's Included
               </h4>
               <ul className="space-y-2 text-xs text-slate-700">
-                {pkg.inclusions.map((inc, i) => (
+                {(pkg.inclusions || []).map((inc, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <span className="text-emerald-600 font-bold">•</span>
                     <span>{inc}</span>
@@ -362,7 +473,7 @@ export function PackageDetailModal({
                 <X size={16} className="text-rose-600" /> What's Excluded
               </h4>
               <ul className="space-y-2 text-xs text-slate-700">
-                {pkg.exclusions.map((exc, i) => (
+                {(pkg.exclusions || []).map((exc, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <span className="text-rose-500 font-bold">•</span>
                     <span>{exc}</span>

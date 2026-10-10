@@ -1,3 +1,4 @@
+import "./lib/env";
 import app from "./app";
 import { logger } from "./lib/logger";
 
@@ -9,6 +10,14 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+process.on("uncaughtException", (err) => {
+  logger.error({ err }, "Uncaught Exception in API server");
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error({ reason, promise }, "Unhandled Rejection in API server");
+});
+
 app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
@@ -17,3 +26,4 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
 });
+

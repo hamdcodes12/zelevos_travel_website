@@ -1,0 +1,43 @@
+{
+  "testId": "ZLV-REAL-TEST-001",
+  "timestamp": "2026-10-02T14:08:51.503Z",
+  "results": {
+    "customerBooking": "PASS",
+    "ownershipIsolation": "PASS",
+    "adminDashboard": "PASS",
+    "operationsAssignment": "PASS",
+    "vendorPortal": "PASS",
+    "fulfillmentDispatch": "PASS",
+    "myTripsFulfillment": "PASS",
+    "supportTicket": "PASS",
+    "partnerPortal": "PASS"
+  },
+  "securityMatrix": {
+    "ZEL-05": "PASS",
+    "ZEL-06": "PASS",
+    "ZEL-04": "PASS",
+    "ZEL-08": "PASS",
+    "ZEL-03": "PASS",
+    "ZEL-07": "PASS",
+    "ZEL-01": "PASS",
+    "ZEL-02": "PASS",
+    "ZEL-09": "PASS",
+    "ZEL-10": "PASS",
+    "ZEL-11": "PASS",
+    "ZEL-12": "PASS",
+    "ZEL-13": "PASS",
+    "ZEL-14": "PASS",
+    "ZEL-15": "PASS",
+    "ZEL-16": "PASS",
+    "ZEL-17": "PASS"
+  },
+  "dbEvidence": {
+    "emailStatus": {
+      "email_status": "SENT",
+      "email_sent_to": "aarav108@gmail.com",
+      "email_message_id": "01a0fcf3-7fde-7c8f-ba66-b4609ae2b272",
+      "email_sent_at": "2026-10-02T14:10:12.239Z",
+      "last_email_status": "SENT"
+    }
+  }
+}

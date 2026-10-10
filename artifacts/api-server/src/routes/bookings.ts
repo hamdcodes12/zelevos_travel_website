@@ -225,10 +225,31 @@ router.post("/bookings", requireAuth, async (req, res) => {
 // Package payments use the authenticated Razorpay order/verification flow in travel.ts.
 
 router.get("/bookings/my-trips", requireAuth, async (req, res) => {
-  const trips = await db.select().from(bookingsTable)
-    .where(eq(bookingsTable.ownerId, req.user!.id))
-    .orderBy(desc(bookingsTable.createdAt));
-  res.json({ trips });
+  try {
+    const rawTrips = await db
+      .select({
+        booking: bookingsTable,
+        packageTitle: packagesTable.title,
+      })
+      .from(bookingsTable)
+      .leftJoin(packagesTable, eq(bookingsTable.packageId, packagesTable.id))
+      .where(
+        or(
+          eq(bookingsTable.ownerId, req.user!.id),
+          eq(bookingsTable.customerId, req.user!.id)
+        )
+      )
+      .orderBy(desc(bookingsTable.createdAt));
+
+    const trips = rawTrips.map((r: any) => ({
+      ...r.booking,
+      packageTitle: r.packageTitle || r.booking.specialRequests?.split("—")?.[0]?.trim() || "Curated Holiday Package",
+    }));
+
+    res.json({ trips });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message || "Failed to fetch user trips." });
+  }
 });
 
 // --------------------------------------------------------------------------

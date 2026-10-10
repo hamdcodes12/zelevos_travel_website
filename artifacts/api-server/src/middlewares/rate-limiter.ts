@@ -241,6 +241,22 @@ export const publicFormRateLimiter = createRateLimiter({
   message: "Too many submissions from this network. Please wait a few moments before trying again.",
 });
 
+// 15. Live GPS Location streaming: up to 60 updates per minute per IP (accommodates 1 ping every 5 seconds)
+export const trackingLocationRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 60,
+  bucket: "tracking-location",
+  message: "Location updates throttled. Please adhere to the recommended 5-second interval.",
+});
+
+// 16. Emergency SOS rate limiter: 10 requests per 10 minutes
+export const trackingSosRateLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 10,
+  bucket: "tracking-sos",
+  message: "Emergency request already transmitted to 24/7 Operations Desk.",
+});
+
 interface LockoutRecord {
   failures: number;
   lockedUntil?: number;

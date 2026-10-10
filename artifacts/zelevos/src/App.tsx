@@ -468,6 +468,21 @@ function Navbar({
     setNotifDrawerOpen(false);
   }, [location]);
 
+  // Body scroll lock when mobile navigation is open (Requirement 6)
+  useEffect(() => {
+    if (mobileOpen) {
+      const originalOverflow = document.body.style.overflow;
+      const originalTouchAction = document.body.style.touchAction;
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.touchAction = originalTouchAction;
+      };
+    }
+    return undefined;
+  }, [mobileOpen]);
+
   const fetchCustomerNotifications = async () => {
     if (!user) return;
     try {
@@ -1033,6 +1048,7 @@ function Navbar({
               </a>
               <a
                 href="/vendor-portal"
+                id="mobile-nav-vendor-portal"
                 onClick={(e) => {
                   e.preventDefault();
                   setMobileOpen(false);
@@ -1043,6 +1059,19 @@ function Navbar({
                 <span>Vendor Portal</span>
                 <ChevronRight size={15} style={{ opacity: 0.4 }} />
               </a>
+              <a
+                href="/partner-portal"
+                id="mobile-nav-partner-portal"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMobileOpen(false);
+                  setLocation('/partner-portal');
+                }}
+                className="mobile-nav-link"
+              >
+                <span>Partner Portal Login</span>
+                <ChevronRight size={15} style={{ opacity: 0.4 }} />
+              </a>
             </div>
 
             {user ? (
@@ -1050,12 +1079,18 @@ function Navbar({
                 <span className="mobile-user-tag">
                   Signed in as <strong>{user.fullName || user.email}</strong>
                 </span>
-                <a href="#my-trips" onClick={() => setMobileOpen(false)} className="mobile-nav-link">
+                <a
+                  href="#my-trips"
+                  id="mobile-nav-my-trips"
+                  onClick={() => setMobileOpen(false)}
+                  className="mobile-nav-link"
+                >
                   <span>My Trips</span>
                   <Luggage size={14} style={{ color: '#3b82f6' }} />
                 </a>
                 <button
                   type="button"
+                  id="mobile-nav-logout-btn"
                   onClick={() => {
                     setMobileOpen(false);
                     onLogout();
@@ -2187,12 +2222,21 @@ function MyTrips({
       const bList = Array.isArray(bookingsRes.results) ? bookingsRes.results : [];
       setBookings(bList);
       const pList = Array.isArray(pkgTripsRes.trips) ? pkgTripsRes.trips : [];
+      const bPackages = bList.filter((b: any) => b.packageId || b.kind === 'PACKAGE');
+      for (const bp of bPackages) {
+        if (!pList.some((p: any) => (p.bookingId && p.bookingId === bp.bookingId) || p.id === bp.id)) {
+          pList.push(bp);
+        }
+      }
       setPackageTrips(pList);
       setCustomRequests(Array.isArray(customRequestsRes.requests) ? customRequestsRes.requests : []);
 
       setSelected((current) => (current ? loadedTrips.find((trip: TripRecord) => trip.id === current.id) || null : null));
       setSelectedBooking((current: any) => (current ? bList.find((b: any) => b.id === current.id) || null : null));
-      setSelectedPackageTrip((current: any) => (current ? pList.find((p: any) => p.bookingId === current.bookingId || p.id === current.id) || null : null));
+      setSelectedPackageTrip((current: any) => {
+        if (current) return pList.find((p: any) => p.bookingId === current.bookingId || p.id === current.id) || pList[0] || null;
+        return pList[0] || null;
+      });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Saved trips could not be loaded.');
     } finally {
@@ -3553,6 +3597,7 @@ function Home() {
     ['PROPOSAL_SENT', 'ACCEPTED', 'ACCEPTED_PENDING_PAYMENT', 'PAID'].includes(p.status)
   ) || (activeProposals.length > 0 ? activeProposals[0] : null);
 
+  const [location, setLocation] = useLocation();
   const [matchPkg, paramsPkg] = useRoute('/packages/:slug');
   const [matchDest, paramsDest] = useRoute('/destinations/:slug');
 
@@ -3658,7 +3703,10 @@ function Home() {
         onLogout={() => void handleLogout()}
         onOpenBuildMyTrip={openBuildMyTrip}
         onOpenSupport={() => setSupportModalOpen(true)}
-        onSelectPackage={(slug) => setSelectedPackageSlug(slug)}
+        onSelectPackage={(slug) => {
+          setSelectedPackageSlug(slug);
+          setLocation('/packages/' + slug);
+        }}
         onSearchDestination={(dest) => {
           setDestinationSearch(dest);
           setTimeout(() => {
@@ -3870,7 +3918,10 @@ function Home() {
         {/* PRIMARY CONTENT: PRD Section 7.1 Curated Packages Section with Themes Filter Bar */}
         <CuratedPackagesSection
           searchFilter={destinationSearch}
-          onSelectPackage={(slug: string) => setSelectedPackageSlug(slug)}
+          onSelectPackage={(slug: string) => {
+            setSelectedPackageSlug(slug);
+            setLocation('/packages/' + slug);
+          }}
           onOpenBuildMyTrip={openBuildMyTrip}
           onToast={showToast}
           user={user}
@@ -3943,7 +3994,12 @@ function Home() {
       {selectedPackageSlug && (
         <PackageDetailModal
           packageIdOrSlug={selectedPackageSlug}
-          onClose={() => setSelectedPackageSlug(null)}
+          onClose={() => {
+            setSelectedPackageSlug(null);
+            if (location.startsWith('/packages/')) {
+              setLocation('/#curated-packages');
+            }
+          }}
           user={user}
           onOpenAuth={() => openAuth('login')}
           onBook={(pkg: PackageDetail) => {
@@ -4142,6 +4198,8 @@ function Router() {
       <WouterRoute path="/dashboard" component={Home} />
       <WouterRoute path="/trips" component={Home} />
       <WouterRoute path="/trips/:id" component={Home} />
+      <WouterRoute path="/my-trips" component={Home} />
+      <WouterRoute path="/my-trips/:id" component={Home} />
       <WouterRoute path="/marketplace" component={Home} />
       <WouterRoute path="/hotels" component={Home} />
       <WouterRoute path="/transport" component={Home} />

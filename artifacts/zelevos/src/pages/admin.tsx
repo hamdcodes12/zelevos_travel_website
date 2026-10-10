@@ -49,6 +49,7 @@ import {
   RotateCcw,
   Trash2,
   FileText,
+  Radio,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { AdminPackagesTab } from "../components/admin-packages-tab";
@@ -63,6 +64,7 @@ import { AdminDestinationsTab } from "../components/admin-destinations-tab";
 import { AdminReportsTab } from "../components/admin-reports-tab";
 import { AdminUserDossierModal } from "../components/admin-user-dossier-modal";
 import { AdminTripFulfillment } from "../components/admin-trip-fulfillment";
+import { AdminLiveTripsTab } from "../components/admin-live-trips-tab";
 import { PasswordInput } from "@/components/ui/password-input";
 
 type AdminProfile = {
@@ -240,7 +242,7 @@ export function AdminPage() {
 
   // Dashboard active tab
   const [activeTab, setActiveTab] = useState<
-    "overview" | "broadcasts" | "customers" | "bookings" | "payments" | "audit" | "settings" | "packages" | "operations" | "suppliers" | "vendors" | "partners" | "finance" | "custom-trips" | "destinations" | "reports"
+    "overview" | "broadcasts" | "customers" | "bookings" | "live-trips" | "payments" | "audit" | "settings" | "packages" | "operations" | "suppliers" | "vendors" | "partners" | "finance" | "custom-trips" | "destinations" | "reports"
   >("overview");
 
   // Selected User ID for Complete Dossier Modal
@@ -255,7 +257,7 @@ export function AdminPage() {
       const searchParams = new URLSearchParams(window.location.search);
       const tabParam = searchParams.get("tab") || window.location.pathname.replace(/^\/admin\/?/, "");
       if (
-        ["packages", "operations", "suppliers", "vendors", "partners", "finance", "custom-trips", "overview", "broadcasts", "customers", "bookings", "payments", "audit", "settings", "destinations", "reports"].includes(
+        ["packages", "operations", "live-trips", "suppliers", "vendors", "partners", "finance", "custom-trips", "overview", "broadcasts", "customers", "bookings", "payments", "audit", "settings", "destinations", "reports"].includes(
           tabParam
         )
       ) {
@@ -1265,6 +1267,7 @@ export function AdminPage() {
               { id: "admin-nav-payments", tab: "payments" as const, label: "Payments", icon: CreditCard },
               { id: "admin-nav-suppliers", tab: "suppliers" as const, label: "Suppliers / Vendors", icon: Building2 },
               { id: "admin-nav-operations", tab: "operations" as const, label: "Operations", icon: Activity },
+              { id: "admin-nav-live-trips", tab: "live-trips" as const, label: "Live Trips & Safety", icon: Radio },
               { id: "admin-nav-packages", tab: "packages" as const, label: "Packages", icon: Package },
               { id: "admin-nav-destinations", tab: "destinations" as const, label: "Destinations", icon: MapPin },
               { id: "admin-nav-support", tab: "operations" as const, label: "Support", icon: MessageSquare },
@@ -3334,6 +3337,11 @@ export function AdminPage() {
               TAB 8: OPERATIONS (Section 11 & 12)
              ================================================================ */}
           {activeTab === "operations" && <AdminOperationsTab onToast={showToast} />}
+
+          {/* ================================================================
+              LIVE TRIPS & REAL-TIME CUSTOMER SAFETY
+             ================================================================ */}
+          {activeTab === "live-trips" && <AdminLiveTripsTab onToast={showToast} />}
 
           {activeTab === "custom-trips" && <AdminCustomTripsTab onToast={showToast} />}
 
