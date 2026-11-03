@@ -1,0 +1,163 @@
+{
+  "conversations": [
+    {
+      "id": "d4fc3be5-f2da-4757-bde8-413301e1242b",
+      "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+      "partner_name": "Thinkatic Global BPO Services Ltd (TEST)",
+      "partner_code": "THK-US-NY-00001",
+      "centre_id": 2,
+      "centre_name": "Thinkatic Global Delivery Centre - NY-01",
+      "project_id": 5,
+      "project_name": "Global AI Customer Support Operations (TEST 8782)",
+      "created_by_user_id": "cea6b51a-ad2d-4fd5-aa6d-135a1fbe522e",
+      "created_by_user_name": "bpo.test@thinkatic.com",
+      "request_type": "project_completed",
+      "subject": "Test Verification - Phase 1 Delivery (1790440185577)",
+      "status": "WAITING_FOR_BPO",
+      "payment_status": "INFO_REQUIRED",
+      "requested_amount": 7500,
+      "currency": "USD",
+      "milestone_name": "Milestone 1 - Inbound Desk Setup",
+      "completion_date": "2026-09-30",
+      "description": "We have finalized all deliverables for Phase 1. Requesting milestone review and payment clearance.",
+      "last_message_at": "2026-09-27T00:47:51.360Z",
+      "last_message_preview": "Payment status: INFO_REQUIRED",
+      "last_sender_type": "ADMIN",
+      "unread_admin_count": 0,
+      "unread_bpo_count": 0,
+      "assigned_admin_id": 1,
+      "assigned_admin_name": "Admin (admin)",
+      "payout_statement_id": null,
+      "resolved_at": "2026-09-26T16:30:02.833Z",
+      "closed_at": null,
+      "created_at": "2026-09-26T16:29:46.131Z",
+      "updated_at": "2026-09-27T00:47:51.360Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "6038a93c-85de-4d4a-ae7a-41d1d66eefe3",
+      "conversation_id": "d4fc3be5-f2da-4757-bde8-413301e1242b",
+      "sender_type": "BPO",
+      "sender_user_id": "cea6b51a-ad2d-4fd5-aa6d-135a1fbe522e",
+      "sender_admin_id": null,
+      "sender_name": "bpo.test@thinkatic.com",
+      "message": "We have finalized all deliverables for Phase 1. Requesting milestone review and payment clearance.",
+      "read_at": null,
+      "created_at": "2026-09-26T16:29:46.131Z"
+    },
+    {
+      "id": "9659d948-ce3d-4669-92b7-f7c431e2f8cc",
+      "conversation_id": "d4fc3be5-f2da-4757-bde8-413301e1242b",
+      "sender_type": "ADMIN",
+      "sender_user_id": null,
+      "sender_admin_id": 1,
+      "sender_name": "Admin (admin)",
+      "message": "We have reviewed the completion report. Quality assurance score meets target. Moving forward with approval.",
+      "read_at": null,
+      "created_at": "2026-09-26T16:29:54.462Z"
+    },
+    {
+      "id": "3d392df6-0475-4f42-bb03-36a4cd8e7e3b",
+      "conversation_id": "d4fc3be5-f2da-4757-bde8-413301e1242b",
+      "sender_type": "ADMIN",
+      "sender_user_id": null,
+      "sender_admin_id": 1,
+      "sender_name": "Thinkatic Finance & Admin",
+      "message": "💳 Payment Request status updated to \"APPROVED_FOR_PROCESSING\" by Admin (admin). (Request approved for Finance processing. Actual payment will be disbursed manually by Finance.)\nDetails: Approved by Operations Admin. Ready for Finance payout batch.",
+      "read_at": null,
+      "created_at": "2026-09-26T16:29:55.849Z"
+    },
+    {
+      "id": "fd9f4f42-c476-424c-9831-557a1cc79281",
+      "conversation_id": "d4fc3be5-f2da-4757-bde8-413301e1242b",
+      "sender_type": "BPO",
+      "sender_user_id": "cea6b51a-ad2d-4fd5-aa6d-135a1fbe522e",
+      "sender_admin_id": null,
+      "sender_name": "bpo.test@thinkatic.com",
+      "message": "📅 Meeting Request: \"Sprint 2 Kickoff & Scope Review\"\nPreferred Date: 2026-10-02 at 14:00 (45 mins)\nAgenda: Review upcoming seat allocations and milestone payment confirmation.\nNotes: Please let us know if 2 PM UTC works for the team.",
+      "read_at": null,
+      "created_at": "2026-09-26T16:29:57.549Z"
+    },
+    {
+      "id": "83987c1f-6e97-45a6-8e41-ff849038af6e",
+      "conversation_id": "d4fc3be5-f2da-4757-bde8-413301e1242b",
+      "sender_type": "ADMIN",
+      "sender_user_id": null,
+      "sender_admin_id": 1,
+      "sender_name": "Thinkatic Scheduling",
+      "message": "🤝 Meeting Scheduled: \"Sprint 2 Kickoff & Scope Review\"\nDate & Time: 10/2/2026, 7:30:00 PM (UTC)\nMeeting Link: https://meet.google.com/thk-bpo-meet\nPasscode: thk-meet-pass\nAgenda: Sprint 2 Kickoff & Scope Review confirmed with BPO partner leadership.",
+      "read_at": null,
+      "created_at": "2026-09-26T16:29:59.301Z"
+    },
+    {
+      "id": "90c07fd2-0a7c-49ba-9f3f-b743509fada2",
+      "conversation_id": "d4fc3be5-f2da-4757-bde8-413301e1242b",
+      "sender_type": "ADMIN",
+      "sender_user_id": null,
+      "sender_admin_id": 1,
+      "sender_name": "Thinkatic Finance & Admin",
+      "message": "💳 Payment Request status updated to \"PAID\" by Admin (admin). (Manual financial disbursement confirmed by Admin/Finance.)\nDetails: Wire transfer processed via Chase Bank Wire Ref #TXN-984214",
+      "read_at": null,
+      "created_at": "2026-09-26T16:30:02.833Z"
+    },
+    {
+      "id": "48601423-493f-459d-b8b3-a3f9095694bc",
+      "conversation_id": "d4fc3be5-f2da-4757-bde8-413301e1242b",
+      "sender_type": "BPO",
+      "sender_user_id": "cea6b51a-ad2d-4fd5-aa6d-135a1fbe522e",
+      "sender_admin_id": null,
+      "sender_name": "bpo.test@thinkatic.com",
+      "message": "HI sir My Name is gurpret Singh",
+      "read_at": null,
+      "created_at": "2026-09-27T00:46:22.488Z"
+    },
+    {
+      "id": "5d36c825-eb87-44be-a32d-7ea30b489aad",
+      "conversation_id": "d4fc3be5-f2da-4757-bde8-413301e1242b",
+      "sender_type": "ADMIN",
+      "sender_user_id": null,
+      "sender_admin_id": 1,
+      "sender_name": "Thinkatic Finance & Admin",
+      "message": "💳 Payment Request status updated to \"INFO_REQUIRED\" by Admin (admin).",
+      "read_at": null,
+      "created_at": "2026-09-27T00:47:51.360Z"
+    }
+  ],
+  "attachments": [
+    {
+      "id": "33dbcf38-2599-47df-84fb-9dcff831309d",
+      "conversation_id": "d4fc3be5-f2da-4757-bde8-413301e1242b",
+      "message_id": "6038a93c-85de-4d4a-ae7a-41d1d66eefe3",
+      "uploader_type": "BPO",
+      "uploader_user_id": "cea6b51a-ad2d-4fd5-aa6d-135a1fbe522e",
+      "uploader_admin_id": null,
+      "file_name": "sprint_completion_report.pdf",
+      "file_size": 79,
+      "file_type": "application/pdf",
+      "storage_path": "bpo_77c7a735-6d71-492a-9eeb-6853f567f432/d4fc3be5-f2da-4757-bde8-413301e1242b/1790440187470_sprint_completion_report.pdf",
+      "created_at": "2026-09-26T16:29:46.131Z"
+    }
+  ],
+  "meetingRequests": [
+    {
+      "id": "83d0b4cc-3e45-4c19-9b03-e2d5ce1fc195",
+      "conversation_id": "d4fc3be5-f2da-4757-bde8-413301e1242b",
+      "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+      "project_id": 5,
+      "requested_by_user_id": "cea6b51a-ad2d-4fd5-aa6d-135a1fbe522e",
+      "title": "Sprint 2 Kickoff & Scope Review",
+      "preferred_date": "2026-10-02",
+      "preferred_time": "14:00",
+      "duration_minutes": 45,
+      "agenda": "Review upcoming seat allocations and milestone payment confirmation.",
+      "message": "Please let us know if 2 PM UTC works for the team.",
+      "status": "SCHEDULED",
+      "scheduled_meeting_id": 1790440199301,
+      "reviewed_by_admin_id": 1,
+      "admin_notes": null,
+      "created_at": "2026-09-26T16:29:57.549Z",
+      "updated_at": "2026-09-26T16:29:59.301Z"
+    }
+  ]
+}

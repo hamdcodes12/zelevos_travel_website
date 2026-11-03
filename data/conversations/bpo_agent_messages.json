@@ -1,0 +1,228 @@
+{
+  "10005": [
+    {
+      "id": 8001,
+      "conversation_id": 10005,
+      "sender_type": "bpo_supervisor",
+      "sender_id": "bpo_sup_01",
+      "sender_name": "BPO Operations Supervisor",
+      "message": "Welcome to the Thinkatic Operations Desk. You can use this channel for real-time shift and project updates.",
+      "read_at": "2026-09-27T01:15:18.964Z",
+      "created_at": "2026-09-27T01:15:18.964Z"
+    },
+    {
+      "id": 8002,
+      "conversation_id": 10005,
+      "sender_type": "bpo_supervisor",
+      "sender_id": "bpo_sup_01",
+      "sender_name": "BPO Operations Supervisor",
+      "message": "Please complete today's remaining calls before shift end. Priority on Patient Support campaigns.",
+      "read_at": "2026-09-27T02:15:18.964Z",
+      "created_at": "2026-09-27T02:15:18.964Z"
+    },
+    {
+      "id": 8003,
+      "conversation_id": 10005,
+      "sender_type": "agent",
+      "sender_id": "5",
+      "sender_name": "Guru Agent",
+      "message": "Understood sir, I am continuing the remaining calls and updating customer references in real time.",
+      "read_at": "2026-09-27T02:45:18.964Z",
+      "created_at": "2026-09-27T02:45:18.964Z"
+    },
+    {
+      "id": 8001,
+      "conversation_id": 10005,
+      "sender_type": "bpo_supervisor",
+      "sender_id": "e5be8200-524a-42f4-bf01-7718f4a52da2",
+      "sender_name": "BPO Operations Supervisor",
+      "message": "[E2E TEST BPO → AGENT #1790478919248] Supervisor shift alert: Please confirm patient records for batch #402.",
+      "attachment_url": null,
+      "attachment_name": null,
+      "created_at": "2026-09-27T03:15:19.519Z",
+      "read_at": "2026-09-27T03:15:19.813Z"
+    },
+    {
+      "id": 8002,
+      "conversation_id": 10005,
+      "sender_type": "agent",
+      "sender_id": "5",
+      "sender_name": "Guru Agent",
+      "message": "[E2E TEST AGENT → BPO #1790478919248] Batch #402 patient records completed and submitted successfully, supervisor!",
+      "attachment_url": null,
+      "attachment_name": null,
+      "attachment_type": null,
+      "created_at": "2026-09-27T03:15:19.817Z",
+      "read_at": "2026-09-27T03:15:20.888Z"
+    },
+    {
+      "id": 8101,
+      "conversation_id": 10005,
+      "sender_type": "bpo_supervisor",
+      "sender_id": "e5be8200-524a-42f4-bf01-7718f4a52da2",
+      "sender_name": "BPO Operations Supervisor",
+      "message": "[E2E TEST BPO → AGENT #1790479039430] Supervisor shift alert: Please confirm patient records for batch #402.",
+      "attachment_url": null,
+      "attachment_name": null,
+      "created_at": "2026-09-27T03:17:19.974Z",
+      "read_at": "2026-09-27T03:17:20.214Z"
+    },
+    {
+      "id": 8102,
+      "conversation_id": 10005,
+      "sender_type": "agent",
+      "sender_id": "5",
+      "sender_name": "Guru Agent",
+      "message": "[E2E TEST AGENT → BPO #1790479039430] Batch #402 patient records completed and submitted successfully, supervisor!",
+      "attachment_url": null,
+      "attachment_name": null,
+      "attachment_type": null,
+      "created_at": "2026-09-27T03:17:20.218Z",
+      "read_at": "2026-09-27T03:17:21.195Z"
+    },
+    {
+      "id": 8104,
+      "conversation_id": 10005,
+      "sender_type": "bpo_supervisor",
+      "sender_id": "cea6b51a-ad2d-4fd5-aa6d-135a1fbe522e",
+      "sender_name": "BPO Operations Supervisor",
+      "message": "hI SIR",
+      "attachment_url": null,
+      "attachment_name": null,
+      "created_at": "2026-09-27T03:27:03.730Z",
+      "read_at": "2026-09-27T03:27:23.104Z"
+    },
+    {
+      "id": 8106,
+      "conversation_id": 10005,
+      "sender_type": "bpo_supervisor",
+      "sender_id": "e5be8200-524a-42f4-bf01-7718f4a52da2",
+      "sender_name": "BPO Operations Supervisor",
+      "message": "[E2E TEST BPO → AGENT #1790483792437] Supervisor shift alert: Please confirm patient records for batch #402.",
+      "attachment_url": null,
+      "attachment_name": null,
+      "created_at": "2026-09-27T04:36:32.678Z",
+      "read_at": "2026-09-27T04:36:33.254Z"
+    },
+    {
+      "id": 8107,
+      "conversation_id": 10005,
+      "sender_type": "agent",
+      "sender_id": "5",
+      "sender_name": "Guru Agent",
+      "message": "[E2E TEST AGENT → BPO #1790483792437] Batch #402 patient records completed and submitted successfully, supervisor!",
+      "attachment_url": null,
+      "attachment_name": null,
+      "attachment_type": null,
+      "created_at": "2026-09-27T04:36:33.259Z",
+      "read_at": "2026-09-27T04:36:34.765Z"
+    },
+    {
+      "id": 8109,
+      "conversation_id": 10005,
+      "sender_type": "bpo_supervisor",
+      "sender_id": "e5be8200-524a-42f4-bf01-7718f4a52da2",
+      "sender_name": "BPO Operations Supervisor",
+      "message": "[E2E TEST BPO → AGENT #1790484004052] Supervisor shift alert: Please confirm patient records for batch #402.",
+      "attachment_url": null,
+      "attachment_name": null,
+      "created_at": "2026-09-27T04:40:04.304Z",
+      "read_at": "2026-09-27T04:40:04.623Z"
+    },
+    {
+      "id": 8110,
+      "conversation_id": 10005,
+      "sender_type": "agent",
+      "sender_id": "5",
+      "sender_name": "Guru Agent",
+      "message": "[E2E TEST AGENT → BPO #1790484004052] Batch #402 patient records completed and submitted successfully, supervisor!",
+      "attachment_url": null,
+      "attachment_name": null,
+      "attachment_type": null,
+      "created_at": "2026-09-27T04:40:04.626Z",
+      "read_at": "2026-09-27T04:40:05.812Z"
+    },
+    {
+      "id": 8111,
+      "conversation_id": 10005,
+      "sender_type": "agent",
+      "sender_id": "5",
+      "sender_name": "Guru Agent",
+      "message": "Hello Supervisor, I have verified today's HIPAA updates and logged 2 complex patient consultations.",
+      "attachment_url": null,
+      "attachment_name": null,
+      "attachment_type": null,
+      "created_at": "2026-09-27T04:40:35.222Z",
+      "read_at": "2026-09-27T04:43:04.209Z"
+    },
+    {
+      "id": 8112,
+      "conversation_id": 10005,
+      "sender_type": "agent",
+      "sender_id": "5",
+      "sender_name": "Guru Agent",
+      "message": "Hello Supervisor, I have verified today's HIPAA updates and logged 2 complex patient consultations.",
+      "attachment_url": null,
+      "attachment_name": null,
+      "attachment_type": null,
+      "created_at": "2026-09-27T04:41:48.063Z",
+      "read_at": "2026-09-27T04:43:04.209Z"
+    },
+    {
+      "id": 8113,
+      "conversation_id": 10005,
+      "sender_type": "bpo_supervisor",
+      "sender_id": "e5be8200-524a-42f4-bf01-7718f4a52da2",
+      "sender_name": "BPO Operations Supervisor",
+      "message": "Please complete today's remaining calls before shift end [ID: 1790484182037]",
+      "attachment_url": null,
+      "attachment_name": null,
+      "created_at": "2026-09-27T04:43:02.341Z"
+    },
+    {
+      "id": 8114,
+      "conversation_id": 10005,
+      "sender_type": "agent",
+      "sender_id": "5",
+      "sender_name": "Guru Agent",
+      "message": "Understood supervisor, I am continuing the remaining calls. [ID: 1790484183195]",
+      "attachment_url": null,
+      "attachment_name": null,
+      "attachment_type": null,
+      "created_at": "2026-09-27T04:43:03.196Z",
+      "read_at": "2026-09-27T04:43:04.209Z"
+    }
+  ],
+  "10104": [
+    {
+      "id": 8001,
+      "conversation_id": 10104,
+      "sender_type": "bpo_supervisor",
+      "sender_id": "bpo_sup_01",
+      "sender_name": "BPO Operations Supervisor",
+      "message": "Welcome to the Thinkatic Operations Desk. You can use this channel for real-time shift and project updates.",
+      "read_at": "2026-10-15T07:41:15.287Z",
+      "created_at": "2026-10-15T07:41:15.287Z"
+    },
+    {
+      "id": 8002,
+      "conversation_id": 10104,
+      "sender_type": "bpo_supervisor",
+      "sender_id": "bpo_sup_01",
+      "sender_name": "BPO Operations Supervisor",
+      "message": "Please complete today's remaining calls before shift end. Priority on Patient Support campaigns.",
+      "read_at": "2026-10-15T08:41:15.287Z",
+      "created_at": "2026-10-15T08:41:15.287Z"
+    },
+    {
+      "id": 8003,
+      "conversation_id": 10104,
+      "sender_type": "agent",
+      "sender_id": "104",
+      "sender_name": "Gurpreet R.",
+      "message": "Understood sir, I am continuing the remaining calls and updating customer references in real time.",
+      "read_at": "2026-10-15T09:11:15.287Z",
+      "created_at": "2026-10-15T09:11:15.287Z"
+    }
+  ]
+}

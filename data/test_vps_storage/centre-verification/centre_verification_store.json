@@ -1,0 +1,130 @@
+{
+  "verifications": [
+    {
+      "id": 1,
+      "partnerId": "THK-VPS-TEST-PARTNER-001",
+      "applicationId": null,
+      "centreId": null,
+      "applicantUserId": "THK-VPS-TEST-PARTNER-001",
+      "officeName": "VPS Enterprise Centre",
+      "addressLine1": "",
+      "addressLine2": null,
+      "city": "Mumbai",
+      "state": "",
+      "country": "India",
+      "postalCode": "",
+      "landmark": null,
+      "contactNumber": "",
+      "centreType": "Dedicated BPO Facility",
+      "ownershipType": "Commercial Lease",
+      "operatingSince": "2024",
+      "totalAreaSqft": null,
+      "numberOfFloors": 1,
+      "status": "IN_PROGRESS",
+      "submittedAt": null,
+      "submissionCount": 0,
+      "reviewedAt": null,
+      "reviewedByAdminId": null,
+      "reviewedByAdminName": null,
+      "rejectionReason": null,
+      "createdAt": "2026-09-20T09:44:23.388Z",
+      "updatedAt": "2026-09-20T09:44:23.905Z",
+      "media": [
+        {
+          "id": 1,
+          "verificationId": 1,
+          "partnerId": "THK-VPS-TEST-PARTNER-001",
+          "applicantUserId": "THK-VPS-TEST-PARTNER-001",
+          "centreId": null,
+          "mediaType": "photo",
+          "category": "reception_entrance",
+          "storageKey": "centre-verification/THK-VPS-TEST-PARTNER-001/1/photos/1789897463391_reception_entrance_office_reception_vps.jpg",
+          "originalFileName": "office_reception_vps.jpg",
+          "mimeType": "image/jpeg",
+          "fileSize": 12,
+          "durationSeconds": null,
+          "uploadedBy": "THK-VPS-TEST-PARTNER-001",
+          "uploadedAt": "2026-09-20T09:44:23.400Z",
+          "status": "active",
+          "filePath": "C:\\Users\\Gurpreet Singh\\Downloads\\Futuristic-AI-Agency-main (1)\\Futuristic-AI-Agency-main\\data\\test_vps_storage\\centre-verification\\THK-VPS-TEST-PARTNER-001\\1\\photos\\1789897463391_reception_entrance_office_reception_vps.jpg"
+        },
+        {
+          "id": 2,
+          "verificationId": 1,
+          "partnerId": "THK-VPS-TEST-PARTNER-001",
+          "applicantUserId": "THK-VPS-TEST-PARTNER-001",
+          "centreId": null,
+          "mediaType": "video",
+          "category": "live_walkthrough",
+          "storageKey": "centre-verification/THK-VPS-TEST-PARTNER-001/1/videos/1789897463902_live_walkthrough_walkthrough_vps.mp4",
+          "originalFileName": "walkthrough_vps.mp4",
+          "mimeType": "video/mp4",
+          "fileSize": 12,
+          "durationSeconds": 65,
+          "uploadedBy": "THK-VPS-TEST-PARTNER-001",
+          "uploadedAt": "2026-09-20T09:44:23.905Z",
+          "status": "active",
+          "filePath": "C:\\Users\\Gurpreet Singh\\Downloads\\Futuristic-AI-Agency-main (1)\\Futuristic-AI-Agency-main\\data\\test_vps_storage\\centre-verification\\THK-VPS-TEST-PARTNER-001\\1\\videos\\1789897463902_live_walkthrough_walkthrough_vps.mp4"
+        }
+      ],
+      "history": [
+        {
+          "id": 1,
+          "verificationId": 1,
+          "submissionRound": 1,
+          "action": "created",
+          "fromStatus": null,
+          "toStatus": "NOT_STARTED",
+          "actorId": "THK-VPS-TEST-PARTNER-001",
+          "actorRole": "partner",
+          "actorName": null,
+          "notes": "Centre verification dossier initialized",
+          "metadata": {},
+          "createdAt": "2026-09-20T09:44:23.388Z"
+        },
+        {
+          "id": 2,
+          "verificationId": 1,
+          "submissionRound": 1,
+          "action": "photo_uploaded",
+          "fromStatus": "IN_PROGRESS",
+          "toStatus": "IN_PROGRESS",
+          "actorId": "THK-VPS-TEST-PARTNER-001",
+          "actorRole": "partner",
+          "actorName": null,
+          "notes": "Photo uploaded for category: reception_entrance",
+          "metadata": {
+            "mediaId": 1,
+            "category": "reception_entrance",
+            "fileName": "office_reception_vps.jpg",
+            "size": 12
+          },
+          "createdAt": "2026-09-20T09:44:23.400Z"
+        },
+        {
+          "id": 3,
+          "verificationId": 1,
+          "submissionRound": 1,
+          "action": "video_uploaded",
+          "fromStatus": "IN_PROGRESS",
+          "toStatus": "IN_PROGRESS",
+          "actorId": "THK-VPS-TEST-PARTNER-001",
+          "actorRole": "partner",
+          "actorName": null,
+          "notes": "Live walkthrough video uploaded for category: live_walkthrough",
+          "metadata": {
+            "mediaId": 2,
+            "category": "live_walkthrough",
+            "fileName": "walkthrough_vps.mp4",
+            "size": 12
+          },
+          "createdAt": "2026-09-20T09:44:23.905Z"
+        }
+      ]
+    }
+  ],
+  "nextVerifId": 2,
+  "nextMediaId": 3,
+  "nextHistId": 4,
+  "updatedAt": "2026-09-20T09:44:23.905Z"
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "check_code": "CHK-OPS-001",
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "reason": "Scheduled secondary data center failover maintenance window shifted by cloud provider. Temporary exception requested until November 15, 2026.",
+    "status": "approved",
+    "start_date": "2026-09-15",
+    "valid_until": "2026-11-15",
+    "approved_by": "Thinkatic Chief Compliance Officer",
+    "approval_date": "2026-09-15T11:00:00Z",
+    "conditions": "Partner must maintain cold-standby configurations and submit preliminary test telemetry by Oct 30.",
+    "notes": "Approved based on valid vendor dependency notification and low risk to ongoing operations.",
+    "created_at": "2026-09-14T09:00:00Z"
+  },
+  {
+    "id": 2,
+    "check_code": "CHK-SEC-004",
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "reason": "Requested 10-day extension to finalize automated WAF rule update before triggering formal penetration test re-scan.",
+    "status": "under_review",
+    "start_date": "2026-09-22",
+    "valid_until": "2026-10-10",
+    "approved_by": null,
+    "approval_date": null,
+    "conditions": null,
+    "notes": "Under review by Senior Security Lead.",
+    "created_at": "2026-09-22T14:30:00Z"
+  }
+]

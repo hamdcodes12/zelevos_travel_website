@@ -1,0 +1,84 @@
+[
+  {
+    "id": 1,
+    "capa_code": "CAPA-00001",
+    "check_code": "CHK-PRJ-002",
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "title": "Dialer Mute Delay on PII Capture Remediation",
+    "issue_summary": "Automated audio mute delay of 1.2s observed during credit card expiration date capture on voice calls.",
+    "root_cause": "Dialer pause-recording webhook latency on legacy SIP trunk routing during peak volume hours.",
+    "corrective_action": "Deploy low-latency edge mute trigger microservice and upgrade agent softphone client build to v4.2.1.",
+    "preventive_action": "Implement synthetic automated test calls daily to monitor mute latency and alarm if delay > 100ms.",
+    "owner_name": "Harpreet Singh (Lead Systems Architect)",
+    "priority": "high",
+    "target_date": "2026-10-15",
+    "status": "in_progress",
+    "evidence_url": "/data/storage/compliance/capa_edge_mute_deployment_plan.pdf",
+    "evidence_notes": "Edge service deployed in staging. Load testing indicates latency dropped to 45ms.",
+    "created_by": "Admin Compliance Auditor",
+    "created_at": "2026-09-15T10:00:00Z",
+    "updated_at": "2026-09-22T16:00:00Z",
+    "history": [
+      {
+        "date": "2026-09-15",
+        "action": "CAPA Created",
+        "note": "Issue identified during QA audio sampling.",
+        "actor": "Admin Auditor"
+      },
+      {
+        "date": "2026-09-16",
+        "action": "Owner Assigned",
+        "note": "Assigned to Lead Systems Architect Harpreet Singh.",
+        "actor": "Partner Lead"
+      },
+      {
+        "date": "2026-09-22",
+        "action": "Progress Update",
+        "note": "Staging microservice tested successfully.",
+        "actor": "Harpreet Singh"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "capa_code": "CAPA-00002",
+    "check_code": "CHK-SEC-002",
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "title": "Floor Workstation Auto-Lock Timeout Standardization",
+    "issue_summary": "Screen lock timeout on 3 training pod stations was set to 600s instead of mandated 180s.",
+    "root_cause": "Group Policy Object (GPO) replication delay to subnet 192.168.14.0/24 during branch domain controller sync.",
+    "corrective_action": "Forced Active Directory GPUpdate across all operational subnets and added policy verification script.",
+    "preventive_action": "Automated nightly audit script that scans domain endpoints and reports non-compliant lock timeouts.",
+    "owner_name": "David Chen (IT Infrastructure Lead)",
+    "priority": "medium",
+    "target_date": "2026-09-10",
+    "status": "completed",
+    "evidence_url": "/data/storage/compliance/gpo_lock_audit_verification.pdf",
+    "evidence_notes": "All 120 endpoints verified at 180s timeout. Signed off by Thinkatic Security Auditor.",
+    "created_by": "Thinkatic Floor Auditor",
+    "created_at": "2026-09-02T11:00:00Z",
+    "updated_at": "2026-09-08T15:00:00Z",
+    "history": [
+      {
+        "date": "2026-09-02",
+        "action": "CAPA Created",
+        "note": "Flagged during spot inspection.",
+        "actor": "Floor Auditor"
+      },
+      {
+        "date": "2026-09-04",
+        "action": "Evidence Submitted",
+        "note": "GPO logs and endpoint scans submitted.",
+        "actor": "David Chen"
+      },
+      {
+        "date": "2026-09-08",
+        "action": "CAPA Closed & Verified",
+        "note": "Resolution verified in production.",
+        "actor": "Admin Auditor"
+      }
+    ]
+  }
+]

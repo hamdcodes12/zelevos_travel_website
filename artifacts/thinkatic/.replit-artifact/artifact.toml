@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Thinkatic — AI Agency"
+version = "1.0.0"
+id = "artifacts/thinkatic"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23363
+
+[services.development]
+run = "pnpm --filter @workspace/thinkatic run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/thinkatic", "run", "build" ]
+publicDir = "artifacts/thinkatic/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23363"
+BASE_PATH = "/"

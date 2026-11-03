@@ -1,0 +1,6 @@
+- [Framer Motion v12 Bezier Ease](framer-motion-ease.md) — `ease: [0.22,1,0.36,1]` must be cast as `[number,number,number,number]` or it fails type-check across the whole codebase.
+- [External DB Connection](external-db.md) — Railway (yamanote.proxy.rlwy.net:38280) is unreachable; Replit built-in DB is not configured.
+- [Thinkatic Site Architecture](thinkatic-architecture.md) — pnpm monorepo; frontend port 23363 (mapped :80), API port 8080; GSAP+Lenis synced in useLenis.ts.
+- [Parallax Layers Pattern](parallax-layers.md) — SVG path `d` attribute cannot use CSS `%` units; use viewBox coordinates (0–100). MovingGrid uses transform translate on oversized div (inset: -size) for seamless GPU-accelerated grid scroll.
+- [Design System](design-system.md) — Phase 1 complete: typography, card variants, button/badge variants, brand cards, Section/Container/Grid, SectionHeader, CTABanner all built. See UPGRADE_ROADMAP.md for full audit and phases 2–8.
+- [Homepage Section Wiring](homepage-sections.md) — All 10 homepage sections live in Home.tsx; OurClients/GlobalCoverage/Process/Testimonials/FAQ were pre-built but not wired; BPOServices upgraded with TiltCard+icons+service chips; FinalCTA is a two-col layout with stats glass card.

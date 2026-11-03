@@ -1,0 +1,68 @@
+import { Router, type IRouter } from "express";
+import healthRouter from "./health";
+import contactsRouter from "./contacts.js";
+import adminRouter from "./admin.js";
+import paypalRouter from "./paypal.js";
+import plansRouter from "./plans.js";
+import userRouter from "./user.js";
+import clientUpdatesRouter from "./clientUpdates.js";
+import ticketsRouter from "./tickets.js";
+import projectsRouter from "./projects.js";
+import documentsCommunicationRouter from "./documentsCommunication.js";
+import meetingsRouter from "./meetings.js";
+import billingRouter from "./billing.js";
+import partnerRouter from "./partner.js";
+import partnerApplicationsRouter from "./partnerApplications.js";
+import bpoProjectsRouter from "./bpoProjects.js";
+import bpoAgentsRouter from "./bpoAgents.js";
+import bpoOperationsRouter from "./bpoOperations.js";
+import bpoClientPortalRouter from "./bpoClientPortal.js";
+import bpoBillingRouter from "./bpoBilling.js";
+import bpoCapacityRouter from "./bpoCapacity.js";
+import bpoIntegrationsRouter from "./bpoIntegrations.js";
+import partnerAgreementsRouter from "./partnerAgreements.js";
+import bpoCentreVerificationRouter from "./bpoCentreVerification.js";
+import accreditationRouter from "./accreditationRoutes.js";
+import chatRouter from "./chat.js";
+import agentPortalRouter from "./agentPortal.js";
+import bpoStatusRouter from "./bpoStatus.js";
+import publicTicketsRouter from "./publicTickets.js";
+import featureControlRouter from "./featureControl.js";
+import bpoConnectRouter from "./bpoConnect.js";
+
+const router: IRouter = Router();
+
+router.use(bpoStatusRouter);
+
+router.use(healthRouter);
+router.use(contactsRouter);
+router.use(publicTicketsRouter);
+router.use(adminRouter);
+router.use(featureControlRouter);
+router.use(paypalRouter);
+router.use(plansRouter);
+router.use(userRouter);
+router.use(clientUpdatesRouter);
+router.use(ticketsRouter);
+router.use(projectsRouter);
+router.use(documentsCommunicationRouter);
+router.use(meetingsRouter);
+router.use(billingRouter);
+router.use(accreditationRouter);
+router.use(partnerApplicationsRouter);
+router.use(partnerAgreementsRouter);
+router.use(bpoCentreVerificationRouter);
+router.use(bpoProjectsRouter);
+router.use(bpoAgentsRouter);
+router.use(agentPortalRouter);
+router.use(bpoOperationsRouter);
+router.use(bpoClientPortalRouter);
+router.use(bpoBillingRouter);
+router.use(bpoCapacityRouter);
+router.use(bpoIntegrationsRouter);
+router.use(partnerRouter);
+router.use(bpoConnectRouter);
+router.use(chatRouter);
+
+export default router;
+

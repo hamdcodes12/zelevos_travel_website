@@ -1,0 +1,52 @@
+# ==============================================================================
+# DEPRECATED — VPS SYSTEMD SERVICE UNIT
+# THINKATIC ARCHITECTURE HAS FULLY MIGRATED TO SUPABASE (DATABASE & STORAGE).
+# Storage and DB are handled in Supabase project kajeoxbyyokauddoiumf.
+# Retained for reference only.
+# ==============================================================================
+
+[Unit]
+Description=Thinkatic Global BPO Enterprise Platform
+Documentation=https://thinkatic.com
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/srv/thinkatic/app
+
+# Application environment
+EnvironmentFile=/srv/thinkatic/app/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=STORAGE_ROOT=/srv/thinkatic/storage
+Environment=BACKUP_ROOT=/srv/thinkatic/backups
+
+# Startup command pointing to bundled production server
+ExecStart=/usr/bin/node artifacts/api-server/dist/index.mjs
+
+# Process management & auto-restart
+Restart=always
+RestartSec=10
+KillMode=process
+TimeoutSec=30
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Security & OS Sandboxing
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+ReadWritePaths=/srv/thinkatic/storage /srv/thinkatic/backups /srv/thinkatic/app/logs
+
+# Standard output and logging (integrated with journalctl)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=thinkatic
+
+[Install]
+WantedBy=multi-user.target

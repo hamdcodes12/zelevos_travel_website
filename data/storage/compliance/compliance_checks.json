@@ -1,0 +1,602 @@
+[
+  {
+    "check_code": "CHK-DOC-001",
+    "title": "Corporate Registration & Certificate of Incorporation",
+    "check_type": "document",
+    "category": "Business Documentation",
+    "requirement_description": "Valid certificate of commercial registration, tax identification, and corporate charter verifying active legal standing.",
+    "priority": "critical",
+    "status": "verified",
+    "evidence_url": "/data/storage/documents/certificate_of_incorporation.pdf",
+    "evidence_notes": "Verified by Thinkatic Legal Operations. Active good standing in Delaware, USA.",
+    "due_date": "2026-12-31",
+    "last_verified_at": "2026-09-01T10:00:00Z",
+    "verified_by": "Compliance Director (Admin)",
+    "is_mandatory": true,
+    "id": 5,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/documents/certificate_of_incorporation.pdf",
+        "notes": "Verified by Thinkatic Legal Operations. Active good standing in Delaware, USA.",
+        "uploaded_at": "2026-09-01T10:00:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Compliance Director (Admin)",
+        "reviewed_at": "2026-09-01T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-DOC-002",
+    "title": "Tax Identification & Good Standing Certificate",
+    "check_type": "document",
+    "category": "Business Documentation",
+    "requirement_description": "Official federal tax clearance and IRS W-9 / W-8BEN-E compliance documentation.",
+    "priority": "high",
+    "status": "verified",
+    "evidence_url": "/data/storage/documents/tax_clearance_cert_2026.pdf",
+    "evidence_notes": "IRS confirmation verified on file. No outstanding tax liens.",
+    "due_date": "2026-12-31",
+    "last_verified_at": "2026-09-01T10:30:00Z",
+    "verified_by": "Finance & Legal Lead",
+    "is_mandatory": true,
+    "id": 6,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/documents/tax_clearance_cert_2026.pdf",
+        "notes": "IRS confirmation verified on file. No outstanding tax liens.",
+        "uploaded_at": "2026-09-01T10:30:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Finance & Legal Lead",
+        "reviewed_at": "2026-09-01T10:30:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-VFY-001",
+    "title": "Physical Office Centre Facility Verification",
+    "check_type": "operational",
+    "category": "Centre Verification",
+    "requirement_description": "Physical audit of delivery center premises, fire suppression, perimeter security, and workstation spacing.",
+    "priority": "critical",
+    "status": "verified",
+    "evidence_url": "/data/storage/centre-verification/audit_report_centre_2.pdf",
+    "evidence_notes": "Office verification audit passed 100% (Thinkatic Verification Badge Active).",
+    "due_date": "2027-01-15",
+    "last_verified_at": "2026-09-10T14:15:00Z",
+    "verified_by": "Global Facilities Auditor",
+    "is_mandatory": true,
+    "id": 7,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/centre-verification/audit_report_centre_2.pdf",
+        "notes": "Office verification audit passed 100% (Thinkatic Verification Badge Active).",
+        "uploaded_at": "2026-09-10T14:15:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Global Facilities Auditor",
+        "reviewed_at": "2026-09-10T14:15:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-VFY-002",
+    "title": "Biometric & RFID Access Control Logs",
+    "check_type": "security",
+    "category": "Centre Verification",
+    "requirement_description": "Automated badge-in / biometric turnstile audit logs showing strict floor access restrictions.",
+    "priority": "high",
+    "status": "verified",
+    "evidence_url": "/data/storage/centre-verification/access_logs_q3.csv",
+    "evidence_notes": "Access logs reviewed. Frontline floor restricted to cleared personnel.",
+    "due_date": "2026-11-30",
+    "last_verified_at": "2026-09-12T09:00:00Z",
+    "verified_by": "Physical Security Officer",
+    "is_mandatory": true,
+    "id": 8,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/centre-verification/access_logs_q3.csv",
+        "notes": "Access logs reviewed. Frontline floor restricted to cleared personnel.",
+        "uploaded_at": "2026-09-12T09:00:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Physical Security Officer",
+        "reviewed_at": "2026-09-12T09:00:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-LGL-001",
+    "title": "Master Service Agreement (MSA) Execution",
+    "check_type": "document",
+    "category": "Legal & Agreement",
+    "requirement_description": "Fully executed Thinkatic BPO Partner Master Service Agreement signed with digital cryptographic seals.",
+    "priority": "critical",
+    "status": "verified",
+    "evidence_url": "/data/storage/agreements/msa_signed_exec_2026.pdf",
+    "evidence_notes": "Cryptographically verified DocuSign signature matching partner principals.",
+    "due_date": "2027-09-01",
+    "last_verified_at": "2026-09-01T11:00:00Z",
+    "verified_by": "Legal Counsel",
+    "is_mandatory": true,
+    "id": 9,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/agreements/msa_signed_exec_2026.pdf",
+        "notes": "Cryptographically verified DocuSign signature matching partner principals.",
+        "uploaded_at": "2026-09-01T11:00:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Legal Counsel",
+        "reviewed_at": "2026-09-01T11:00:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-LGL-002",
+    "title": "Non-Disclosure & Data Protection Addendum (NDA/DPA)",
+    "check_type": "document",
+    "category": "Legal & Agreement",
+    "requirement_description": "Bilateral confidentiality agreement and EU/US cross-border data transfer clauses.",
+    "priority": "critical",
+    "status": "verified",
+    "evidence_url": "/data/storage/agreements/dpa_executed.pdf",
+    "evidence_notes": "DPA schedule A & B fully countersigned.",
+    "due_date": "2027-09-01",
+    "last_verified_at": "2026-09-01T11:30:00Z",
+    "verified_by": "Legal Counsel",
+    "is_mandatory": true,
+    "id": 10,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/agreements/dpa_executed.pdf",
+        "notes": "DPA schedule A & B fully countersigned.",
+        "uploaded_at": "2026-09-01T11:30:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Legal Counsel",
+        "reviewed_at": "2026-09-01T11:30:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-SEC-001",
+    "title": "ISO/IEC 27001 Information Security Certification",
+    "check_type": "security",
+    "category": "Security",
+    "requirement_description": "Accredited third-party certificate demonstrating active ISMS controls and annual surveillance audit.",
+    "priority": "critical",
+    "status": "verified",
+    "evidence_url": "/data/storage/compliance/iso_27001_cert_2026.pdf",
+    "evidence_notes": "Certificate verified with accredited registrar UKAS/ANAB. Valid until Oct 2027.",
+    "due_date": "2027-10-20",
+    "last_verified_at": "2026-09-05T16:00:00Z",
+    "verified_by": "InfoSec Lead Auditor",
+    "is_mandatory": true,
+    "id": 11,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/iso_27001_cert_2026.pdf",
+        "notes": "Certificate verified with accredited registrar UKAS/ANAB. Valid until Oct 2027.",
+        "uploaded_at": "2026-09-05T16:00:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "InfoSec Lead Auditor",
+        "reviewed_at": "2026-09-05T16:00:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-SEC-002",
+    "title": "Clean Desk & Clear Screen Policy Enforcement",
+    "check_type": "operational",
+    "category": "Security",
+    "requirement_description": "Zero pen/paper/mobile phones on the operations floor. Automated screen locking at 180 seconds idle.",
+    "priority": "high",
+    "status": "verified",
+    "evidence_url": "/data/storage/compliance/clean_desk_audit_q3.pdf",
+    "evidence_notes": "Floor inspection complete. Lockers operational, GPO policy verified.",
+    "due_date": "2026-10-31",
+    "last_verified_at": "2026-09-15T11:20:00Z",
+    "verified_by": "QA Floor Supervisor",
+    "is_mandatory": true,
+    "id": 12,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/clean_desk_audit_q3.pdf",
+        "notes": "Floor inspection complete. Lockers operational, GPO policy verified.",
+        "uploaded_at": "2026-09-15T11:20:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "QA Floor Supervisor",
+        "reviewed_at": "2026-09-15T11:20:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-SEC-003",
+    "title": "PCI-DSS Level 1 Scope Attestation of Compliance (AoC)",
+    "check_type": "security",
+    "category": "Security",
+    "requirement_description": "QSA-signed Attestation of Compliance covering agent payment processing environment.",
+    "priority": "high",
+    "status": "verified",
+    "evidence_url": "/data/storage/compliance/pci_dss_aoc_2026.pdf",
+    "evidence_notes": "AoC Version 4.0 approved. Card data strictly tokenized before agent view.",
+    "due_date": "2027-03-31",
+    "last_verified_at": "2026-09-08T13:45:00Z",
+    "verified_by": "Head of Cybersecurity",
+    "is_mandatory": true,
+    "id": 13,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/pci_dss_aoc_2026.pdf",
+        "notes": "AoC Version 4.0 approved. Card data strictly tokenized before agent view.",
+        "uploaded_at": "2026-09-08T13:45:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Head of Cybersecurity",
+        "reviewed_at": "2026-09-08T13:45:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-SEC-004",
+    "title": "Quarterly Vulnerability Scanning & Penetration Test",
+    "check_type": "security",
+    "category": "Security",
+    "requirement_description": "ASV external perimeter vulnerability report showing zero critical or high vulnerabilities.",
+    "priority": "medium",
+    "status": "under_review",
+    "evidence_url": "/data/storage/compliance/q3_vulnerability_scan_report.pdf",
+    "evidence_notes": "Submitted by Partner DevOps Lead on 24 Sep 2026. Awaiting final review from Thinkatic Security Team.",
+    "due_date": "2026-09-30",
+    "last_verified_at": null,
+    "verified_by": null,
+    "is_mandatory": true,
+    "id": 14,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/q3_vulnerability_scan_report.pdf",
+        "notes": "Submitted by Partner DevOps Lead on 24 Sep 2026. Awaiting final review from Thinkatic Security Team.",
+        "uploaded_at": "2026-09-01T10:00:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "submitted",
+        "reviewed_by": null,
+        "reviewed_at": null
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-DAT-001",
+    "title": "HIPAA Patient Health Information (PHI) Handling Protocol",
+    "check_type": "document",
+    "category": "Data/Privacy",
+    "requirement_description": "Administrative, physical, and technical safeguards complying with 45 CFR Part 160/164 for telehealth support.",
+    "priority": "critical",
+    "status": "verified",
+    "evidence_url": "/data/storage/compliance/hipaa_compliance_attestation.pdf",
+    "evidence_notes": "BAA terms verified. Encryption at rest (AES-256) and TLS 1.3 in transit verified.",
+    "due_date": "2026-12-15",
+    "last_verified_at": "2026-09-02T15:30:00Z",
+    "verified_by": "Privacy Officer",
+    "is_mandatory": true,
+    "id": 15,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/hipaa_compliance_attestation.pdf",
+        "notes": "BAA terms verified. Encryption at rest (AES-256) and TLS 1.3 in transit verified.",
+        "uploaded_at": "2026-09-02T15:30:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Privacy Officer",
+        "reviewed_at": "2026-09-02T15:30:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-DAT-002",
+    "title": "GDPR / Data Subject Rights & Incident Notification Plan",
+    "check_type": "operational",
+    "category": "Data/Privacy",
+    "requirement_description": "Documented 72-hour breach notification playbook and data subject access request (DSAR) workflows.",
+    "priority": "high",
+    "status": "verified",
+    "evidence_url": "/data/storage/compliance/dsar_breach_playbook_v3.pdf",
+    "evidence_notes": "Procedure manual audited and approved.",
+    "due_date": "2026-11-15",
+    "last_verified_at": "2026-09-04T12:10:00Z",
+    "verified_by": "Data Protection Officer",
+    "is_mandatory": true,
+    "id": 16,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/dsar_breach_playbook_v3.pdf",
+        "notes": "Procedure manual audited and approved.",
+        "uploaded_at": "2026-09-04T12:10:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Data Protection Officer",
+        "reviewed_at": "2026-09-04T12:10:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-WRK-001",
+    "title": "Frontline Agent Background Checks & ID Verification",
+    "check_type": "operational",
+    "category": "Workforce",
+    "requirement_description": "100% pre-employment criminal history, identity proofing, and reference check clearance for all rostered staff.",
+    "priority": "critical",
+    "status": "verified",
+    "evidence_url": "/data/storage/compliance/agent_roster_clearance_q3.xlsx",
+    "evidence_notes": "Audited against 5 active agents in bpo_agents roster (Gurpreet R., Alex Miller, Sarah Jenkins, David Chen, Guru Agent). All cleared.",
+    "due_date": "2026-12-31",
+    "last_verified_at": "2026-09-18T10:00:00Z",
+    "verified_by": "HR & Compliance Auditor",
+    "is_mandatory": true,
+    "id": 17,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/agent_roster_clearance_q3.xlsx",
+        "notes": "Audited against 5 active agents in bpo_agents roster (Gurpreet R., Alex Miller, Sarah Jenkins, David Chen, Guru Agent). All cleared.",
+        "uploaded_at": "2026-09-18T10:00:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "HR & Compliance Auditor",
+        "reviewed_at": "2026-09-18T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-TRN-001",
+    "title": "Mandatory Security Awareness & Phishing Simulation",
+    "check_type": "training",
+    "category": "Training",
+    "requirement_description": "Annual security awareness course completion certificate and monthly anti-phishing simulation scores.",
+    "priority": "high",
+    "status": "verified",
+    "evidence_url": "/data/storage/compliance/annual_security_training_completion.pdf",
+    "evidence_notes": "100% roster completion logged in Thinkatic Training Module.",
+    "due_date": "2026-10-31",
+    "last_verified_at": "2026-09-14T16:45:00Z",
+    "verified_by": "Training Director",
+    "is_mandatory": true,
+    "id": 18,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/annual_security_training_completion.pdf",
+        "notes": "100% roster completion logged in Thinkatic Training Module.",
+        "uploaded_at": "2026-09-14T16:45:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Training Director",
+        "reviewed_at": "2026-09-14T16:45:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-TRN-002",
+    "title": "Telehealth Campaign Specific Agent Certifications",
+    "check_type": "training",
+    "category": "Training",
+    "requirement_description": "Medical terminology, empathetic patient triage, and telehealth workflow certification.",
+    "priority": "high",
+    "status": "verified",
+    "evidence_url": "/data/storage/compliance/telehealth_campaign_certifications.pdf",
+    "evidence_notes": "All 5 frontline support agents passed client accreditation curriculum.",
+    "due_date": "2026-10-15",
+    "last_verified_at": "2026-09-16T14:00:00Z",
+    "verified_by": "Campaign Training Specialist",
+    "is_mandatory": true,
+    "id": 19,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/telehealth_campaign_certifications.pdf",
+        "notes": "All 5 frontline support agents passed client accreditation curriculum.",
+        "uploaded_at": "2026-09-16T14:00:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Campaign Training Specialist",
+        "reviewed_at": "2026-09-16T14:00:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-QMS-001",
+    "title": "Quality Assurance Minimum Passing Score Adherence (>=85%)",
+    "check_type": "operational",
+    "category": "Quality",
+    "requirement_description": "30-day rolling average quality score must maintain at or above 85% with zero unaddressed critical defects.",
+    "priority": "critical",
+    "status": "verified",
+    "evidence_url": "/api/bpo/qa/summary",
+    "evidence_notes": "Live Quality telemetry confirmed: Current 30-day Mean QA Score is 94.3% across 56 completed evaluations. Pass rate 96.4%.",
+    "due_date": "2026-09-30",
+    "last_verified_at": "2026-09-25T08:00:00Z",
+    "verified_by": "Master QA Auditor",
+    "is_mandatory": true,
+    "id": 20,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/api/bpo/qa/summary",
+        "notes": "Live Quality telemetry confirmed: Current 30-day Mean QA Score is 94.3% across 56 completed evaluations. Pass rate 96.4%.",
+        "uploaded_at": "2026-09-25T08:00:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Master QA Auditor",
+        "reviewed_at": "2026-09-25T08:00:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-OPS-001",
+    "title": "Business Continuity & Disaster Recovery (BCDR) Drill",
+    "check_type": "operational",
+    "category": "Operations",
+    "requirement_description": "Annual failover drill report testing backup telephony carriers and cloud workspace recovery within 15 minutes.",
+    "priority": "high",
+    "status": "exception_active",
+    "evidence_url": "/data/storage/compliance/bcdr_failover_plan_v2.pdf",
+    "evidence_notes": "Approved time-bound exception (EXP-00001) active until Nov 15, 2026 due to upstream cloud provider maintenance.",
+    "due_date": "2026-11-15",
+    "last_verified_at": "2026-09-15T09:30:00Z",
+    "verified_by": "Operations Risk Committee",
+    "is_mandatory": true,
+    "id": 21,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/bcdr_failover_plan_v2.pdf",
+        "notes": "Approved time-bound exception (EXP-00001) active until Nov 15, 2026 due to upstream cloud provider maintenance.",
+        "uploaded_at": "2026-09-15T09:30:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "rejected",
+        "reviewed_by": "Operations Risk Committee",
+        "reviewed_at": "2026-09-15T09:30:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-OPS-002",
+    "title": "Dual ISP Redundancy & UPS Power Backup Battery Test",
+    "check_type": "operational",
+    "category": "Operations",
+    "requirement_description": "Automatic cutover test between Primary (Fiber 1 Gbps) and Secondary ISP; 4-hour full-load UPS generator test log.",
+    "priority": "medium",
+    "status": "verified",
+    "evidence_url": "/data/storage/compliance/ups_generator_isp_test_log.pdf",
+    "evidence_notes": "Cutover latency 400ms. UPS hold-up time verified at 5.5 hours under peak agent load.",
+    "due_date": "2026-11-30",
+    "last_verified_at": "2026-09-11T17:00:00Z",
+    "verified_by": "Infrastructure Auditor",
+    "is_mandatory": true,
+    "id": 22,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/ups_generator_isp_test_log.pdf",
+        "notes": "Cutover latency 400ms. UPS hold-up time verified at 5.5 hours under peak agent load.",
+        "uploaded_at": "2026-09-11T17:00:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Infrastructure Auditor",
+        "reviewed_at": "2026-09-11T17:00:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-PRJ-001",
+    "title": "Project SLA Adherence (Telehealth Campaign)",
+    "check_type": "operational",
+    "category": "Project Requirements",
+    "requirement_description": "Monthly Service Level Agreement metrics: ASA < 20s, Abandonment < 3%, First Contact Resolution > 82%.",
+    "priority": "high",
+    "status": "verified",
+    "evidence_url": "/api/bpo/marketplace/active-campaigns",
+    "evidence_notes": "Telehealth campaign telemetry verified compliant with client SLA benchmarks.",
+    "due_date": "2026-09-30",
+    "last_verified_at": "2026-09-24T18:00:00Z",
+    "verified_by": "Client Relationship Director",
+    "is_mandatory": true,
+    "id": 23,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/api/bpo/marketplace/active-campaigns",
+        "notes": "Telehealth campaign telemetry verified compliant with client SLA benchmarks.",
+        "uploaded_at": "2026-09-24T18:00:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "approved",
+        "reviewed_by": "Client Relationship Director",
+        "reviewed_at": "2026-09-24T18:00:00Z"
+      }
+    ]
+  },
+  {
+    "check_code": "CHK-PRJ-002",
+    "title": "Call Recording & PII Redaction Audit",
+    "check_type": "security",
+    "category": "Project Requirements",
+    "requirement_description": "Automated verification that customer credit card numbers, CVVs, and patient SSNs are zero-byte redacted on recordings.",
+    "priority": "high",
+    "status": "action_required",
+    "evidence_url": "/data/storage/compliance/pii_redaction_audit_sample.pdf",
+    "evidence_notes": "Corrective Action Plan (CAPA-00001) open. Dialer mute delay remediation in progress. Target completion Oct 15, 2026.",
+    "due_date": "2026-10-15",
+    "last_verified_at": null,
+    "verified_by": null,
+    "is_mandatory": true,
+    "id": 24,
+    "partner_id": "77c7a735-6d71-492a-9eeb-6853f567f432",
+    "centre_id": 2,
+    "evidence_versions": [
+      {
+        "version": 1,
+        "url": "/data/storage/compliance/pii_redaction_audit_sample.pdf",
+        "notes": "Corrective Action Plan (CAPA-00001) open. Dialer mute delay remediation in progress. Target completion Oct 15, 2026.",
+        "uploaded_at": "2026-09-01T10:00:00Z",
+        "uploaded_by": "Partner Compliance Team",
+        "review_status": "rejected",
+        "reviewed_by": null,
+        "reviewed_at": null
+      }
+    ]
+  }
+]

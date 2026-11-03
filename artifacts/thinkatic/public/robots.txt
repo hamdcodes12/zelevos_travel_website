@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Disallow admin routes from crawlers
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /api/
+
+# Crawl-delay for polite bots
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://thinkatic.com/sitemap.xml
